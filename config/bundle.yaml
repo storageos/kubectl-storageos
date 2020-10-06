@@ -9,35 +9,13 @@ spec:
           - name=storageos-cluster-operator
         namespace: storageos-operator
         limits:
-          maxLines: 10000
+          maxLines: 100000
     - logs:
         selector:
           - app=storageos
-          - app.kubernetes.io/component=storageos-csi-helper
         namespace: kube-system
         limits:
-          maxLines: 10000
-    - logs:
-        selector:
-          - app=storageos
-          - app.kubernetes.io/component=storageos-daemonset
-        namespace: kube-system
-        limits:
-          maxLines: 10000
-    - logs:
-        selector:
-          - app=storageos
-          - app.kubernetes.io/component=storageos-api-manager
-        namespace: kube-system
-        limits:
-          maxLines: 10000
-    - logs:
-        selector:
-          - app=storageos
-          - app.kubernetes.io/component=storageos-scheduler
-        namespace: kube-system
-        limits:
-          maxLines: 10000            
+          maxLines: 1000000
     - clusterResources: {}
   analyzers:
     - clusterVersion:
