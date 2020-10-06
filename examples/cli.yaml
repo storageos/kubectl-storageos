@@ -1,0 +1,44 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - exec:
+        collectorName: storageos-nodes
+        name: storageos-nodes
+        selector:
+          - run=cli
+        namespace: kube-system
+        command: ["storageos"]
+        args: ["get", "nodes"]
+        timeout: 20s
+    - run:
+        collectorName: "run-storageos-cli"
+        image: storageos/cli:v2.2.0
+        namespace: kube-system
+        command: ["storageos"]
+        args:
+        - --endpoints
+        - "http://storageos.kube-system.svc:5705"
+        - get
+        - nodes
+        - -o
+        - yaml
+        imagePullPolicy: IfNotPresent
+    - run:
+        collectorName: "run-storageos-cli2"
+        image: storageos/cli:v2.2.0
+        namespace: kube-system
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          echo STORAGEOS NODES;
+          storageos --endpoints http://storageos.kube-system.svc:5705 get nodes -o yaml;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos --endpoints http://storageos.kube-system.svc:5705 get volumes --all-namespaces -oyaml;
+          echo '-----------------------------------------';
+          "
+        imagePullPolicy: IfNotPresent
