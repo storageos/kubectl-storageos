@@ -1,0 +1,118 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - exec:
+        collectorName: ps
+        name: ps
+        selector:
+          - app=tools
+        namespace: kube-system
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 20s
+
+# We created the following Daemonset Pod to execute on it
+# kubectl create -f ./daemonset-tools.yaml
+#
+# cat ./daemonset-tools.yaml
+#apiVersion: apps/v1
+#kind: DaemonSet
+#metadata:
+#  name: tools
+#  namespace: kube-system
+#spec:
+#  revisionHistoryLimit: 10
+#  selector:
+#    matchLabels:
+#      app: tools
+#  template:
+#    metadata:
+#      labels:
+#        app: tools
+#    spec:
+#      containers:
+#      - command:
+#        - /bin/sh
+#        - -c
+#        - "while true; do sleep 3600; done"
+#        image: arau/tools:0.7
+#        name: tools
+#        securityContext:
+#          allowPrivilegeEscalation: true
+#          capabilities:
+#            add:
+#            - SYS_ADMIN
+#          privileged: true
+#        volumeMounts:
+#        - mountPath: /sys
+#          name: sys
+#        - mountPath: /var/lib/storageos
+#          mountPropagation: Bidirectional
+#          name: state
+#        - mountPath: /lib/modules
+#          name: kernel-modules
+#          readOnly: true
+#        - mountPath: /etc/storageos
+#          name: config
+#        - mountPath: /csi
+#          name: plugin-dir
+#        - mountPath: /var/lib/csi/sockets/
+#          name: registrar-socket-dir
+#      dnsPolicy: ClusterFirstWithHostNet
+#      hostNetwork: true
+#      hostPID: true
+#      priorityClassName: system-node-critical
+#      tolerations:
+#      - key: node.kubernetes.io/disk-pressure
+#        operator: Exists
+#      - key: node.kubernetes.io/memory-pressure
+#        operator: Exists
+#      - key: node.kubernetes.io/network-unavailable
+#        operator: Exists
+#      - key: node.kubernetes.io/not-ready
+#        operator: Exists
+#      - key: node.kubernetes.io/out-of-disk
+#        operator: Exists
+#      - key: node.kubernetes.io/pid-pressure
+#        operator: Exists
+#      - key: node.kubernetes.io/unreachable
+#        operator: Exists
+#      - key: node.kubernetes.io/unschedulable
+#        operator: Exists
+#      volumes:
+#      - hostPath:
+#          path: /lib/modules
+#          type: ""
+#        name: kernel-modules
+#      - hostPath:
+#          path: /sys
+#          type: ""
+#        name: sys
+#      - hostPath:
+#          path: /var/lib/storageos
+#          type: ""
+#        name: state
+#      - configMap:
+#          defaultMode: 384
+#          name: storageos-node-config
+#          optional: false
+#        name: config
+#      - hostPath:
+#          path: /var/lib/kubelet
+#          type: Directory
+#        name: kubelet-dir
+#      - hostPath:
+#          path: /var/lib/kubelet/plugins_registry
+#          type: Directory
+#        name: registration-dir
+#      - hostPath:
+#          path: /var/lib/kubelet/device-plugins/
+#          type: DirectoryOrCreate
+#        name: registrar-socket-dir
+#      - hostPath:
+#          path: /var/lib/kubelet/plugins_registry/storageos
+#          type: DirectoryOrCreate
+#        name: plugin-dir
