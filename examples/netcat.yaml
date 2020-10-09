@@ -8,6 +8,7 @@ spec:
         collectorName: "network-check"
         image: arau/tools:0.9
         namespace: kube-system
+        hostNetwork: true
         command:
         - "/bin/sh"
         - "-c"
@@ -23,7 +24,7 @@ spec:
           echo \"Source node for the test:\";
           hostname -f -I; echo;
 
-          parallel -j2 nc -vz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+          parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
                               ::: 5703 5704 5705 5710 5711
           "
         timeout: 300s
