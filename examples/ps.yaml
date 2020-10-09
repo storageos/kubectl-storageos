@@ -38,7 +38,7 @@ spec:
 #        - /bin/sh
 #        - -c
 #        - "while true; do sleep 3600; done"
-#        image: arau/tools:0.7
+#        image: arau/tools:0.8
 #        name: tools
 #        securityContext:
 #          allowPrivilegeEscalation: true

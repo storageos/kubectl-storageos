@@ -1,0 +1,29 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - run:
+        collectorName: "network-check"
+        image: arau/tools:0.9
+        namespace: kube-system
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+          #
+          # IOPort = 5703 # DataPlane
+          # SupervisorPort = 5704 # For sync
+          # ExternalAPIPort = 5705 # REST API
+          # InternalAPIPort = 5710 # Grpc API
+          # GossipPort = 5711 # Gossip+Healthcheck
+
+          echo \"Source node for the test:\";
+          hostname -f -I; echo;
+
+          parallel -j2 nc -vz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+                              ::: 5703 5704 5705 5710 5711
+          "
+        timeout: 300s
