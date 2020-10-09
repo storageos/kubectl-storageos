@@ -4,7 +4,17 @@ metadata:
   name: StorageOS
 spec:
   collectors:
-    - exec:
+    - run:
+        collectorName: "ps-run"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostPID: true
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 20s
+    - exec: 
+        # This collector would need the DaemonSet definition below to be created
+        # before hand
         collectorName: ps
         name: ps
         selector:
