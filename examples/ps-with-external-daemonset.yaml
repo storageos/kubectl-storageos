@@ -4,15 +4,7 @@ metadata:
   name: StorageOS
 spec:
   collectors:
-    - run:
-        collectorName: "ps-run"
-        image: arau/tools:0.9
-        namespace: kube-system
-        hostPID: true
-        command: ["ps"]
-        args: ["auxwwwf"]
-        timeout: 20s
-    - exec: 
+    - exec:
         # This collector would need the DaemonSet definition below to be created
         # before hand
         collectorName: ps
@@ -22,7 +14,7 @@ spec:
         namespace: kube-system
         command: ["ps"]
         args: ["auxwwwf"]
-        timeout: 20s
+        timeout: 60s
 
 # We created the following Daemonset Pod to execute on it
 # kubectl create -f ./daemonset-tools.yaml

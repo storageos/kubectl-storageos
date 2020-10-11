@@ -1,0 +1,38 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - run:
+        collectorName: "hostname-one"
+        name: "runonenode"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostNetwork: true
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+
+          hostname
+          "
+        timeout: 20s
+    - run:
+        collectorName: "hostname-worker"
+        name: "runmanynodes"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostNetwork: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+
+          hostname
+          "
+        timeout: 30s

@@ -1,0 +1,18 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - run:
+        # Because of the nodeSelector, this runner will create 
+        # one Pod for each node that matches the nodeSelector Term
+        collectorName: "ps-all-nodes"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 20s

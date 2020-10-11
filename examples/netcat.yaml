@@ -9,6 +9,8 @@ spec:
         image: arau/tools:0.9
         namespace: kube-system
         hostNetwork: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
         command:
         - "/bin/sh"
         - "-c"
@@ -27,4 +29,4 @@ spec:
           parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
                               ::: 5703 5704 5705 5710 5711
           "
-        timeout: 300s
+        timeout: 90s
