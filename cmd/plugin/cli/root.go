@@ -12,7 +12,6 @@ import (
 	"github.com/tj/go-spin"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/storageos/kubectl-storageos/pkg/logger"
 	"github.com/storageos/kubectl-storageos/pkg/plugin"
 )
 
@@ -22,17 +21,17 @@ var (
 
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "",
-		Short:         "",
-		Long:          `.`,
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		Use:   "storageos",
+		Short: "StorageOS",
+		Long:  `StorageOS kubectl plugin`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log := logger.NewLogger()
-			log.Info("")
+			if len(args) == 0 {
+				cmd.Help()
+				os.Exit(0)
+			}
 
 			s := spin.New()
 			finishedCh := make(chan bool, 1)
@@ -62,9 +61,6 @@ func RootCmd() *cobra.Command {
 			if err := plugin.RunPlugin(KubernetesConfigFlags, namespaceName); err != nil {
 				return errors.Cause(err)
 			}
-
-			log.Info("")
-
 			return nil
 		},
 	}
@@ -76,9 +72,7 @@ func RootCmd() *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	cmd.AddCommand(AnalyzeCmd())
 	cmd.AddCommand(BundleCmd())
-	// cmd.AddCommand(VersionCmd())
 
 	return cmd
 }

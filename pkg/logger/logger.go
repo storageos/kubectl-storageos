@@ -2,34 +2,19 @@ package logger
 
 import (
 	"fmt"
-
-	"github.com/fatih/color"
 )
 
-type Logger struct {
+var (
+	quiet = false
+)
+
+func SetQuiet(s bool) {
+	quiet = s
 }
 
-func NewLogger() *Logger {
-	return &Logger{}
-}
-
-func (l *Logger) Info(msg string, args ...interface{}) {
-	if msg == "" {
-		fmt.Println("")
+func Printf(format string, args ...interface{}) {
+	if quiet {
 		return
 	}
-
-	c := color.New(color.FgHiCyan)
-	c.Println(fmt.Sprintf(msg, args...))
-}
-
-func (l *Logger) Error(err error) {
-	c := color.New(color.FgHiRed)
-	c.Println(fmt.Sprintf("%#v", err))
-}
-
-func (l *Logger) Instructions(msg string, args ...interface{}) {
-	white := color.New(color.FgHiWhite)
-	white.Println("")
-	white.Println(fmt.Sprintf(msg, args...))
+	fmt.Printf(format, args...)
 }
