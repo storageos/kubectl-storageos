@@ -1,0 +1,6 @@
+domain: storageos.com
+layout:
+- go.kubebuilder.io/v3
+projectName: kubectl-storageos
+repo: github.com/storageos/kubectl-storageos
+version: "3"
