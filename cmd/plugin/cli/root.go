@@ -78,6 +78,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(AnalyzeCmd())
 	cmd.AddCommand(BundleCmd())
+	// cmd.AddCommand(VersionCmd())
 
 	return cmd
 }

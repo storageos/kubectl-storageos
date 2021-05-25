@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"strings"
+
+	"github.com/replicatedhq/troubleshoot/pkg/k8sutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -37,22 +40,19 @@ from a server that can be used to assist when troubleshooting a Kubernetes clust
 
 	// cobra.OnInitialize(initConfig)
 
-	// cmd.AddCommand(Analyze())
-	// cmd.AddCommand(VersionCmd())
+	cmd.Flags().StringSlice("redactors", []string{}, "names of the additional redactors to use")
+	cmd.Flags().Bool("redact", true, "enable/disable default redactions")
+	cmd.Flags().Bool("collect-without-permissions", false, "always generate a support bundle, even if it some require additional permissions")
 
-	// cmd.Flags().StringSlice("redactors", []string{}, "names of the additional redactors to use")
-	// cmd.Flags().Bool("redact", true, "enable/disable default redactions")
-	// cmd.Flags().Bool("collect-without-permissions", false, "always generate a support bundle, even if it some require additional permissions")
+	// hidden in favor of the `insecure-skip-tls-verify` flag
+	cmd.Flags().Bool("allow-insecure-connections", false, "when set, do not verify TLS certs when retrieving spec and reporting results")
+	cmd.Flags().MarkHidden("allow-insecure-connections")
 
-	// // hidden in favor of the `insecure-skip-tls-verify` flag
-	// cmd.Flags().Bool("allow-insecure-connections", false, "when set, do not verify TLS certs when retrieving spec and reporting results")
-	// cmd.Flags().MarkHidden("allow-insecure-connections")
+	viper.BindPFlags(cmd.Flags())
 
-	// viper.BindPFlags(cmd.Flags())
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	// viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-
-	// k8sutil.AddFlags(cmd.Flags())
+	k8sutil.AddFlags(cmd.Flags())
 
 	return cmd
 }
