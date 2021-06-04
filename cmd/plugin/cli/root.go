@@ -9,10 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/storageos/kubectl-storageos/pkg/plugin"
 	"github.com/tj/go-spin"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-
-	"github.com/storageos/kubectl-storageos/pkg/plugin"
 )
 
 var (
@@ -73,6 +72,7 @@ func RootCmd() *cobra.Command {
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	cmd.AddCommand(BundleCmd())
+	cmd.AddCommand(InstallCmd())
 
 	return cmd
 }
