@@ -15,7 +15,9 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-all: build
+BUILDFLAGS = -tags "exclude_graphdriver_devicemapper"
+
+all: generate build
 
 ##@ General
 
@@ -45,18 +47,21 @@ fmt: ## Run go fmt against code.
 	go fmt ./...
 
 vet: ## Run go vet against code.
-	go vet ./...
+	go vet ${BUILDFLAGS} ./...
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ${BUILDFLAGS}
+
+e2e:
+	kubectl-kuttl test --config tests/e2e/kuttl-test.yaml
 
 ##@ Build
 
-build: generate fmt vet ## Build manager binary.
-	go build -o bin/kubectl-storageos github.com/storageos/kubectl-storageos/cmd/plugin
+build: fmt vet ## Build manager binary.
+	go build ${BUILDFLAGS} -o bin/kubectl-storageos github.com/storageos/kubectl-storageos/cmd/plugin
 
 #run: manifests generate fmt vet ## Run a controller from your host.
 run: fmt vet ## Run a controller from your host.

@@ -96,7 +96,7 @@ func SetFieldInManifest(manifest, value, valueName string, fields ...string) (st
 		return "", err
 	}
 
-	_, err = obj.Pipe(kyaml.LookupCreate(kyaml.SequenceNode, fields...), kyaml.SetField(valueName, parsedVal))
+	_, err = obj.Pipe(kyaml.LookupCreate(kyaml.MappingNode, fields...), kyaml.SetField(valueName, parsedVal))
 	if err != nil {
 		return "", err
 	}
@@ -117,17 +117,110 @@ func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 	return strings.TrimSpace(val.MustString()), nil
 }
 
+// KustomizePatch is useed to pass a new patch to a kustomization file, see AddPatchesToKustomize
+type KustomizePatch struct {
+	Op    string
+	Path  string
+	Value string
+}
+
+// AddPatchesToKustomize adds any number of patches (via []KustomizePatch{}) to kustomizationFile string,
+// returning the updated kustomization file as a string.
+
+// Example
+//*******************************************************
+// Input kustomization file:
+//*******************************************************
+// apiVersion: kustomize.config.k8s.io/v1beta1
+// kind: Kustomization
+//
+// resources:
+// - storageos-cluster.yaml
+//******************************************************
+// Other inputs:
+// targetKind: "StorageOSCluster"
+// targetName: "storageoscluster-sample"
+// patches: []KustomizePatch{
+//	{
+//		Op: "replace",
+//		Path: "/spec/kvBackend/address",
+//		Value: 	"storageos.storageos-etcd:2379",
+//	},
+// }
+//*******************************************************
+// Results in the following output kustomization file:
+//*******************************************************
+// apiVersion: kustomize.config.k8s.io/v1beta1
+// kind: Kustomization
+//
+// resources:
+// - storageos-cluster.yaml
+//
+// patches:
+// - target:
+//     kind: StorageOSCluster
+//     name: storageoscluster-sample
+//   patch: |
+//     - op: replace
+//       path: /spec/kvBackend/address
+//       value: storageos.storageos-etcd:2379
+//*******************************************************
+func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, patches []KustomizePatch) (string, error) {
+	obj, err := kyaml.Parse(string(kustomizationFile))
+	if err != nil {
+		return "", err
+	}
+
+	patchStrings := make([]string, 0)
+	for _, patch := range patches {
+		patchString := fmt.Sprintf("%s%s%s%s%s%s", `
+    - op: `, patch.Op, `
+      path: `, patch.Path, `
+      value: `, patch.Value)
+		patchStrings = append(patchStrings, patchString)
+
+	}
+
+	allPatchesStr := strings.Join(patchStrings, "")
+
+	targetString := fmt.Sprintf("%s%s%s%s%s", `
+- target:
+    kind: `, targetKind, `
+    name: `, targetName, `
+  patch: |`)
+
+	patch, err := kyaml.Parse(strings.Join([]string{targetString, allPatchesStr}, ""))
+
+	_, err = obj.Pipe(
+		kyaml.LookupCreate(kyaml.SequenceNode, "patches"),
+		kyaml.Append(patch.YNode().Content...))
+	if err != nil {
+		return "", err
+	}
+
+	return obj.MustString(), nil
+}
+
+// NamespaceYaml returns a yaml string for a namespace object based on the namespace name
+func NamespaceYaml(namespace string) string {
+	return fmt.Sprintf("%v%v", `apiVersion: v1
+kind: Namespace
+metadata:
+  name: `, namespace)
+
+}
+
 // PodIsRunning attempts to `get` a pod by name and namespace, the function returns no error
 // if the pod is in running phase. If an error occurs during `get`, the error is returned.
 // If the pod is a phase other than running, `get` is executed again after 5 seconds.
-// After 30 seconds, the function times out and returns timeout error.
+// After 60 seconds, the function times out and returns timeout error.
 func PodIsRunning(config *rest.Config, name, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err
 	}
 	podClient := clientset.CoreV1().Pods(namespace)
-	timeout := time.After(time.Second * 30)
+	timeout := time.After(time.Second * 60)
 	errs, ctx := errgroup.WithContext(context.TODO())
 	errs.Go(func() error {
 		for {

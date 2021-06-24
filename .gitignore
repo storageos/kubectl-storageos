@@ -23,3 +23,7 @@ vendor
 *.swp
 *.swo
 *~
+
+# kuttl files 
+kind-logs*
+kubeconfig

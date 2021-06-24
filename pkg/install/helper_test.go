@@ -71,7 +71,7 @@ spec:
   # tlsEtcdSecretRefNamespace:
   disableTelemetry: true
   images:
-    nodeContainer: soegarots/node:latest
+    nodeContainer: storageos/node:latest
     apiManagerContainer: storageos/api-manager:develop
   #   initContainer:
   #   csiNodeDriverRegistrarContainer:
@@ -103,7 +103,7 @@ spec:
   # tlsEtcdSecretRefNamespace:
   disableTelemetry: true
   images:
-    nodeContainer: soegarots/node:latest
+    nodeContainer: storageos/node:latest
     apiManagerContainer: storageos/api-manager:develop
   #   initContainer:
   #   csiNodeDriverRegistrarContainer:
@@ -139,7 +139,7 @@ spec:
 		}
 
 		if kyaml.MustParse(manifest).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(manifest).MustString(), kyaml.MustParse(tc.expManifest).MustString())
+			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(manifest).MustString())
 		}
 	}
 }
@@ -207,5 +207,110 @@ spec:
 		if field != tc.expString {
 			t.Errorf("expected %v, got %v", tc.expString, field)
 		}
+	}
+}
+
+func TestAddPatchesToKustomize(t *testing.T) {
+	tcases := []struct {
+		name       string
+		kust       string
+		targetKind string
+		targetName string
+		patches    []KustomizePatch
+		expKust    string
+		expErr     bool
+	}{
+		{
+			name: "add single patch for kvbackend",
+			kust: `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- storageos-cluster.yaml`,
+			targetKind: stosClusterKind,
+			targetName: defaultStosClusterName,
+			patches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Path:  "/spec/kvBackend/address",
+					Value: "storageos.storageos-etcd:2379",
+				},
+			},
+			expErr: false,
+			expKust: `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- storageos-cluster.yaml
+
+patches:
+- target:
+    kind: StorageOSCluster
+    name: storageoscluster-sample
+  patch: |
+    - op: replace
+      path: /spec/kvBackend/address
+      value: storageos.storageos-etcd:2379`,
+		},
+		{
+			name: "add multiple patches",
+			kust: `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- storageos-cluster.yaml`,
+			targetKind: stosClusterKind,
+			targetName: defaultStosClusterName,
+			patches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Path:  "/spec/kvBackend/address",
+					Value: "storageos.storageos-etcd:2379",
+				},
+				{
+					Op:    "add",
+					Path:  "/spec/abc/def",
+					Value: "newvalue",
+				},
+				{
+					Op:    "add",
+					Path:  "/spec/ghi/jkl",
+					Value: "newvalue",
+				},
+			},
+			expErr: false,
+			expKust: `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- storageos-cluster.yaml
+
+patches:
+- target:
+    kind: StorageOSCluster
+    name: storageoscluster-sample
+  patch: |
+    - op: replace
+      path: /spec/kvBackend/address
+      value: storageos.storageos-etcd:2379
+    - op: add
+      path: /spec/abc/def
+      value: newvalue
+    - op: add
+      path: /spec/ghi/jkl
+      value: newvalue`,
+		},
+	}
+	for _, tc := range tcases {
+		kust, err := AddPatchesToKustomize(tc.kust, tc.targetKind, tc.targetName, tc.patches)
+		if err != nil {
+			if !tc.expErr {
+				t.Errorf("got err %v unexpectedly", err)
+			}
+		}
+		if kyaml.MustParse(kust).MustString() != kyaml.MustParse(tc.expKust).MustString() {
+			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expKust).MustString(), kyaml.MustParse(kust).MustString())
+		}
+
 	}
 }

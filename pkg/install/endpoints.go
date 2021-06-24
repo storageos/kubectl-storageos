@@ -9,6 +9,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -17,11 +18,11 @@ const (
 
 // handleEndpointsInput:
 // - pulls and creates the etcd-shell pod
-// - prompts the user for endpoints input
+// - deletes the etcd-shell pod (deferred)
+// - prompts the user for endpoints input if required
 // - validates the endpoints using the etcd-shell-pod
-// - deletes the etcd-shell pod
-// - adds validated endpoints to storageos-cluster.spec.kvBackend
-func (in *Installer) handleEndpointsInput() error {
+// - adds validated endpoints patch to kustomization file for storageos-cluster.yaml
+func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
 	etcdShell, err := pullManifest(etcdShellUrl)
 	if err != nil {
 		return err
@@ -31,27 +32,33 @@ func (in *Installer) handleEndpointsInput() error {
 		return err
 	}
 
-	etcdEndpoints, err := etcdEndpointsPrompt()
-	if err != nil {
-		return err
-	}
-
-	err = validateEndpoints(etcdEndpoints, string(etcdShell))
-	if err != nil {
+	defer func() error {
 		err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true)
 		if err != nil {
 			return err
 		}
+		return nil
+	}()
 
-		return err
+	// if etcdEndpoints were not passed via flag or config, prompt user to enter manually
+	if etcdEndpoints == "" {
+		etcdEndpoints, err = etcdEndpointsPrompt()
+		if err != nil {
+			return err
+		}
 	}
-
-	err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true)
+	err = validateEndpoints(etcdEndpoints, string(etcdShell))
 	if err != nil {
 		return err
 	}
 
-	err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, stosClusterFile), etcdEndpoints, "address", "spec", "kvBackend")
+	endpointPatch := KustomizePatch{
+		Op:    "replace",
+		Path:  "/spec/kvBackend/address",
+		Value: etcdEndpoints,
+	}
+
+	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []KustomizePatch{endpointPatch})
 	if err != nil {
 		return err
 	}
@@ -62,9 +69,8 @@ func (in *Installer) handleEndpointsInput() error {
 // validateEndpoints:
 // - retrieves etcd-shell pod name and namespace
 // - ensures the etcd-shell pod is in running state
-// - execs into the etcd-shell pod and runs etcdctl to list the etcd cluster members
-//   TODO: do read/write to etcd instead of members list
-// - if no error has occurred, the endpoints are validated
+// - performs etcdctlHealthCheck
+// - if no error has occurred during health check, the endpoints are validated
 func validateEndpoints(endpoints, etcdShell string) error {
 	etcdShellPodName, err := GetFieldInManifest(etcdShell, "metadata", "name")
 	if err != nil {
@@ -84,30 +90,54 @@ func validateEndpoints(endpoints, etcdShell string) error {
 	if err != nil {
 		return err
 	}
-	stdout, stderr, err := ExecToPod(config, etcdctlMemberListCmd(endpoints), "", etcdShellPodName, etcdShellPodNS, nil)
+
+	err = etcdctlHealthCheck(config, etcdShellPodName, etcdShellPodNS, endpointsSplitter(endpoints), "foo", "bar")
 	if err != nil {
 		return err
 	}
-	if stderr != "" {
-		return fmt.Errorf(stderr)
-	}
-	logger.Printf("\n\nEndpoints succesfully validated, etcd members list:\n\n%s\n\n", stdout)
+
+	logger.Printf("\nETCD endpoints succesfully validated\n\n")
 
 	return nil
 }
 
-// etcdctlMemberList returns a slice of strings representing the etcdctl command for members list to
-// be interpreted by the pod exec:
-// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" member list`}
-func etcdctlMemberListCmd(endpoints string) []string {
-	return []string{"/bin/bash", "-c", fmt.Sprintf("%s%s%s", "etcdctl --endpoints \"http://", endpoints, "\" member list")}
+// etcdctlHelathCheck performs write, read, delete of key/value to etcd endpoints, returning an error
+// if any step fails.
+func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, endpoints, key, value string) error {
+	errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoints)
+	_, stderr, err := ExecToPod(config, etcdctlSetCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
+	if err != nil {
+		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+	}
+	if stderr != "" {
+		return fmt.Errorf(stderr)
+	}
+
+	_, stderr, err = ExecToPod(config, etcdctlGetCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
+	if err != nil {
+		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+
+	}
+	if stderr != "" {
+		return fmt.Errorf(stderr)
+	}
+
+	_, stderr, err = ExecToPod(config, etcdctlRmCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
+	if err != nil {
+		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+	}
+	if stderr != "" {
+		return fmt.Errorf(stderr)
+	}
+
+	return nil
 }
 
 // etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
 // func is run on each character as it is entered as per the regexp - it does not refer to actual
 // endpoint validation which is handled later.
 func etcdEndpointsPrompt() (string, error) {
-	logger.Printf("   Please enter ETCD endpoint(s). If more than one endpoint exists, enter endpoints as a comma-separated string.\n\n   Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379\n\n")
+	logger.Printf("   Please enter ETCD endpoints. If more than one endpoint exists, enter endpoints as a comma-delimited list of machine addresses in the cluster.\n\n   Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379\n\n")
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("^[a-z0-9,.:-]+$", input)
 		if !match {

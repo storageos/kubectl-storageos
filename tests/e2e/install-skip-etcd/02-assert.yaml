@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-controller-manager
+  namespace: stos-operator-install-skip-etcd
+status:
+  replicas: 1 
