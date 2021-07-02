@@ -1,0 +1,130 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: supportbundle
+spec:
+  collectors: 
+    # - clusterResources: {}
+    # - run:
+    #     name: "network-checks"
+    #     collectorName: "netcat"
+    #     image: arau/tools:0.9
+    #     namespace: kube-system
+    #     hostNetwork: true
+    #     hostPID: true
+    #     nodeSelector:
+    #       node-role.kubernetes.io/worker: "true"
+    #     command:
+    #     - "/bin/sh"
+    #     - "-c"
+    #     - "
+    #       #!/bin/bash
+    #       #
+    #       # IOPort = 5703 # DataPlane
+    #       # SupervisorPort = 5704 # For sync
+    #       # ExternalAPIPort = 5705 # REST API
+    #       # InternalAPIPort = 5710 # Grpc API
+    #       # GossipPort = 5711 # Gossip+Healthcheck
+    #       echo \"Source node for the test:\";
+    #       hostname -f -I; echo;
+    #       parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+    #                           ::: 5703 5704 5705 5710 5711
+    #       "
+    #     timeout: 90s
+    #     imagePullPolicy: IfNotPresent
+    # - run:
+    #     collectorName: "hostname-one"
+    #     name: "runonenode"
+    #     image: arau/tools:0.9
+    #     namespace: kube-system
+    #     hostNetwork: true
+    #     command:
+    #     - "/bin/sh"
+    #     - "-c"
+    #     - "
+    #       #!/bin/bash
+    #       hostname
+    #       "
+    #     timeout: 20s
+    - run:
+        collectorName: "run-storageos-cli"
+        name: storageos
+        image: storageos/cli:v2.2.0
+        namespace: kube-system
+        command: 
+        - "/bin/sh"
+        - "-c"
+        - "
+          for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
+            state_file=/sys/module/$mod/initstate;
+            if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
+                echo \"Module $mod is running\";
+            else 
+                echo \"Module $mod is not running\";
+            fi;
+          done;
+        "
+        imagePullPolicy: IfNotPresent
+    - run:
+        collectorName: "run-storageos-cli2"
+        image: ubuntu
+        namespace: kube-system
+        command: 
+        - "/bin/sh"
+        - "-c"
+        - "
+          for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
+            state_file=/sys/module/$mod/initstate;
+            if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
+                echo \"Module $mod is running\";
+            else 
+                echo \"Module $mod is not running\";
+                echo \"--> executing \"modprobe -b $mod\"\";
+                if ! /usr/sbin/modprobe -b $mod; then
+                    if [ \"$mod\" != \"target_core_user\" ] && [ \"$mod\" != \"uio\" ]; then
+                        exit 1;
+                    else 
+                        echo \"Couldn't enable $mod\";
+                    fi;
+                fi;
+                mkdir -p /etc/modules-load.d;
+                [ ! -f /etc/modules-load.d/lio.conf ] && echo $mod >> /etc/modules-load.d/lio.conf;
+            fi;
+            echo \"$state_file\";
+          done;
+        "
+        # - "
+        #   for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
+        #     state_file=/sys/module/$mod/initstate
+        #     if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
+        #         echo \"Module $mod is running\"
+        #     else 
+        #         echo \"Module $mod is not running\"
+        #         echo \"--> executing \"modprobe -b $mod\"\"
+        #         if ! modprobe -b $mod; then
+        #             # core_user and uio are not mandatory
+        #             if [ \"$mod\" != \"target_core_user\" ] && [ \"$mod\" != \"uio\" ]; then
+        #                 exit 1
+        #             else 
+        #                 echo \"Couldn't enable $mod\"
+        #             fi
+        #         fi
+        #         # Enable module at boot
+        #         mkdir -p /etc/modules-load.d
+        #         [ ! -f /etc/modules-load.d/lio.conf ] && echo $mod >> /etc/modules-load.d/lio.conf # create file if doesn't exist
+        #     fi
+        # done
+        # "
+        # args:
+        
+        imagePullPolicy: IfNotPresent
+  # analyzers:
+  #   - textAnalyze:
+  #       checkName: Required kernel modules
+  #       fileName: storageos/run-storageos-cli.log
+  #       regex: 'health: online'
+  #       outcomes:
+  #         - pass:
+  #             message: Required kernel modules are present.
+  #         - fail:
+  #             message: Required kernel modules are not present.
