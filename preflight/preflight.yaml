@@ -76,7 +76,7 @@ spec:
     - textAnalyze:
         checkName: Required kernel module target_core_mod
         fileName: storageos/run-storageos-cli.log
-        regex: 'Module target_core_mod is running'
+        regex: 'Module target_core_mod is present'
         outcomes:
           - pass:
               message: Required kernel module is present.
@@ -85,7 +85,7 @@ spec:
     - textAnalyze:
         checkName: Required kernel module tcm_loop
         fileName: storageos/run-storageos-cli.log
-        regex: 'Module tcm_loop is running'
+        regex: 'Module tcm_loop is present'
         outcomes:
           - pass:
               message: Required kernel module is present.
@@ -94,7 +94,7 @@ spec:
     - textAnalyze:
         checkName: Required kernel module target_core_file
         fileName: storageos/run-storageos-cli.log
-        regex: 'Module target_core_file is running'
+        regex: 'Module target_core_file is present'
         outcomes:
           - pass:
               message: Required kernel module is present.
@@ -103,7 +103,7 @@ spec:
     - textAnalyze:
         checkName: Required kernel module uio
         fileName: storageos/run-storageos-cli.log
-        regex: 'Module uio is running'
+        regex: 'Module uio is present'
         outcomes:
           - pass:
               message: Required kernel module is present.
@@ -112,7 +112,7 @@ spec:
     - textAnalyze:
         checkName: Required kernel module target_core_user
         fileName: storageos/run-storageos-cli.log
-        regex: 'Module target_core_user is running'
+        regex: 'Module target_core_user is present'
         outcomes:
           - pass:
               message: Required kernel module is present.
