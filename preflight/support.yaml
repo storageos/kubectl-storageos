@@ -80,7 +80,7 @@ spec:
             else 
                 echo \"Module $mod is not running\";
                 echo \"--> executing \"modprobe -b $mod\"\";
-                if ! /usr/sbin/modprobe -b $mod; then
+                if ! modprobe -b $mod; then
                     if [ \"$mod\" != \"target_core_user\" ] && [ \"$mod\" != \"uio\" ]; then
                         exit 1;
                     else 
