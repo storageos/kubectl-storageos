@@ -9,7 +9,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eco-controller-manager
+  name: storageos-etcd-controller-manager
   namespace: etcd-install-full
 status:
   replicas: 1
@@ -17,7 +17,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eco-proxy
+  name: storageos-etcd-proxy
   namespace: etcd-install-full
 status:
   replicas: 1

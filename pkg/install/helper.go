@@ -14,11 +14,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	storagev1 "k8s.io/client-go/kubernetes/typed/storage/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
+// NewClientConfig returns a client-go rest config
 func NewClientConfig() (*rest.Config, error) {
 	configFlags := &genericclioptions.ConfigFlags{}
 
@@ -29,6 +31,7 @@ func NewClientConfig() (*rest.Config, error) {
 	return config, nil
 }
 
+// GetClientsetFromConfig returns a k8s clientset from a client-go rest config
 func GetClientsetFromConfig(config *rest.Config) (*kubernetes.Clientset, error) {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -85,6 +88,36 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	return stdout.String(), stderr.String(), nil
 }
 
+// GetDefaultStorageClassName returns the name of the default storage class in the cluster, if more
+// than one storage class is set to default, the first one discovered is returned. An error is returned
+// if no default storage class is found.
+func GetDefaultStorageClassName() (string, error) {
+	restConfig, err := NewClientConfig()
+	if err != nil {
+		return "", err
+	}
+
+	storageV1Client, err := storagev1.NewForConfig(restConfig)
+	if err != nil {
+		return "", err
+	}
+	storageClasses, err := storageV1Client.StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, storageClass := range storageClasses.Items {
+		for k, v := range storageClass.GetObjectMeta().GetAnnotations() {
+			if k == "storageclass.kubernetes.io/is-default-class" && v == "true" {
+				return storageClass.GetObjectMeta().GetName(), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no default storage class discovered in cluster")
+}
+
+// SetFieldInManifest sets valueName equal to value at path in manifest defined by fields.
+// See TestSetFieldInManifest for examples.
 func SetFieldInManifest(manifest, value, valueName string, fields ...string) (string, error) {
 	obj, err := kyaml.Parse(manifest)
 	if err != nil {
@@ -104,6 +137,8 @@ func SetFieldInManifest(manifest, value, valueName string, fields ...string) (st
 
 }
 
+// GetFieldInManifest returns the string value at path in manifest defined by fields.
+// See TestGetFieldInManifest for examples.
 func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 	obj, err := kyaml.Parse(manifest)
 	if err != nil {
