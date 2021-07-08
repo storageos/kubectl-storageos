@@ -15,7 +15,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-BUILDFLAGS = -tags "exclude_graphdriver_devicemapper"
+BUILDFLAGS = -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper"
 
 all: build
 
@@ -60,7 +60,6 @@ e2e:
 build: test ## Build manager binary.
 	go build ${BUILDFLAGS} -o bin/kubectl-storageos github.com/storageos/kubectl-storageos/cmd/plugin
 
-#run: fmt vet generate ## Run a controller from your host.
 run: fmt vet generate ## Run a controller from your host.
 	go run ./cmd/plugin/main.go
 

@@ -1,6 +1,6 @@
 module github.com/storageos/kubectl-storageos
 
-go 1.15
+go 1.16
 
 require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
