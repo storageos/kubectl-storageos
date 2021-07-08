@@ -1,0 +1,5 @@
+skipEtcdInstall: true
+storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
+storageOSClusterNamespace: stos-cluster-install-skip-etcd-config
+etcdEndpoints: storageos-etcd.etcd-install-full:2379
+storageClassName: standard
