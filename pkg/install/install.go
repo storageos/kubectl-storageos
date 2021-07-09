@@ -373,8 +373,8 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 // It is the equivalent of:
 // `kustomize build <dir> | kubectl apply -f -
 func (in *Installer) kustomizeAndApply(dir string) error {
-	kustomizer := krusty.MakeKustomizer(in.fileSys, krusty.MakeDefaultOptions())
-	resMap, err := kustomizer.Run(dir)
+	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+	resMap, err := kustomizer.Run(in.fileSys, dir)
 	if err != nil {
 		return err
 	}
