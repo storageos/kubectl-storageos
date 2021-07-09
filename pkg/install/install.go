@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -70,8 +69,9 @@ resources:`
 	stosClusterKind        = "StorageOSCluster"
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
-	defaultStosClusterNS   = "storageos"
+	defaultEtcdClusterNS   = "storageos-etcd"
 	defaultStosClusterName = "storageoscluster-sample"
+	defaultStosClusterNS   = "storageos"
 )
 
 // fsData represents dir name, subdir name, file name and file data.
@@ -103,6 +103,7 @@ func NewInstaller() (*Installer, error) {
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install() error {
+	var err error
 	v := viper.GetViper()
 	if v.GetBool(SkipEtcdInstallFlag) {
 		err := in.handleEndpointsInput(v.GetString(EtcdEndpointsFlag))
@@ -113,15 +114,32 @@ func (in *Installer) Install() error {
 		// add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
 		// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
 		// based on flags (or cli config file)
-		err := in.setFieldInFsManifestIfValueExists(filepath.Join(etcdDir, operatorDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-		if err != nil {
-			return err
-		}
-		err = in.setFieldInFsManifestIfValueExists(filepath.Join(etcdDir, clusterDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-		if err != nil {
-			return err
-		}
+		etcdNamespace := v.GetString(EtcdNamespaceFlag)
+		if etcdNamespace != "" {
+			err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
+			if err != nil {
+				return err
+			}
+			err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
+			if err != nil {
+				return err
+			}
+			err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []KustomizePatch{KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
+			if err != nil {
+				return err
+			}
 
+			// update endpoint for stos cluster based on etcd namespace flag
+			endpointsPatch := KustomizePatch{
+				Op:    "replace",
+				Path:  "/spec/kvBackend/address",
+				Value: fmt.Sprintf("%s%s%s%s", defaultEtcdClusterNS, ".", etcdNamespace, ":2379"),
+			}
+			err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []KustomizePatch{endpointsPatch})
+			if err != nil {
+				return err
+			}
+		}
 		// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
 		// with desired storage class name to kustomization for etcd cluster
 		storageClass := v.GetString(StorageClassFlag)
@@ -145,38 +163,30 @@ func (in *Installer) Install() error {
 		if err != nil {
 			return err
 		}
-
-		// update endpoint for stos cluster based on input flag (just namespace can be set for now)
-		err = in.addEndpointsPatchToClusterKustomization("", v.GetString(EtcdNamespaceFlag))
-		if err != nil {
-			return err
-		}
 	}
 	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
 	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
 	// based on flags (or cli config file)
 
-	// set namespace for operator
-	err := in.setFieldInFsManifestIfValueExists(filepath.Join(stosDir, operatorDir, kustomizationFile), v.GetString(StosOperatorNSFlag), "namespace", "")
-	if err != nil {
-		return err
+	stosOperatorNS := v.GetString(StosOperatorNSFlag)
+	if stosOperatorNS != "" {
+		err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), stosOperatorNS, "namespace", "")
+		if err != nil {
+			return err
+		}
 	}
 
-	// handle case where cluster ns has not been provided and idempotently apply default storageos ns for cluster
 	stosClusterNS := v.GetString(StosClusterNSFlag)
-	if stosClusterNS == "" {
-		stosClusterNS = defaultStosClusterNS
-
-	}
-	err = in.kubectlClient.Apply(context.TODO(), "", NamespaceYaml(stosClusterNS), true)
-	if err != nil {
-		return err
-	}
-
-	// set namespace for storageos cluster and secret
-	err = in.setFieldInFsManifestIfValueExists(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterNS, "namespace", "")
-	if err != nil {
-		return err
+	if stosClusterNS != "" {
+		// apply the provided storageos cluster ns
+		err = in.kubectlClient.Apply(context.TODO(), "", NamespaceYaml(stosClusterNS), true)
+		if err != nil {
+			return err
+		}
+		err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterNS, "namespace", "")
+		if err != nil {
+			return err
+		}
 	}
 
 	err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir))
@@ -185,35 +195,6 @@ func (in *Installer) Install() error {
 	}
 	time.Sleep(5 * time.Second)
 	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (in *Installer) addEndpointsPatchToClusterKustomization(name, namespace string) error {
-	var err error
-	if name == "" {
-		name, err = in.getFieldInFsManifest(path.Join(etcdDir, clusterDir, etcdClusterFile), "metadata", "name")
-		if err != nil {
-			return err
-		}
-	}
-	if namespace == "" {
-		namespace, err = in.getFieldInFsManifest(path.Join(etcdDir, clusterDir, etcdClusterFile), "metadata", "namespace")
-		if err != nil {
-			return err
-		}
-	}
-
-	endpointsPatch := KustomizePatch{
-		Op:    "replace",
-		Path:  "/spec/kvBackend/address",
-		Value: fmt.Sprintf("%v%v%v%v%v", name, ".", namespace, ":", "2379"),
-	}
-
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []KustomizePatch{endpointsPatch})
 	if err != nil {
 		return err
 	}
@@ -454,19 +435,6 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 		return err
 	}
 	err = in.fileSys.WriteFile(path, []byte(dataStr))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// setFieldInFsManifestIfValueExists is the same as setFieldInFsManifest, except if value is ""
-// the function returns early without setting any field.
-func (in *Installer) setFieldInFsManifestIfValueExists(path, value, valueName string, fields ...string) error {
-	if value == "" {
-		return nil
-	}
-	err := in.setFieldInFsManifest(path, value, valueName, fields...)
 	if err != nil {
 		return err
 	}
