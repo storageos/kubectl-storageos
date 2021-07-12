@@ -86,7 +86,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 		return err
 	}
 
-	err = PodIsRunning(config, etcdShellPodName, etcdShellPodNS)
+	err = PodIsRunning(config, etcdShellPodName, etcdShellPodNS, 60, 5)
 	if err != nil {
 		return err
 	}

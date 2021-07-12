@@ -17,7 +17,9 @@ import (
 	storagev1 "k8s.io/client-go/kubernetes/typed/storage/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative/pkg/manifest"
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // NewClientConfig returns a client-go rest config
@@ -114,6 +116,25 @@ func GetDefaultStorageClassName() (string, error) {
 	}
 
 	return "", fmt.Errorf("no default storage class discovered in cluster")
+}
+
+// GetManifestFromMultiDoc returns an individual object string from a multi-doc yaml file
+// after searching by kind. Note: the first object in multiManifest matching kind is returned.
+func GetManifestFromMultiDoc(multiManifest, kind string) (string, error) {
+	objs, err := manifest.ParseObjects(context.TODO(), multiManifest)
+	if err != nil {
+		return "", err
+	}
+	for _, obj := range objs.Items {
+		if obj.UnstructuredObject().GetKind() == kind {
+			objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+			if err != nil {
+				return "", err
+			}
+			return string(objYaml), nil
+		}
+	}
+	return "", fmt.Errorf("no object of kind: %s found in multi doc manifest", kind)
 }
 
 // SetFieldInManifest sets valueName equal to value at path in manifest defined by fields.
@@ -247,15 +268,15 @@ metadata:
 
 // PodIsRunning attempts to `get` a pod by name and namespace, the function returns no error
 // if the pod is in running phase. If an error occurs during `get`, the error is returned.
-// If the pod is a phase other than running, `get` is executed again after 5 seconds.
-// After 60 seconds, the function times out and returns timeout error.
-func PodIsRunning(config *rest.Config, name, namespace string) error {
+// If the pod is a phase other than running, `get` is executed again after `interval` seconds.
+// After `limit` seconds, the function times out and returns timeout error.
+func PodIsRunning(config *rest.Config, name, namespace string, limit, interval time.Duration) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err
 	}
 	podClient := clientset.CoreV1().Pods(namespace)
-	timeout := time.After(time.Second * 60)
+	timeout := time.After(time.Second * limit)
 	errs, ctx := errgroup.WithContext(context.TODO())
 	errs.Go(func() error {
 		for {
@@ -270,7 +291,39 @@ func PodIsRunning(config *rest.Config, name, namespace string) error {
 				if pod.Status.Phase == corev1.PodRunning {
 					return nil
 				}
-				time.Sleep(5 * time.Second)
+				time.Sleep(interval * time.Second)
+			}
+		}
+	})
+	return errs.Wait()
+}
+
+// DeploymentIsReady attempts to `get` a deployment by name and namespace, the function returns no error
+// if the deployment replicas are all ready. If an error occurs during `get`, the error is returned.
+// If the deployment replicas are not all ready, `get` is executed again after `interval` seconds.
+// After `limit` seconds, the function times out and returns timeout error.
+func DeploymentIsReady(config *rest.Config, name, namespace string, limit, interval time.Duration) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	depClient := clientset.AppsV1().Deployments(namespace)
+	timeout := time.After(time.Second * limit)
+	errs, ctx := errgroup.WithContext(context.TODO())
+	errs.Go(func() error {
+		for {
+			select {
+			case <-timeout:
+				return fmt.Errorf("timeout attempting to reach deployment %s;%s", name, namespace)
+			default:
+				dep, err := depClient.Get(ctx, name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				if *dep.Spec.Replicas == dep.Status.ReadyReplicas {
+					return nil
+				}
+				time.Sleep(interval * time.Second)
 			}
 		}
 	})

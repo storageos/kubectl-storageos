@@ -71,6 +71,7 @@ resources:`
 	defaultEtcdClusterName = "storageos-etcd"
 	defaultEtcdClusterNS   = "storageos-etcd"
 	defaultStosClusterName = "storageoscluster-sample"
+	defaultStosOperatorNS  = "storageos"
 	defaultStosClusterNS   = "storageos"
 )
 
@@ -193,12 +194,38 @@ func (in *Installer) Install() error {
 	if err != nil {
 		return err
 	}
-	time.Sleep(5 * time.Second)
+	err = in.stosOperatorIsReady(stosOperatorNS)
+	if err != nil {
+		return err
+	}
 	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir))
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (in *Installer) stosOperatorIsReady(stosOperatorNS string) error {
+	if stosOperatorNS == "" {
+		stosOperatorNS = defaultStosOperatorNS
+	}
+	config, err := NewClientConfig()
+	if err != nil {
+		return err
+	}
+	stosOperatorDeployment, err := in.getManifestFromFsMultiDoc(filepath.Join(stosDir, operatorDir, stosOperatorFile), "Deployment")
+	if err != nil {
+		return err
+	}
+	stosOperatorName, err := GetFieldInManifest(stosOperatorDeployment, "metadata", "name")
+	if err != nil {
+		return err
+	}
+	err = DeploymentIsReady(config, stosOperatorName, stosOperatorNS, 90, 5)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -423,7 +450,7 @@ func pullManifest(url string) (string, error) {
 	return string(contents), nil
 }
 
-// setFieldInFsManifest reads the the file at path of the in-memory filesystem, uses
+// setFieldInFsManifest reads the file at path of the in-memory filesystem, uses
 // SetFieldInManiest internally to perform the update and then writes the returned file to path.
 func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields ...string) error {
 	data, err := in.fileSys.ReadFile(path)
@@ -441,7 +468,7 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 	return nil
 }
 
-// getFieldInFsManifest reads the the file at path of the in-memory filesystem, uses
+// getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
 // GetFieldInManiest internally to retrieve the specified field.
 func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string, error) {
 	data, err := in.fileSys.ReadFile(path)
@@ -453,4 +480,18 @@ func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string
 		return "", err
 	}
 	return field, nil
+}
+
+// getManifestFromFsMultiDoc reads the file at path of the in-memory filesystem, uses
+// GetManifestFromMultiDoc internally to retrieve the individual manifest by kind.
+func (in *Installer) getManifestFromFsMultiDoc(path, kind string) (string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	singleManifest, err := GetManifestFromMultiDoc(string(data), kind)
+	if err != nil {
+		return "", err
+	}
+	return singleManifest, nil
 }
