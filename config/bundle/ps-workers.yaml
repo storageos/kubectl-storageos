@@ -7,9 +7,9 @@ spec:
     - run:
         # Because of the nodeSelector, this runner will create 
         # one Pod for each node that matches the nodeSelector Term
-        collectorName: "ps-all-nodes"
+        collectorName: ps-all-nodes
         image: arau/tools:0.9
-        namespace: kube-system
+        namespace: storageos
         hostPID: true
         nodeSelector:
           node-role.kubernetes.io/worker: "true"

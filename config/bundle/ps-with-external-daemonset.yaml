@@ -11,7 +11,7 @@ spec:
         name: ps
         selector:
           - app=tools
-        namespace: kube-system
+        namespace: storageos
         command: ["ps"]
         args: ["auxwwwf"]
         timeout: 60s
@@ -24,7 +24,7 @@ spec:
 #kind: DaemonSet
 #metadata:
 #  name: tools
-#  namespace: kube-system
+#  namespace: storageos
 #spec:
 #  revisionHistoryLimit: 10
 #  selector:

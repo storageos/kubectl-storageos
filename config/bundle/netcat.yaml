@@ -5,9 +5,10 @@ metadata:
 spec:
   collectors:
     - run:
-        collectorName: "network-check"
+        name: network-check
+        collectorName: network-check
         image: arau/tools:0.9
-        namespace: kube-system
+        namespace: storageos
         hostNetwork: true
         nodeSelector:
           node-role.kubernetes.io/worker: "true"

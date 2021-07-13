@@ -6,22 +6,23 @@ spec:
   collectors:
     - clusterResources: {}
     - logs:
+        name: storageos-operator-logs    
         selector:
-          - name=storageos-cluster-operator
-        namespace: storageos-operator
+          - name=storageos-operator-operator-logs
+        namespace: storageos
         limits:
           maxLines: 10000
     - logs:
         selector:
           - app=storageos
-        namespace: kube-system
+        namespace: storageos
         limits:
           maxLines: 1000000
     - run:
-        name: "network-checks"
-        collectorName: "netcat"
+        name: network-checks
+        collectorName: netcat
         image: arau/tools:0.9
-        namespace: kube-system
+        namespace: storageos
         hostNetwork: true
         hostPID: true
         nodeSelector:
@@ -46,28 +47,28 @@ spec:
           "
         timeout: 90s
     - run:
-        name: "backend-disks"
-        collectorName: "lsblk"
+        name: backend-disks
+        collectorName: lsblk
         image: arau/tools:0.9
-        namespace: kube-system
+        namespace: storageos
         hostPID: true
         nodeSelector:
           node-role.kubernetes.io/worker: "true"
         command: ["lsblk"]
         timeout: 90s
     - run:
-        name: "free-disk-space"
-        collectorName: "df"
+        name: free-disk-space
+        collectorName: df
         image: arau/tools:0.9
-        namespace: kube-system
+        namespace: storageos
         hostPID: true
         nodeSelector:
           node-role.kubernetes.io/worker: "true"
         command: ["df -h"]
         timeout: 90s
     - run:
-        name: "ps-all-nodes"
-        collectorName: "processlist"
+        name: ps-all-nodes
+        collectorName: processlist
         image: arau/tools:0.9
         namespace: kube-system
         hostPID: true
@@ -116,6 +117,7 @@ spec:
               message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
               uri: https://kubernetes.io
           - pass:
+          - pass:
               message: Your cluster meets the recommended and required versions of Kubernetes.
     - customResourceDefinition:
         customResourceDefinitionName: storageosclusters.storageos.com
@@ -134,7 +136,7 @@ spec:
               message: This cluster has enough nodes.
     - deploymentStatus:
         name: storageos-api-manager
-        namespace: kube-system
+        namespace: storageos
         outcomes:
           - fail:
               when: "< 1"
@@ -146,7 +148,7 @@ spec:
               message: There are multiple replicas of the API Manager deployment ready.
     - deploymentStatus:
         name: storageos-api-manager
-        namespace: kube-system
+        namespace: storageos
         outcomes:
           - fail:
               when: "< 1"
@@ -158,7 +160,7 @@ spec:
               message: There are multiple replicas of the API Manager deployment ready.
     - deploymentStatus:
         name: storageos-csi-helper
-        namespace: kube-system
+        namespace: storageos
         outcomes:
           - fail:
               when: "< 1"
@@ -167,10 +169,9 @@ spec:
               message: The CSI helper deployment is ready.
     - deploymentStatus:
         name: storageos-scheduler
-        namespace: kube-system
+        namespace: storageos
         outcomes:
           - fail:
               when: "< 1"
               message: The scheduler deployment does not have any ready replicas.
           - pass:
-              message: The scheduler deployment is ready.

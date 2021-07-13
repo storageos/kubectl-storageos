@@ -6,26 +6,28 @@ spec:
   collectors:
     - clusterResources: {}
     - logs:
-        name: storageos-cluster-operator-logs
+        name: storageos-operator-logs
         selector:
-          - name=storageos-cluster-operator
-        namespace: storageos-operator
+          - name=storageos-controller-manager
+        namespace: storageos
         limits:
           maxLines: 10000
     - logs:
         name: storageos-logs
         selector:
           - app=storageos
-        namespace: kube-system
+        namespace: storageos
         limits:
           maxLines: 1000000
-    - exec:
-        name: "network-checks"
-        collectorName: "netcat"
+    - run:
+        name: network-checks
+        collectorName: netcat
         image: arau/tools:0.9
-        namespace: kube-system
-        selector:
-          - app=tools
+        namespace: storageos
+        hostNetwork: true
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
         command:
         - "/bin/sh"
         - "-c"
@@ -46,38 +48,42 @@ spec:
           "
         timeout: 90s
     - exec:
-        name: "backend-disks"
-        collectorName: "lsblk"
+        name: backend-disks
+        collectorName: lsblk
         selector:
           - kind=daemonset
           - app=storageos
-        namespace: kube-system
+        namespace: storageos
         command: ["lsblk"]
         timeout: 90s
     - exec:
-        name: "free-disk-space"
-        collectorName: "df"
-        namespace: kube-system
+        name: free-disk-space
+        collectorName: df
+        namespace: storageos
         selector:
           - kind=daemonset
           - app=storageos
         command: ["df", "-h"]
         timeout: 90s
-    - exec:
-        name: "ps-all-nodes"
-        collectorName: "processlist"
-        namespace: kube-system
-        selector:
-          - app=tools
+    - run:
+        name: ps-all-nodes
+        collectorName: processlist
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
         command: ["ps"]
         args: ["auxwwwf"]
         timeout: 90s
-    - exec:
-        name: "loadAvg-all-nodes"
-        collectorName: "top"
-        namespace: kube-system
-        selector:
-          - app=tools
+    - run:
+        name: loadAvg-all-nodes
+        collectorName: top
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
         command: ["top"]
         args:
           - "-b"
@@ -91,13 +97,13 @@ spec:
         collectorName: storageos-cli
         selector:
           - run=cli
-        namespace: kube-system
+        namespace: storageos
         timeout: 90s
         command: ["/bin/sh"]
         args:
         - -c
         - "
-          export STORAGEOS_ENDPOINTS='http://storageos.kube-system.svc:5705';
+          export STORAGEOS_ENDPOINTS='http://storageos.storageos.svc:5705';
           echo STORAGEOS CLUSTER;
           storageos get cluster -ojson;
           echo '-----------------------------------------';
