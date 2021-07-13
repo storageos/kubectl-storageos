@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -255,6 +257,151 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 	}
 
 	return obj.MustString(), nil
+}
+
+// GenericPatchesForSupportBundle creates and returns []KustomizePatch for a kustomiziation file to be applied to the
+// SupportBundle.
+//
+// Inputs:
+// * spec: string of the SupportBundle manifest
+// * instruction: "collectors" or "analyzers"
+// * value: string of Value for patch
+// * fields: path of fields (after instruction) to value to be changed in SupportBundle eg {"run","namespace"}
+// * lookUpValue: value to compare at path findByFields eg "storageos-operator-logs"
+// * skipByFields: (optional) include path of fields for an instruction to be ignored (ie no patch applied even if it
+// matches 'fields' path above. Eg {"logs","name"}
+//
+// This function is useful in cases where it is desired to set a field such as namespace in a SupportBundle for most
+// (but not all instructions). The appropriate patches are created and can then be added to the applicable kustomization.
+func GenericPatchesForSupportBundle(spec, instruction, value string, fields []string, lookUpValue string, skipByFields []string) ([]KustomizePatch, error) {
+	instructionTypes, err := getSupportBundleInstructionTypes(instruction)
+	if err != nil {
+		return nil, err
+	}
+
+	obj, err := kyaml.Parse(spec)
+	if err != nil {
+		return nil, err
+	}
+	instructionObj, err := obj.Pipe(kyaml.Lookup(
+		"spec",
+		instruction,
+	))
+	if err != nil {
+		return nil, err
+	}
+	instructionPatches := make([]KustomizePatch, 0)
+	elements, _ := instructionObj.Elements()
+	for count, element := range elements {
+		if len(skipByFields) != 0 {
+			elementNodeToSkip, err := element.Pipe(kyaml.Lookup(skipByFields...))
+			if err != nil {
+				return nil, err
+			}
+			if strings.TrimSpace(elementNodeToSkip.MustString()) == strings.TrimSpace(lookUpValue) {
+				continue
+			}
+		}
+		for _, instructionType := range instructionTypes {
+
+			instructionNode, err := element.Pipe(kyaml.Lookup(instructionType))
+			if err != nil {
+				return nil, err
+			}
+			if instructionNode == nil {
+				continue
+			}
+
+			fieldNode, err := instructionNode.Pipe(kyaml.Lookup(fields...))
+			if err != nil {
+
+				return nil, err
+			}
+			if fieldNode == nil {
+				break
+			}
+			path := filepath.Join("/spec", instruction, strconv.Itoa(count), instructionType, filepath.Join(fields...))
+			instructionPatches = append(instructionPatches, KustomizePatch{Op: "replace", Path: path, Value: value})
+		}
+	}
+	return instructionPatches, nil
+}
+
+// SpecificPatchForSupportBundle creates and returns KustomizePatch for a kustomiziation file to be applied to the
+// SupportBundle.
+//
+// Inputs:
+// * spec: string of the SupportBundle manifest
+// * instruction: "collectors" or "analyzers"
+// * value: string of Value for patch
+// * fields: path of fields (after instruction) to value to be changed in SupportBundle eg {"run","namespace"}
+// * lookUpValue: value to compare at path findByFields eg "storageos-operator-logs"
+// * findByFields: path of fields to locate the specific instruction
+// eg {"logs","name"}
+//
+// This function is useful in cases where it is desired to set a field such as namespace in a SupportBundle for a
+// specific collector or analyzer
+func SpecificPatchForSupportBundle(spec, instruction, value string, fields []string, lookUpValue string, findByFields []string) (KustomizePatch, error) {
+	kPatch := KustomizePatch{}
+	obj, err := kyaml.Parse(spec)
+	if err != nil {
+		return kPatch, err
+	}
+	instructionObj, err := obj.Pipe(kyaml.Lookup(
+		"spec",
+		instruction,
+	))
+	if err != nil {
+		return kPatch, err
+	}
+
+	elements, _ := instructionObj.Elements()
+	for count, element := range elements {
+		if len(findByFields) != 0 {
+			elementNodeToPatch, err := element.Pipe(kyaml.Lookup(findByFields...))
+			if err != nil {
+				return kPatch, err
+			}
+			if strings.TrimSpace(elementNodeToPatch.MustString()) != strings.TrimSpace(lookUpValue) {
+				continue
+			}
+		}
+		path := filepath.Join("/spec", instruction, strconv.Itoa(count), filepath.Join(fields...))
+		return KustomizePatch{Op: "replace", Value: value, Path: path}, nil
+	}
+	return kPatch, fmt.Errorf("path not found in support bundle")
+}
+
+func getSupportBundleInstructionTypes(instruction string) ([]string, error) {
+	collectorTypes := []string{
+		"clusterInfo",
+		"clusterResources",
+		"logs",
+		"copy",
+		"data",
+		"secret",
+		"run",
+		"http",
+		"exec",
+		"postgresql",
+		"mysql",
+		"redis",
+		"ceph",
+		"longhorn",
+		"registryImages",
+	}
+	//TODO: set analyzertypes
+	analyzerTypes := []string{}
+
+	switch instruction {
+	case "collectors":
+		return collectorTypes, nil
+	case "analyzers":
+		return analyzerTypes, nil
+	default:
+		return nil, fmt.Errorf("unsupported instruction %v, must be \"collectors\" or \"analyzers\"", instruction)
+	}
+
 }
 
 // NamespaceYaml returns a yaml string for a namespace object based on the namespace name

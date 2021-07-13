@@ -1,6 +1,7 @@
 package install
 
 import (
+	"reflect"
 	"testing"
 
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
@@ -392,6 +393,314 @@ spec:
 		}
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
 			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+		}
+
+	}
+}
+
+func TestGenericPatchesFromSupportBundle(t *testing.T) {
+	tcases := []struct {
+		name         string
+		spec         string
+		instruction  string
+		value        string
+		fields       []string
+		lookUpValue  string
+		skipByFields []string
+		expPatches   []KustomizePatch
+		expError     bool
+	}{
+		{
+			name: "find deployment",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs
+        selector:
+          - name=storageos-controller-manager
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app: storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: "backend-disks"
+        collectorName: "lsblk"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: "free-disk-space"
+        collectorName: "df"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: storageos
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.storageos.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson --timeout 30s;
+          echo '-----------------------------------------';
+"`,
+			instruction:  "collectors",
+			value:        "test-ns",
+			fields:       []string{"namespace"},
+			lookUpValue:  "storageos-operator-logs",
+			skipByFields: []string{"logs", "name"},
+			expPatches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/collectors/2/logs/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/collectors/3/run/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/collectors/4/run/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/collectors/5/exec/namespace",
+				},
+			},
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		patches, err := GenericPatchesForSupportBundle(tc.spec, tc.instruction, tc.value, tc.fields, tc.lookUpValue, tc.skipByFields)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if !reflect.DeepEqual(tc.expPatches, patches) {
+			t.Errorf("expected %v, got %v", tc.expPatches, patches)
+		}
+
+	}
+}
+
+func TestSpecificPatchForSupportBundle(t *testing.T) {
+	tcases := []struct {
+		name         string
+		spec         string
+		instruction  string
+		value        string
+		fields       []string
+		lookUpValue  string
+		findByFields []string
+		expPatch     KustomizePatch
+		expError     bool
+	}{
+		{
+			name: "find deployment",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs
+        selector:
+          - name=storageos-controller-manager
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app: storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: "backend-disks"
+        collectorName: "lsblk"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: "free-disk-space"
+        collectorName: "df"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: storageos
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.storageos.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson --timeout 30s;
+          echo '-----------------------------------------';
+"`,
+			instruction:  "collectors",
+			value:        "test-ns",
+			fields:       []string{"logs", "namespace"},
+			lookUpValue:  "storageos-operator-logs",
+			findByFields: []string{"logs", "name"},
+			expPatch: KustomizePatch{
+				Op:    "replace",
+				Value: "test-ns",
+				Path:  "/spec/collectors/1/logs/namespace",
+			},
+			expError: false,
+		},
+		{
+			name: "find deployment",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs
+        selector:
+          - name=storageos-controller-manager
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app: storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: "backend-disks"
+        collectorName: "lsblk"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: "free-disk-space"
+        collectorName: "df"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: storageos
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.storageos.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson --timeout 30s;
+          echo '-----------------------------------------';
+"`,
+			instruction:  "collectors",
+			value:        "test-ns",
+			fields:       []string{"exec", "namespace"},
+			lookUpValue:  "storageos-cli-info",
+			findByFields: []string{"exec", "name"},
+			expPatch: KustomizePatch{
+				Op:    "replace",
+				Value: "test-ns",
+				Path:  "/spec/collectors/5/exec/namespace",
+			},
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		patch, err := SpecificPatchForSupportBundle(tc.spec, tc.instruction, tc.value, tc.fields, tc.lookUpValue, tc.findByFields)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if !reflect.DeepEqual(tc.expPatch, patch) {
+			t.Errorf("expected %v, got %v", tc.expPatch, patch)
 		}
 
 	}

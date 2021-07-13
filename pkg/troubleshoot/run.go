@@ -60,6 +60,8 @@ func Run(v *viper.Viper, arg string) error {
 		return errors.Wrap(err, "failed to load collector spec")
 	}
 
+	//TODO: kustomize support bundle here with namespace
+
 	multidocs := strings.Split(string(collectorContent), "\n---\n")
 
 	// we suppory both raw collector kinds and supportbundle kinds here
