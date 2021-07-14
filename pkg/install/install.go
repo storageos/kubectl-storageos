@@ -12,6 +12,7 @@ import (
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
 	"github.com/spf13/viper"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
@@ -125,18 +126,18 @@ func (in *Installer) Install() error {
 			if err != nil {
 				return err
 			}
-			err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []KustomizePatch{KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
+			err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
 			if err != nil {
 				return err
 			}
 
 			// update endpoint for stos cluster based on etcd namespace flag
-			endpointsPatch := KustomizePatch{
+			endpointsPatch := pluginutils.KustomizePatch{
 				Op:    "replace",
 				Path:  "/spec/kvBackend/address",
 				Value: fmt.Sprintf("%s%s%s%s", defaultEtcdClusterNS, ".", etcdNamespace, ":2379"),
 			}
-			err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []KustomizePatch{endpointsPatch})
+			err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointsPatch})
 			if err != nil {
 				return err
 			}
@@ -145,12 +146,12 @@ func (in *Installer) Install() error {
 		// with desired storage class name to kustomization for etcd cluster
 		storageClass := v.GetString(StorageClassFlag)
 		if storageClass == "" {
-			storageClass, err = GetDefaultStorageClassName()
+			storageClass, err = pluginutils.GetDefaultStorageClassName()
 			if err != nil {
 				return err
 			}
 		}
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []KustomizePatch{KustomizePatch{Op: "replace", Path: "/spec/storage/volumeClaimTemplate/storageClassName", Value: storageClass}})
+		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/storage/volumeClaimTemplate/storageClassName", Value: storageClass}})
 		if err != nil {
 			return err
 		}
@@ -180,7 +181,7 @@ func (in *Installer) Install() error {
 	stosClusterNS := v.GetString(StosClusterNSFlag)
 	if stosClusterNS != "" {
 		// apply the provided storageos cluster ns
-		err = in.kubectlClient.Apply(context.TODO(), "", NamespaceYaml(stosClusterNS), true)
+		err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(stosClusterNS), true)
 		if err != nil {
 			return err
 		}
@@ -210,7 +211,7 @@ func (in *Installer) stosOperatorIsReady(stosOperatorNS string) error {
 	if stosOperatorNS == "" {
 		stosOperatorNS = defaultStosOperatorNS
 	}
-	config, err := NewClientConfig()
+	config, err := pluginutils.NewClientConfig()
 	if err != nil {
 		return err
 	}
@@ -218,24 +219,24 @@ func (in *Installer) stosOperatorIsReady(stosOperatorNS string) error {
 	if err != nil {
 		return err
 	}
-	stosOperatorName, err := GetFieldInManifest(stosOperatorDeployment, "metadata", "name")
+	stosOperatorName, err := pluginutils.GetFieldInManifest(stosOperatorDeployment, "metadata", "name")
 	if err != nil {
 		return err
 	}
-	err = DeploymentIsReady(config, stosOperatorName, stosOperatorNS, 90, 5)
+	err = pluginutils.DeploymentIsReady(config, stosOperatorName, stosOperatorNS, 90, 5)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []KustomizePatch) error {
+func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
 	kustFile, err := in.fileSys.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	kustFileWithPatches, err := AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
+	kustFileWithPatches, err := pluginutils.AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
 	if err != nil {
 		return err
 	}
@@ -339,7 +340,7 @@ func createFileData(yamlFlag, yamlUrl, fileName string) (map[string][]byte, erro
 		return files, err
 	}
 	files[fileName] = []byte(yamlContents)
-	kustYamlContents, err := SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", fileName, "]"), "resources", "")
+	kustYamlContents, err := pluginutils.SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", fileName, "]"), "resources", "")
 	if err != nil {
 		return files, err
 	}
@@ -457,7 +458,7 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 	if err != nil {
 		return err
 	}
-	dataStr, err := SetFieldInManifest(string(data), value, valueName, fields...)
+	dataStr, err := pluginutils.SetFieldInManifest(string(data), value, valueName, fields...)
 	if err != nil {
 		return err
 	}
@@ -475,7 +476,7 @@ func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string
 	if err != nil {
 		return "", err
 	}
-	field, err := GetFieldInManifest(string(data), fields...)
+	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
 	if err != nil {
 		return "", err
 	}
@@ -489,7 +490,7 @@ func (in *Installer) getManifestFromFsMultiDoc(path, kind string) (string, error
 	if err != nil {
 		return "", err
 	}
-	singleManifest, err := GetManifestFromMultiDoc(string(data), kind)
+	singleManifest, err := pluginutils.GetManifestFromMultiDoc(string(data), kind)
 	if err != nil {
 		return "", err
 	}

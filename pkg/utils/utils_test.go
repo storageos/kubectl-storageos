@@ -228,8 +228,8 @@ kind: Kustomization
 
 resources:
 - storageos-cluster.yaml`,
-			targetKind: stosClusterKind,
-			targetName: defaultStosClusterName,
+			targetKind: "StorageOSCluster",
+			targetName: "storageoscluster-sample",
 			patches: []KustomizePatch{
 				{
 					Op:    "replace",
@@ -260,8 +260,8 @@ kind: Kustomization
 
 resources:
 - storageos-cluster.yaml`,
-			targetKind: stosClusterKind,
-			targetName: defaultStosClusterName,
+			targetKind: "StorageOSCluster",
+			targetName: "storageoscluster-sample",
 			patches: []KustomizePatch{
 				{
 					Op:    "replace",
