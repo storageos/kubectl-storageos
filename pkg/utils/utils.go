@@ -266,14 +266,15 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 // * spec: string of the SupportBundle manifest
 // * instruction: "collectors" or "analyzers"
 // * value: string of Value for patch
-// * fields: path of fields (after instruction) to value to be changed in SupportBundle eg {"run","namespace"}
-// * lookUpValue: value to compare at path findByFields eg "storageos-operator-logs"
-// * skipByFields: (optional) include path of fields for an instruction to be ignored (ie no patch applied even if it
-// matches 'fields' path above. Eg {"logs","name"}
+// * fields: path of fields (after instruction) to value to be changed in SupportBundle eg {"namespace"}
+// * lookUpValue: value to compare at path skipByFields eg "storageos-operator-logs". If lookup value is left empty,
+// any instruction with skipByFields path is skipped. This value is only to specify a single instruction for ignoring.
+// * pathsToSkip: (optional) include paths of fields for an instructions to be ignored (ie no patch applied even if it
+// matches 'fields' path above. Eg {{"logs"},{"run"}}
 //
 // This function is useful in cases where it is desired to set a field such as namespace in a SupportBundle for most
 // (but not all instructions). The appropriate patches are created and can then be added to the applicable kustomization.
-func GenericPatchesForSupportBundle(spec, instruction, value string, fields []string, lookUpValue string, skipByFields []string) ([]KustomizePatch, error) {
+func GenericPatchesForSupportBundle(spec, instruction, value string, fields []string, skipLookUpValue string, pathsToSkip [][]string) ([]KustomizePatch, error) {
 	instructionTypes, err := getSupportBundleInstructionTypes(instruction)
 	if err != nil {
 		return nil, err
@@ -293,14 +294,12 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 	instructionPatches := make([]KustomizePatch, 0)
 	elements, _ := instructionObj.Elements()
 	for count, element := range elements {
-		if len(skipByFields) != 0 {
-			elementNodeToSkip, err := element.Pipe(kyaml.Lookup(skipByFields...))
-			if err != nil {
-				return nil, err
-			}
-			if strings.TrimSpace(elementNodeToSkip.MustString()) == strings.TrimSpace(lookUpValue) {
-				continue
-			}
+		skipElement, err := skipElement(element, pathsToSkip, skipLookUpValue)
+		if err != nil {
+			return nil, err
+		}
+		if skipElement {
+			continue
 		}
 		for _, instructionType := range instructionTypes {
 
@@ -325,6 +324,30 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 		}
 	}
 	return instructionPatches, nil
+}
+
+// skipElemnt is a helper function for GenericPatchesForSupportBundle - it decides whether or not and
+// instruction should be skipped based on whether pathsToSkip and/or lookUpValue exists within the instruction.
+func skipElement(element *kyaml.RNode, pathsToSkip [][]string, lookUpValue string) (bool, error) {
+	for _, pathToSkip := range pathsToSkip {
+		if len(pathToSkip) == 0 {
+			continue
+		}
+		elementNodeToSkip, err := element.Pipe(kyaml.Lookup(pathToSkip...))
+		if err != nil {
+			return false, err
+		}
+		if lookUpValue == "" {
+			if elementNodeToSkip != nil {
+				return true, nil
+			}
+		} else {
+			if strings.TrimSpace(elementNodeToSkip.MustString()) == strings.TrimSpace(lookUpValue) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 // SpecificPatchForSupportBundle creates and returns KustomizePatch for a kustomiziation file to be applied to the
@@ -372,6 +395,31 @@ func SpecificPatchForSupportBundle(spec, instruction, value string, fields []str
 	return kPatch, fmt.Errorf("path not found in support bundle")
 }
 
+// AllInstructionTypesExcept returns [][]string of all instructino types for instruction, except for those provided
+func AllInstructionTypesExcept(instruction string, exceptions ...string) ([][]string, error) {
+	allTypes, err := getSupportBundleInstructionTypes(instruction)
+	if err != nil {
+		return nil, err
+	}
+	finalInstructionTypes := make([][]string, 0)
+	for _, instructionType := range allTypes {
+		exists := false
+		for _, exception := range exceptions {
+			if instructionType == exception {
+				exists = true
+			}
+		}
+		if exists {
+			continue
+		}
+		single := []string{instructionType}
+		finalInstructionTypes = append(finalInstructionTypes, single)
+	}
+
+	return finalInstructionTypes, nil
+}
+
+// getSupportBundleInstructinoTypes returns the list of types for analyzer or collector instructions
 func getSupportBundleInstructionTypes(instruction string) ([]string, error) {
 	collectorTypes := []string{
 		"clusterInfo",
@@ -390,8 +438,25 @@ func getSupportBundleInstructionTypes(instruction string) ([]string, error) {
 		"longhorn",
 		"registryImages",
 	}
-	//TODO: set analyzertypes
-	analyzerTypes := []string{}
+	analyzerTypes := []string{
+		"clusterVersion",
+		"distribution",
+		"containerRuntime",
+		"nodeResources",
+		"deploymentStatus",
+		"statefulsetStatus",
+		"imagePullSecret",
+		"ingress",
+		"storageClass",
+		"secret",
+		"customResourceDefinition",
+		"textAnalyze",
+		"postgres",
+		"mysql",
+		"cephStatus",
+		"longhorn",
+		"registryImages",
+	}
 
 	switch instruction {
 	case "collectors":

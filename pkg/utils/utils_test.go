@@ -406,12 +406,104 @@ func TestGenericPatchesFromSupportBundle(t *testing.T) {
 		value        string
 		fields       []string
 		lookUpValue  string
-		skipByFields []string
+		skipByFields [][]string
 		expPatches   []KustomizePatch
 		expError     bool
 	}{
 		{
-			name: "find deployment",
+			name: "skip all runs",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs
+        selector:
+          - name=storageos-controller-manager
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        name: storageos-logs
+        selector:
+          - app: storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: "backend-disks"
+        collectorName: "lsblk"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: "free-disk-space"
+        collectorName: "df"
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: storageos
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.storageos.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson --timeout 30s;
+          echo '-----------------------------------------';
+"`,
+			instruction:  "collectors",
+			value:        "test",
+			fields:       []string{"name"},
+			lookUpValue:  "",
+			skipByFields: [][]string{{"run"}},
+			expPatches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Value: "test",
+					Path:  "/spec/collectors/1/logs/name",
+				},
+				{
+					Op:    "replace",
+					Value: "test",
+					Path:  "/spec/collectors/2/logs/name",
+				},
+				{
+					Op:    "replace",
+					Value: "test",
+					Path:  "/spec/collectors/5/exec/name",
+				},
+			},
+			expError: false,
+		},
+		{
+			name: "skip operator logs",
 			spec: `apiVersion: troubleshoot.sh/v1beta2
 kind: SupportBundle
 metadata:
@@ -481,7 +573,7 @@ spec:
 			value:        "test-ns",
 			fields:       []string{"namespace"},
 			lookUpValue:  "storageos-operator-logs",
-			skipByFields: []string{"logs", "name"},
+			skipByFields: [][]string{{"logs", "name"}},
 			expPatches: []KustomizePatch{
 				{
 					Op:    "replace",
@@ -502,6 +594,434 @@ spec:
 					Op:    "replace",
 					Value: "test-ns",
 					Path:  "/spec/collectors/5/exec/namespace",
+				},
+			},
+			expError: false,
+		},
+		{
+			name: "skip operator logs",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs    
+        selector:
+          - name=storageos-operator-operator-logs
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app=storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: network-checks
+        collectorName: netcat
+        image: arau/tools:0.9
+        namespace: storageos
+        hostNetwork: true
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+          #
+          # IOPort = 5703 # DataPlane
+          # SupervisorPort = 5704 # For sync
+          # ExternalAPIPort = 5705 # REST API
+          # InternalAPIPort = 5710 # Grpc API
+          # GossipPort = 5711 # Gossip+Healthcheck
+
+          echo \"Source node for the test:\";
+          hostname -f -I; echo;
+
+          parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+                              ::: 5703 5704 5705 5710 5711
+          "
+        timeout: 90s
+    - run:
+        name: backend-disks
+        collectorName: lsblk
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: free-disk-space
+        collectorName: df
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - run:
+        name: ps-all-nodes
+        collectorName: processlist"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: kube-system
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.kube-system.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS NODES;
+          storageos get nodes -o json;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson;
+          echo '-----------------------------------------';
+          "
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.9.0"
+              message: StorageOS requires at least Kubernetes 1.9.0 with CSI enabled or later.
+              uri: https://kubernetes.io
+          - warn:
+              when: "< 1.15.0"
+              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
+              uri: https://kubernetes.io
+          - pass:
+          - pass:
+              message: Your cluster meets the recommended and required versions of Kubernetes.
+    - customResourceDefinition:
+        customResourceDefinitionName: storageosclusters.storageos.com
+        outcomes:
+          - fail:
+              message: The StorageOSCluster CRD was not found in the cluster.
+          - pass:
+              message: StorageOS CRD is installed and available.
+    - nodeResources:
+        checkName: Must have at least 3 nodes in the cluster
+        outcomes:
+          - warn:
+              when: "count() < 3"
+              message: This application recommends at last 3 nodes.
+          - pass:
+              message: This cluster has enough nodes.
+    - deploymentStatus:
+        name: storageos-operator
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-csi-helper
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The CSI helper deployment does not have any ready replicas.
+          - pass:
+              message: The CSI helper deployment is ready.
+    - deploymentStatus:
+        name: storageos-scheduler
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The scheduler deployment does not have any ready replicas.
+          - pass:		
+`,
+			instruction:  "analyzers",
+			value:        "test-ns",
+			fields:       []string{"namespace"},
+			lookUpValue:  "storageos-operator",
+			skipByFields: [][]string{{"deploymentStatus", "name"}},
+			expPatches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/analyzers/4/deploymentStatus/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/analyzers/5/deploymentStatus/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/analyzers/6/deploymentStatus/namespace",
+				},
+				{
+					Op:    "replace",
+					Value: "test-ns",
+					Path:  "/spec/analyzers/7/deploymentStatus/namespace",
+				},
+			},
+			expError: false,
+		},
+		{
+			name: "skip operator logs",
+			spec: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs    
+        selector:
+          - name=storageos-operator-operator-logs
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app=storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: network-checks
+        collectorName: netcat
+        image: arau/tools:0.9
+        namespace: storageos
+        hostNetwork: true
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+          #
+          # IOPort = 5703 # DataPlane
+          # SupervisorPort = 5704 # For sync
+          # ExternalAPIPort = 5705 # REST API
+          # InternalAPIPort = 5710 # Grpc API
+          # GossipPort = 5711 # Gossip+Healthcheck
+
+          echo \"Source node for the test:\";
+          hostname -f -I; echo;
+
+          parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+                              ::: 5703 5704 5705 5710 5711
+          "
+        timeout: 90s
+    - run:
+        name: backend-disks
+        collectorName: lsblk
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: free-disk-space
+        collectorName: df
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - run:
+        name: ps-all-nodes
+        collectorName: processlist"
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: kube-system
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.kube-system.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS NODES;
+          storageos get nodes -o json;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson;
+          echo '-----------------------------------------';
+          "
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.9.0"
+              message: StorageOS requires at least Kubernetes 1.9.0 with CSI enabled or later.
+              uri: https://kubernetes.io
+          - warn:
+              when: "< 1.15.0"
+              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
+              uri: https://kubernetes.io
+          - pass:
+          - pass:
+              message: Your cluster meets the recommended and required versions of Kubernetes.
+    - customResourceDefinition:
+        customResourceDefinitionName: storageosclusters.storageos.com
+        outcomes:
+          - fail:
+              message: The StorageOSCluster CRD was not found in the cluster.
+          - pass:
+              message: StorageOS CRD is installed and available.
+    - nodeResources:
+        checkName: Must have at least 3 nodes in the cluster
+        outcomes:
+          - warn:
+              when: "count() < 3"
+              message: This application recommends at last 3 nodes.
+          - pass:
+              message: This cluster has enough nodes.
+    - deploymentStatus:
+        name: storageos-operator
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-csi-helper
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The CSI helper deployment does not have any ready replicas.
+          - pass:
+              message: The CSI helper deployment is ready.
+    - deploymentStatus:
+        name: storageos-scheduler
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The scheduler deployment does not have any ready replicas.
+          - pass:		
+`,
+			instruction:  "analyzers",
+			value:        "test",
+			fields:       []string{"checkName"},
+			lookUpValue:  "",
+			skipByFields: [][]string{{"deploymentStatus"}, {"clusterVersion"}, {"customResourceDefinition"}},
+
+			expPatches: []KustomizePatch{
+				{
+					Op:    "replace",
+					Value: "test",
+					Path:  "/spec/analyzers/2/nodeResources/checkName",
 				},
 			},
 			expError: false,
@@ -703,5 +1223,46 @@ spec:
 			t.Errorf("expected %v, got %v", tc.expPatch, patch)
 		}
 
+	}
+}
+
+func TestAllInstructionTypesExcept(t *testing.T) {
+	tcases := []struct {
+		name        string
+		instruction string
+		exceptions  []string
+		expList     [][]string
+		expError    bool
+	}{
+		{
+			name:        "collectors",
+			instruction: "collectors",
+			exceptions:  []string{"clusterInfo", "run", "logs", "copy"},
+			expList: [][]string{
+				{"clusterResources"},
+				{"data"},
+				{"secret"},
+				{"http"},
+				{"exec"},
+				{"postgresql"},
+				{"mysql"},
+				{"redis"},
+				{"ceph"},
+				{"longhorn"},
+				{"registryImages"},
+			},
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		list, err := AllInstructionTypesExcept(tc.instruction, tc.exceptions...)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if !reflect.DeepEqual(list, tc.expList) {
+			t.Errorf("expected %v, got %v", tc.expList, list)
+		}
 	}
 }
