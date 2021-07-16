@@ -9,28 +9,31 @@ import (
 // be interpreted by the pod exec:
 // {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" member list`}
 func etcdctlMemberListCmd(endpoints string) []string {
-	return []string{"/bin/bash", "-c", fmt.Sprintf("%s%s%s", "etcdctl --endpoints ", endpoints, " member list")}
+	return []string{"etcdctl", "--endpoints", endpoints, "member", "list"}
 }
 
-// etcdctlSetCmd returns a slice of strings representing the etcdctl command for a simple write to
+// etcdctlPutCmd returns a slice of strings representing the etcdctl command for a simple write to
 // be interpreted by the pod exec:
-// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" set foo bar`}
-func etcdctlSetCmd(endpoints, key, value string) []string {
-	return []string{"/bin/bash", "-c", fmt.Sprintf("%s%s%s%s%s%s", "etcdctl --endpoints ", endpoints, " set ", key, " ", value)}
+// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" put foo bar`}
+func etcdctlPutCmd(endpoints, key, value string) []string {
+	return []string{"etcdctl", "--endpoints", endpoints, "put", key, value}
+
 }
 
 // etcdctlGetCmd returns a slice of strings representing the etcdctl command for a simple read to
 // be interpreted by the pod exec:
-// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" get foo bar`}
+// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" get foo`}
 func etcdctlGetCmd(endpoints, key string) []string {
-	return []string{"/bin/bash", "-c", fmt.Sprintf("%s%s%s%s", "etcdctl --endpoints ", endpoints, " get ", key)}
+	return []string{"etcdctl", "--endpoints", endpoints, "get", key}
+
 }
 
-// etcdctlRmCmd returns a slice of strings representing the etcdctl command for a simple delete to
+// etcdctlDelCmd returns a slice of strings representing the etcdctl command for a simple delete to
 // be interpreted by the pod exec:
-// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" rm foo bar`}
-func etcdctlRmCmd(endpoints, key string) []string {
-	return []string{"/bin/bash", "-c", fmt.Sprintf("%s%s%s%s", "etcdctl --endpoints ", endpoints, " rm ", key)}
+// {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" del foo`}
+func etcdctlDelCmd(endpoints, key string) []string {
+	return []string{"etcdctl", "--endpoints", endpoints, "del", key}
+
 }
 
 // endpointsSplitter takes endpoints input from user prompt and returns digestable string for etcdctl

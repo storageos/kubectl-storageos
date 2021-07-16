@@ -73,7 +73,7 @@ func TestEtcdctlMemberList(t *testing.T) {
 	}
 }
 
-func TestEtcdctlSetCmd(t *testing.T) {
+func TestEtcdctlPutCmd(t *testing.T) {
 	tcases := []struct {
 		name      string
 		endpoints string
@@ -89,7 +89,7 @@ func TestEtcdctlSetCmd(t *testing.T) {
 			cmd: []string{
 				"/bin/bash",
 				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" set foo bar",
+				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" put foo bar",
 			},
 		},
 		{
@@ -100,12 +100,12 @@ func TestEtcdctlSetCmd(t *testing.T) {
 			cmd: []string{
 				"/bin/bash",
 				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" set test-key test-val",
+				"etcdctl --endpoints \"http://1.2.3.4:2379\" put test-key test-val",
 			},
 		},
 	}
 	for _, tc := range tcases {
-		cmd := etcdctlSetCmd(tc.endpoints, tc.key, tc.value)
+		cmd := etcdctlPutCmd(tc.endpoints, tc.key, tc.value)
 		if !reflect.DeepEqual(cmd, tc.cmd) {
 			t.Errorf("expected %v, got %v", tc.cmd, cmd)
 		}
@@ -148,7 +148,7 @@ func TestEtcdctlGetCmd(t *testing.T) {
 	}
 }
 
-func TestEtcdctlRmCmd(t *testing.T) {
+func TestEtcdctlDelCmd(t *testing.T) {
 	tcases := []struct {
 		name      string
 		endpoints string
@@ -162,7 +162,7 @@ func TestEtcdctlRmCmd(t *testing.T) {
 			cmd: []string{
 				"/bin/bash",
 				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" rm foo",
+				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" del foo",
 			},
 		},
 		{
@@ -172,12 +172,12 @@ func TestEtcdctlRmCmd(t *testing.T) {
 			cmd: []string{
 				"/bin/bash",
 				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" rm test-key",
+				"etcdctl --endpoints \"http://1.2.3.4:2379\" del test-key",
 			},
 		},
 	}
 	for _, tc := range tcases {
-		cmd := etcdctlRmCmd(tc.endpoints, tc.key)
+		cmd := etcdctlDelCmd(tc.endpoints, tc.key)
 		if !reflect.DeepEqual(cmd, tc.cmd) {
 			t.Errorf("expected %v, got %v", tc.cmd, cmd)
 		}

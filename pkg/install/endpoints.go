@@ -105,7 +105,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 // if any step fails.
 func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, endpoints, key, value string) error {
 	errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoints)
-	_, stderr, err := ExecToPod(config, etcdctlSetCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
+	_, stderr, err := ExecToPod(config, etcdctlPutCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 	}
@@ -122,7 +122,7 @@ func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, e
 		return fmt.Errorf(stderr)
 	}
 
-	_, stderr, err = ExecToPod(config, etcdctlRmCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
+	_, stderr, err = ExecToPod(config, etcdctlDelCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 	}
