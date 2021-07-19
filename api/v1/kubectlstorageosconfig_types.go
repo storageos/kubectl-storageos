@@ -28,14 +28,26 @@ type KubectlStorageOSConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of KubectlStorageOSConfig. Edit kubectlstorageosconfig_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
+	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
+	EtcdOperatorNamespace      string `json:"etcdNamespace,omitempty"`
 }
 
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
 type KubectlStorageOSConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+}
+
+// Install defines options for cli install subcommand
+type Install struct {
+	StorageOSOperatorYaml string `json:"storageOSOperatorYaml,omitempty"`
+	StorageOSClusterYaml  string `json:"storageOSClusterYaml,omitempty"`
+	EtcdOperatorYaml      string `json:"etcdOperatorYaml,omitempty"`
+	EtcdClusterYaml       string `json:"etcdClusterYaml,omitempty"`
+	SkipEtcdInstall       bool   `json:"skipEtcdInstall,omitempty"`
+	EtcdEndpoints         string `json:"etcdEndpoints,omitempty"`
+	StorageClassName      string `json:"storageClassName,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -1,5 +1,11 @@
-skipEtcdInstall: true
-storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
-storageOSClusterNamespace: stos-cluster-install-skip-etcd-config
-etcdEndpoints: storageos-etcd.etcd-install-full:2379
-storageClassName: standard
+apiVersion: storageos.com/v1
+kind: KubectlStorageOSConfig
+metadata:
+  name: kubectlstorageosconfig-sample
+spec:
+  storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
+  storageOSClusterNamespace: stos-cluster-install-skip-etcd-config
+  install:
+    skipEtcdInstall: true 
+    etcdEndpoints: storageos-etcd.etcd-install-full:2379
+    storageClassName: standard

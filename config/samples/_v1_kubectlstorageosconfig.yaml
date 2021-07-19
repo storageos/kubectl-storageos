@@ -3,5 +3,14 @@ kind: KubectlStorageOSConfig
 metadata:
   name: kubectlstorageosconfig-sample
 spec:
-  # Add fields here
-  foo: bar
+  storageOSOperatorNamespace: storageos-operator
+  storageOSClusterNamespace: storageos-cluster
+  etcdNamespace: storageos-etcd-system
+  install:
+    storageOSOperatorYaml: /path/to/storageos-operator.yaml     
+    storageOSClusterYaml: /path/to/storageos-cluster.yaml 
+    etcdOperatorYaml: /path/to/etcd-operator.yaml 
+    etcdClusterYaml: /path/to/etcd-cluster.yaml
+    skipEtcdInstall: false
+    etcdEndpoints: "<etcd-endpoints>"
+    storageClassName: standard
