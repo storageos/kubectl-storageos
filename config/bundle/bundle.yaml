@@ -1,0 +1,177 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: StorageOS
+spec:
+  collectors:
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs    
+        selector:
+          - name=storageos-operator-operator-logs
+        namespace: storageos
+        limits:
+          maxLines: 10000
+    - logs:
+        selector:
+          - app=storageos
+        namespace: storageos
+        limits:
+          maxLines: 1000000
+    - run:
+        name: network-checks
+        collectorName: netcat
+        image: arau/tools:0.9
+        namespace: storageos
+        hostNetwork: true
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "
+          #!/bin/bash
+          #
+          # IOPort = 5703 # DataPlane
+          # SupervisorPort = 5704 # For sync
+          # ExternalAPIPort = 5705 # REST API
+          # InternalAPIPort = 5710 # Grpc API
+          # GossipPort = 5711 # Gossip+Healthcheck
+
+          echo \"Source node for the test:\";
+          hostname -f -I; echo;
+
+          parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+                              ::: 5703 5704 5705 5710 5711
+          "
+        timeout: 90s
+    - run:
+        name: backend-disks
+        collectorName: lsblk
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["lsblk"]
+        timeout: 90s
+    - run:
+        name: free-disk-space
+        collectorName: df
+        image: arau/tools:0.9
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["df -h"]
+        timeout: 90s
+    - run:
+        name: ps-all-nodes
+        collectorName: processlist
+        image: arau/tools:0.9
+        namespace: kube-system
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args: ["auxwwwf"]
+        timeout: 90s
+    - exec:
+        name: storageos-cli-info
+        collectorName: storageos-cli
+        selector:
+          - run=cli
+        namespace: kube-system
+        timeout: 90s
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - "
+          export STORAGEOS_ENDPOINTS='http://storageos.kube-system.svc:5705';
+          echo STORAGEOS CLUSTER;
+          storageos get cluster -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  LICENCE;
+          storageos get licence -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS  NAMESPACE;
+          storageos get namespace -ojson;
+          echo '-----------------------------------------';
+          echo STORAGEOS NODES;
+          storageos get nodes -o json;
+          echo '-----------------------------------------';
+          echo STORAGEOS VOLUMES;
+          storageos get volumes --all-namespaces -ojson;
+          echo '-----------------------------------------';
+          "
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.9.0"
+              message: StorageOS requires at least Kubernetes 1.9.0 with CSI enabled or later.
+              uri: https://kubernetes.io
+          - warn:
+              when: "< 1.15.0"
+              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
+              uri: https://kubernetes.io
+          - pass:
+          - pass:
+              message: Your cluster meets the recommended and required versions of Kubernetes.
+    - customResourceDefinition:
+        customResourceDefinitionName: storageosclusters.storageos.com
+        outcomes:
+          - fail:
+              message: The StorageOSCluster CRD was not found in the cluster.
+          - pass:
+              message: StorageOS CRD is installed and available.
+    - nodeResources:
+        checkName: Must have at least 3 nodes in the cluster
+        outcomes:
+          - warn:
+              when: "count() < 3"
+              message: This application recommends at last 3 nodes.
+          - pass:
+              message: This cluster has enough nodes.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the API Manager deployment ready.
+    - deploymentStatus:
+        name: storageos-csi-helper
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The CSI helper deployment does not have any ready replicas.
+          - pass:
+              message: The CSI helper deployment is ready.
+    - deploymentStatus:
+        name: storageos-scheduler
+        namespace: storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The scheduler deployment does not have any ready replicas.
+          - pass:

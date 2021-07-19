@@ -35,13 +35,32 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/troubleshoot/pkg/specs"
 	"github.com/spf13/viper"
+	"github.com/storageos/kubectl-storageos/pkg/install"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/kustomize/api/filesys"
+	"sigs.k8s.io/kustomize/api/krusty"
+)
+
+const (
+	// name of instruction to collect storageos operator logs
+	stosOperatorLogsName = "storageos-operator-logs"
+	// kustomization template for support bundle
+	kustTemp = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- bundle.yaml`
 )
 
 var (
 	httpClient *http.Client
 )
+
+type InMemory struct {
+	fileSys filesys.FileSystem
+}
 
 func Run(v *viper.Viper, arg string) error {
 	fmt.Print(cursor.Hide())
@@ -59,6 +78,15 @@ func Run(v *viper.Viper, arg string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to load collector spec")
 	}
+
+	fmt.Println(string(collectorContent))
+	if v.GetString(install.StosOperatorNSFlag) != "" || v.GetString(install.StosClusterNSFlag) != "" {
+		collectorContent, err = kustomizeSupportBundle(v, collectorContent)
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Println(string(collectorContent))
 
 	multidocs := strings.Split(string(collectorContent), "\n---\n")
 
@@ -660,4 +688,116 @@ func tarSupportBundleDir(inputDir, outputFilename string) error {
 type CollectorFailure struct {
 	Collector *troubleshootv1beta2.Collect
 	Failure   string
+}
+
+func newInMemory() *InMemory {
+	fs := filesys.MakeFsInMemory()
+	return &InMemory{
+		fileSys: fs,
+	}
+}
+
+// getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
+// GetFieldInManiest internally to retrieve the specified field.
+func (im *InMemory) getFieldInFsManifest(path string, fields ...string) (string, error) {
+	data, err := im.fileSys.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
+	if err != nil {
+		return "", err
+	}
+	return field, nil
+}
+
+func (im *InMemory) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
+	kustFile, err := im.fileSys.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	kustFileWithPatches, err := pluginutils.AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
+	if err != nil {
+		return err
+	}
+
+	err = im.fileSys.WriteFile(path, []byte(kustFileWithPatches))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func kustomizeSupportBundle(v *viper.Viper, supportBundleContent []byte) ([]byte, error) {
+	topDir := "supportbundle"
+	im := newInMemory()
+	err := im.fileSys.Mkdir(topDir)
+	if err != nil {
+		return nil, err
+	}
+	err = im.fileSys.WriteFile(filepath.Join(topDir, "bundle.yaml"), supportBundleContent)
+	if err != nil {
+		return nil, err
+	}
+	err = im.fileSys.WriteFile(filepath.Join(topDir, "kustomization.yaml"), []byte(kustTemp))
+	if err != nil {
+		return nil, err
+	}
+	// create kustomization patches for support bundle collectors
+	// patches for all namespaces except that of operator logs instruction
+	patches := make([]pluginutils.KustomizePatch, 0)
+	clusterNS := v.GetString(install.StosClusterNSFlag)
+	if clusterNS != "" {
+		colletorPatches, err := pluginutils.GenericPatchesForSupportBundle(string(supportBundleContent), "collectors", clusterNS, []string{"namespace"}, stosOperatorLogsName, [][]string{{"logs", "name"}})
+		if err != nil {
+			return nil, err
+		}
+		pathsToSkip, err := pluginutils.AllInstructionTypesExcept("analyzers", "deploymentStatus")
+		if err != nil {
+			return nil, err
+		}
+		analyzerPatches, err := pluginutils.GenericPatchesForSupportBundle(string(supportBundleContent), "analyzers", clusterNS, []string{"namespace"}, "", pathsToSkip)
+		if err != nil {
+			return nil, err
+		}
+		patches = append(colletorPatches, analyzerPatches...)
+
+	}
+	// patch for operator logs instruction
+	operatorNS := v.GetString(install.StosOperatorNSFlag)
+	if operatorNS != "" {
+		logsPatch, err := pluginutils.SpecificPatchForSupportBundle(string(supportBundleContent), "collectors", operatorNS, []string{"logs", "namespace"}, stosOperatorLogsName, []string{"logs", "name"})
+		if err != nil {
+			return nil, err
+		}
+		patches = append(patches, logsPatch)
+	}
+
+	kind, err := im.getFieldInFsManifest(filepath.Join(topDir, "bundle.yaml"), "kind")
+	if err != nil {
+		return nil, err
+	}
+	bundleName, err := im.getFieldInFsManifest(filepath.Join(topDir, "bundle.yaml"), "metadata", "name")
+	if err != nil {
+		return nil, err
+	}
+
+	err = im.addPatchesToFSKustomize(filepath.Join(topDir, "kustomization.yaml"), kind, bundleName, patches)
+	if err != nil {
+		return nil, err
+	}
+
+	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+	resMap, err := kustomizer.Run(im.fileSys, topDir)
+	if err != nil {
+		return nil, err
+	}
+	resYaml, err := resMap.AsYaml()
+	if err != nil {
+		return nil, err
+	}
+
+	return resYaml, nil
 }

@@ -27,3 +27,6 @@ vendor
 # kuttl files 
 kind-logs*
 kubeconfig
+
+# support bundles
+support-bundle*.tar.gz

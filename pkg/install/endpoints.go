@@ -9,6 +9,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"k8s.io/client-go/rest"
 )
 
@@ -52,13 +53,13 @@ func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
 		return err
 	}
 
-	endpointPatch := KustomizePatch{
+	endpointPatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/spec/kvBackend/address",
 		Value: etcdEndpoints,
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []KustomizePatch{endpointPatch})
+	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointPatch})
 	if err != nil {
 		return err
 	}
@@ -72,21 +73,21 @@ func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
 // - performs etcdctlHealthCheck
 // - if no error has occurred during health check, the endpoints are validated
 func validateEndpoints(endpoints, etcdShell string) error {
-	etcdShellPodName, err := GetFieldInManifest(etcdShell, "metadata", "name")
+	etcdShellPodName, err := pluginutils.GetFieldInManifest(etcdShell, "metadata", "name")
 	if err != nil {
 		return err
 	}
-	etcdShellPodNS, err := GetFieldInManifest(etcdShell, "metadata", "namespace")
-	if err != nil {
-		return err
-	}
-
-	config, err := NewClientConfig()
+	etcdShellPodNS, err := pluginutils.GetFieldInManifest(etcdShell, "metadata", "namespace")
 	if err != nil {
 		return err
 	}
 
-	err = PodIsRunning(config, etcdShellPodName, etcdShellPodNS, 60, 5)
+	config, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return err
+	}
+
+	err = pluginutils.PodIsRunning(config, etcdShellPodName, etcdShellPodNS, 60, 5)
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 // if any step fails.
 func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, endpoints, key, value string) error {
 	errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoints)
-	_, stderr, err := ExecToPod(config, etcdctlPutCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
+	_, stderr, err := pluginutils.ExecToPod(config, etcdctlPutCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 	}
@@ -113,7 +114,7 @@ func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, e
 		return fmt.Errorf(stderr)
 	}
 
-	_, stderr, err = ExecToPod(config, etcdctlGetCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
+	_, stderr, err = pluginutils.ExecToPod(config, etcdctlGetCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 
@@ -122,7 +123,7 @@ func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, e
 		return fmt.Errorf(stderr)
 	}
 
-	_, stderr, err = ExecToPod(config, etcdctlDelCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
+	_, stderr, err = pluginutils.ExecToPod(config, etcdctlDelCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 	}
