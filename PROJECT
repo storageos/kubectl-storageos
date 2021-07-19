@@ -3,4 +3,12 @@ layout:
 - go.kubebuilder.io/v3
 projectName: kubectl-storageos
 repo: github.com/storageos/kubectl-storageos
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: storageos.com
+  kind: KubectlStorageOSConfig
+  path: github.com/storageos/kubectl-storageos/api/v1
+  version: v1
 version: "3"

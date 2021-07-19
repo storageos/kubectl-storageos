@@ -38,17 +38,17 @@ const (
 	StosClusterNSFlag    = "stos-cluster-namespace"
 	StorageClassFlag     = "storage-class"
 
-	// config file fields
-	StosOperatorYamlConfig = "storageOSOperatorYaml"
-	StosClusterYamlConfig  = "storageOSClusterYaml"
-	EtcdOperatorYamlConfig = "etcdOperatorYaml"
-	EtcdClusterYamlConfig  = "etcdClusterYaml"
-	SkipEtcdInstallConfig  = "skipEtcdInstall"
-	EtcdEndpointsConfig    = "etcdEndpoints"
-	EtcdNamespaceConfig    = "etcdNamespace"
-	StosOperatorNSConfig   = "storageOSOperatorNamespace"
-	StosClusterNSConfig    = "storageOSClusterNamespace"
-	StorageClassConfig     = "storageClassName"
+	// config file fields - contain path delimiters for plugin interpretation of config manifest
+	EtcdNamespaceConfig    = "spec.etcdNamespace"
+	StosOperatorNSConfig   = "spec.storageOSOperatorNamespace"
+	StosClusterNSConfig    = "spec.storageOSClusterNamespace"
+	StosOperatorYamlConfig = "spec.install.storageOSOperatorYaml"
+	StosClusterYamlConfig  = "spec.install.storageOSClusterYaml"
+	EtcdOperatorYamlConfig = "spec.install.etcdOperatorYaml"
+	EtcdClusterYamlConfig  = "spec.install.etcdClusterYaml"
+	SkipEtcdInstallConfig  = "spec.install.skipEtcdInstall"
+	EtcdEndpointsConfig    = "spec.install.etcdEndpoints"
+	StorageClassConfig     = "spec.install.storageClassName"
 
 	// dir and file names for in memory fs
 	etcdDir           = "etcd"

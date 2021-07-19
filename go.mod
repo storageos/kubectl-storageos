@@ -31,6 +31,7 @@ require (
 	k8s.io/apimachinery v0.21.1
 	k8s.io/cli-runtime v0.21.1
 	k8s.io/client-go v0.21.1
+	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/kubebuilder-declarative-pattern v0.0.0-20210322221347-4ba4cadcd4ca
 	sigs.k8s.io/kustomize/api v0.8.8
 	sigs.k8s.io/kustomize/kyaml v0.10.17
