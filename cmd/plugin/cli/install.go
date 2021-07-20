@@ -37,10 +37,10 @@ func InstallCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().String(install.StosOperatorYamlFlag, "", "path to storageos-operator.yaml")
-	cmd.Flags().String(install.StosClusterYamlFlag, "", "path to storageos-cluster.yaml")
-	cmd.Flags().String(install.EtcdClusterYamlFlag, "", "path to etcd-cluster.yaml")
-	cmd.Flags().String(install.EtcdOperatorYamlFlag, "", "path to etcd-operator.yaml")
+	cmd.Flags().String(install.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
+	cmd.Flags().String(install.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
+	cmd.Flags().String(install.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
+	cmd.Flags().String(install.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().Bool(install.SkipEtcdInstallFlag, false, "skip etcd installation and enter endpoints manually")
 	cmd.Flags().String(install.EtcdEndpointsFlag, "", "etcd endpoints")
 	cmd.Flags().String(install.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")

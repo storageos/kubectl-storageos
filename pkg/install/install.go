@@ -399,8 +399,7 @@ func (in *Installer) kustomizeAndApply(dir string) error {
 	return nil
 }
 
-// readOrPullManifest attempts readManifest first. If path is empty, pullManifest
-// is called for url
+// readOrPullManifest returns a string of the manifest from path or url provided
 func readOrPullManifest(path, url string) (string, error) {
 	var contents string
 	var err error
@@ -410,13 +409,18 @@ func readOrPullManifest(path, url string) (string, error) {
 			return contents, err
 		}
 		return contents, nil
-	} else {
-		contents, err = readManifest(path)
+	} else if util.IsURL(path) {
+		contents, err = pullManifest(path)
 		if err != nil {
 			return contents, err
 		}
 		return contents, nil
 	}
+	contents, err = readManifest(path)
+	if err != nil {
+		return contents, err
+	}
+	return contents, nil
 }
 
 // readManifest returns string of contents at path
