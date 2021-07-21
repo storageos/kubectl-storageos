@@ -97,7 +97,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 		return err
 	}
 
-	logger.Printf("\nETCD endpoints succesfully validated\n\n")
+	logger.Printf("\nETCD endpoints successfully validated\n\n")
 
 	return nil
 }
