@@ -332,7 +332,7 @@ func loadSpecFromURL(v *viper.Viper, arg string) ([]byte, error) {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, errors.Wrap(err, "read responce body")
+			return nil, errors.Wrap(err, "read response body")
 		}
 
 		return body, nil
@@ -518,7 +518,7 @@ func untarAndSave(tarFile []byte, bundlePath string) error {
 	files := make(map[string][]byte)
 	fileHeaders := make(map[string]*tar.Header)
 	tarReader := tar.NewReader(bytes.NewBuffer(tarFile))
-	//Extract and separate tar contentes in file and folders, keeping header info from each one.
+	//Extract and separate tar contents in file and folders, keeping header info from each one.
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
