@@ -4,7 +4,7 @@
 
 This project is under development, use it on your own risk please.
 
-The main goal of this project is to give an easy integratin with Kubernetes for StorageOS related administration tasks.
+The main goal of this project is to give an easy integration with Kubernetes for StorageOS related administration tasks.
 
 ## Installation
 
@@ -12,8 +12,8 @@ The main goal of this project is to give an easy integratin with Kubernetes for 
 
  * Go 1.16+
 
-The project doesn't have proper release process and pre-compiled binaries, because it is under construction at the moment.
-To install the plugin you have to build your own version. 
+Since the project is under active development there isn't a release process or pre-compiled binaries yet.  
+For now, to install the plugin you have to build your own version. 
 
 ```
 # git clone https://github.com/storageos/kubectl-storageos.git
