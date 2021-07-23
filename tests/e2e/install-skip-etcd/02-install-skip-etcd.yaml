@@ -1,5 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-        - command: sleep 2m
-        - command: kubectl storageos install --skip-etcd-install --etcd-endpoints=storageos-etcd.etcd-install-full:2379 --stos-operator-namespace=stos-operator-install-skip-etcd --stos-cluster-namespace=stos-cluster-install-skip-etcd

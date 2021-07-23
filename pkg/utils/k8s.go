@@ -8,6 +8,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -166,6 +167,54 @@ func PodIsRunning(config *rest.Config, name, namespace string) error {
 	}
 	if pod.Status.Phase != corev1.PodRunning {
 		return fmt.Errorf("pod %s; %s is not in running phase", name, namespace)
+	}
+	return nil
+}
+
+// NoPodsInNS returns no error only if no pod exists in the provided namespace.
+func NoPodsInNS(config *rest.Config, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	podClient := clientset.CoreV1().Pods(namespace)
+	pods, err := podClient.List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	if len(pods.Items) > 0 {
+		return fmt.Errorf("pods still exist in namespace %s", namespace)
+	}
+	return nil
+}
+
+// NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster
+func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	nsClient := clientset.CoreV1().Namespaces()
+	_, err = nsClient.Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("namespace %v exists in cluster", namespace)
+}
+
+// NamespaceExists returns no error only if the specified namespace exists in the k8s cluster
+func NamespaceExists(config *rest.Config, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	nsClient := clientset.CoreV1().Namespaces()
+	_, err = nsClient.Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return err
 	}
 	return nil
 }

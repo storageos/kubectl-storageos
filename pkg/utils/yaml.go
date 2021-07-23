@@ -51,6 +51,53 @@ func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) 
 	return objsOfKind, nil
 }
 
+// OmitKindFromMultiDoc returns 'multiDoc' without objects of 'kind'.
+func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
+	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	if err != nil {
+		return "", err
+	}
+	objsWithoutKind := make([]string, 0)
+	for _, obj := range objs.Items {
+		if obj.UnstructuredObject().GetKind() == kind {
+			continue
+		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return "", err
+		}
+		objsWithoutKind = append(objsWithoutKind, string(objYaml))
+	}
+	return strings.Join(objsWithoutKind, "\n---\n"), nil
+}
+
+// OmitAndReturnKindFromMultiDoc returns 'multiDoc' without objects of 'kind', while also returning
+// []string of 'kind' objects that are omitted
+func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, error) {
+	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	if err != nil {
+		return "", nil, err
+	}
+	objsWithoutKind := make([]string, 0)
+	objsOfKind := make([]string, 0)
+	for _, obj := range objs.Items {
+		if obj.UnstructuredObject().GetKind() == kind {
+			objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+			if err != nil {
+				return "", nil, err
+			}
+			objsOfKind = append(objsOfKind, string(objYaml))
+			continue
+		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return "", nil, err
+		}
+		objsWithoutKind = append(objsWithoutKind, string(objYaml))
+	}
+	return strings.Join(objsWithoutKind, "\n---\n"), objsOfKind, nil
+}
+
 // SetFieldInManifest sets valueName equal to value at path in manifest defined by fields.
 // See TestSetFieldInManifest for examples.
 func SetFieldInManifest(manifest, value, valueName string, fields ...string) (string, error) {

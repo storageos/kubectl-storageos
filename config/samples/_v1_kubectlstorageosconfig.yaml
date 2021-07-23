@@ -11,6 +11,6 @@ spec:
     storageOSClusterYaml: /path/to/storageos-cluster.yaml 
     etcdOperatorYaml: /path/to/etcd-operator.yaml 
     etcdClusterYaml: /path/to/etcd-cluster.yaml
-    skipEtcdInstall: false
+    skipEtcd: false
     etcdEndpoints: "<etcd-endpoints>"
     storageClassName: standard

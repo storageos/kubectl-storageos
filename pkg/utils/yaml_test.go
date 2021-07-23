@@ -398,6 +398,186 @@ spec:
 	}
 }
 
+func TestOmitKindFromMultiDoc(t *testing.T) {
+	tcases := []struct {
+		name          string
+		multiManifest string
+		kind          string
+		expManifest   string
+		expError      bool
+	}{
+		{
+			name: "find deployment",
+			multiManifest: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-test-svc
+  labels:
+    app: test
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+`,
+			kind: "Service",
+			expManifest: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test
+  name: my-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - image: test
+        name: test
+`,
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		man, err := OmitKindFromMultiDoc(tc.multiManifest, tc.kind)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
+			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+		}
+	}
+}
+
+func TestOmitAndReturnKindFromMultiDoc(t *testing.T) {
+	tcases := []struct {
+		name          string
+		multiManifest string
+		kind          string
+		expManifest   string
+		expKinds      []string
+		expError      bool
+	}{
+		{
+			name: "find deployment",
+			multiManifest: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-test-svc
+  labels:
+    app: test
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+`,
+			kind: "Service",
+			expManifest: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test
+  name: my-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - image: test
+        name: test
+`,
+			expKinds: []string{`
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-test-svc
+  labels:
+    app: test
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: test`},
+
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		man, kinds, err := OmitAndReturnKindFromMultiDoc(tc.multiManifest, tc.kind)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
+			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+		}
+		if len(tc.expKinds) != len(kinds) {
+			t.Errorf("expected %v, got %v", len(tc.expKinds), len(kinds))
+		}
+	}
+}
+
 func TestGetAllManifestsOfKindFromMultiDoc(t *testing.T) {
 	tcases := []struct {
 		name          string
@@ -575,7 +755,6 @@ spec:
 			}
 		}
 		if len(tc.expManifests) != len(mans) {
-			//		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
 			t.Errorf("expected %v manifests, got %v", len(tc.expManifests), len(mans))
 		}
 
