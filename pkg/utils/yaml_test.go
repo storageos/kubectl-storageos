@@ -1,4 +1,4 @@
-package install
+package utils
 
 import (
 	"reflect"
@@ -393,6 +393,190 @@ spec:
 		}
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
 			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+		}
+
+	}
+}
+
+func TestGetAllManifestsOfKindFromMultiDoc(t *testing.T) {
+	tcases := []struct {
+		name          string
+		multiManifest string
+		kind          string
+		expManifests  []string
+		expError      bool
+	}{
+		{
+			name: "find deployment",
+			multiManifest: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-test-svc
+  labels:
+    app: test
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+`,
+			kind: "Deployment",
+			expManifests: []string{`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test
+  name: my-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - image: test
+        name: test
+`},
+			expError: false,
+		},
+		{
+			name: "find 2 deployments",
+			multiManifest: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-test-svc
+  labels:
+    app: test
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test-2
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+
+`,
+			kind: "Deployment",
+			expManifests: []string{`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test
+  name: my-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - image: test
+        name: test
+`,
+				`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-test-2
+  labels:
+    app: test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: test
+
+`},
+			expError: false,
+		},
+	}
+	for _, tc := range tcases {
+		mans, err := GetAllManifestsOfKindFromMultiDoc(tc.multiManifest, tc.kind)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if len(tc.expManifests) != len(mans) {
+			//		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
+			t.Errorf("expected %v manifests, got %v", len(tc.expManifests), len(mans))
 		}
 
 	}
