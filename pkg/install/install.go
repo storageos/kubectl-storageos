@@ -105,7 +105,6 @@ func NewInstaller() (*Installer, error) {
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install() error {
-	var err error
 	v := viper.GetViper()
 	if v.GetBool(SkipEtcdInstallFlag) {
 		err := in.handleEndpointsInput(v.GetString(EtcdEndpointsFlag))
@@ -113,64 +112,78 @@ func (in *Installer) Install() error {
 			return err
 		}
 	} else {
-		// add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
-		// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
-		// based on flags (or cli config file)
 		etcdNamespace := v.GetString(EtcdNamespaceFlag)
-		if etcdNamespace != "" {
-			err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-			if err != nil {
-				return err
-			}
-			err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-			if err != nil {
-				return err
-			}
-			err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
-			if err != nil {
-				return err
-			}
-
-			// update endpoint for stos cluster based on etcd namespace flag
-			endpointsPatch := pluginutils.KustomizePatch{
-				Op:    "replace",
-				Path:  "/spec/kvBackend/address",
-				Value: fmt.Sprintf("%s%s%s%s", defaultEtcdClusterNS, ".", etcdNamespace, ":2379"),
-			}
-			err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointsPatch})
-			if err != nil {
-				return err
-			}
-		}
-		// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
-		// with desired storage class name to kustomization for etcd cluster
 		storageClass := v.GetString(StorageClassFlag)
-		if storageClass == "" {
-			storageClass, err = pluginutils.GetDefaultStorageClassName()
-			if err != nil {
-				return err
-			}
+		in.etcdKustomize(etcdNamespace, storageClass)
+	}
+	stosOperatorNS := v.GetString(StosOperatorNSFlag)
+	stosClusterNS := v.GetString(StosClusterNSFlag)
+	in.stosKustomize(stosOperatorNS, stosClusterNS)
+
+	return nil
+}
+
+// etcdKustomize add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
+// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
+// based on flags (or cli config file)
+func (in *Installer) etcdKustomize(etcdNamespace string, storageClass string) error {
+	var err error
+	if etcdNamespace != "" {
+		err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", "")
+		if err != nil {
+			return err
 		}
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/storage/volumeClaimTemplate/storageClassName", Value: storageClass}})
+		err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", "")
+		if err != nil {
+			return err
+		}
+		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
 		if err != nil {
 			return err
 		}
 
-		err = in.kustomizeAndApply(filepath.Join(etcdDir, operatorDir))
-		if err != nil {
-			return err
+		// update endpoint for stos cluster based on etcd namespace flag
+		endpointsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/kvBackend/address",
+			Value: fmt.Sprintf("%s%s%s%s", defaultEtcdClusterNS, ".", etcdNamespace, ":2379"),
 		}
-		time.Sleep(5 * time.Second)
-		err = in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir))
+		err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointsPatch})
 		if err != nil {
 			return err
 		}
 	}
-	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
-	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
-	// based on flags (or cli config file)
 
-	stosOperatorNS := v.GetString(StosOperatorNSFlag)
+	// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
+	// with desired storage class name to kustomization for etcd cluster
+	if storageClass == "" {
+		storageClass, err = pluginutils.GetDefaultStorageClassName()
+		if err != nil {
+			return err
+		}
+	}
+	err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/storage/volumeClaimTemplate/storageClassName", Value: storageClass}})
+	if err != nil {
+		return err
+	}
+
+	err = in.kustomizeAndApply(filepath.Join(etcdDir, operatorDir))
+	if err != nil {
+		return err
+	}
+	time.Sleep(5 * time.Second)
+	err = in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// stosKustomize add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
+// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
+// based on flags (or cli config file)
+func (in *Installer) stosKustomize(stosOperatorNS string, stosClusterNS string) error {
 	if stosOperatorNS != "" {
 		err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), stosOperatorNS, "namespace", "")
 		if err != nil {
@@ -178,7 +191,7 @@ func (in *Installer) Install() error {
 		}
 	}
 
-	stosClusterNS := v.GetString(StosClusterNSFlag)
+	var err error
 	if stosClusterNS != "" {
 		// apply the provided storageos cluster ns
 		err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(stosClusterNS), true)

@@ -8,6 +8,7 @@ var (
 	quiet = false
 )
 
+// SetQuiet sets the value for quiet
 func SetQuiet(s bool) {
 	quiet = s
 }

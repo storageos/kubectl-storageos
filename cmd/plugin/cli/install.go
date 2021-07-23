@@ -77,10 +77,9 @@ func setFlags(cmd *cobra.Command) {
 
 			return
 
-		} else {
-			// Config file was found but another error was produced
-			panic(fmt.Errorf("error discovered in config file: %v", err))
 		}
+		// Config file was found but another error was produced
+		panic(fmt.Errorf("error discovered in config file: %v", err))
 	}
 	// config file read without error, set flags from config
 	viper.Set(install.SkipEtcdInstallFlag, viper.Get(install.SkipEtcdInstallConfig))

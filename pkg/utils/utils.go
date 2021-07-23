@@ -184,7 +184,6 @@ type KustomizePatch struct {
 
 // AddPatchesToKustomize adds any number of patches (via []KustomizePatch{}) to kustomizationFile string,
 // returning the updated kustomization file as a string.
-
 // Example
 //*******************************************************
 // Input kustomization file:
@@ -247,7 +246,7 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
     name: `, targetName, `
   patch: |`)
 
-	patch, err := kyaml.Parse(strings.Join([]string{targetString, allPatchesStr}, ""))
+	patch, _ := kyaml.Parse(strings.Join([]string{targetString, allPatchesStr}, ""))
 
 	_, err = obj.Pipe(
 		kyaml.LookupCreate(kyaml.SequenceNode, "patches"),

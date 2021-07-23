@@ -204,6 +204,33 @@ func Run(v *viper.Viper, arg string) error {
 	}
 
 	// perform analysis, if possible
+	runAnalysis(supportBundleSpec, archivePath, finishedCh, isFinishedChClosed)
+
+	if !fileUploaded {
+		msg := archivePath
+		if appName := supportBundleSpec.Labels["applicationName"]; appName != "" {
+			f := `A support bundle for %s has been created in this directory
+named %s. Please upload it on the Troubleshoot page of
+the %s Admin Console to begin analysis.`
+			msg = fmt.Sprintf(f, appName, archivePath, appName)
+		}
+
+		fmt.Printf("%s\n", msg)
+
+		return nil
+	}
+
+	fmt.Printf("\r%s\r", cursor.ClearEntireLine())
+	if fileUploaded {
+		fmt.Printf("A support bundle has been created and uploaded to your cluster for analysis. Please visit the Troubleshoot page to continue.\n")
+		fmt.Printf("A copy of this support bundle was written to the current directory, named %q\n", archivePath)
+	} else {
+		fmt.Printf("A support bundle has been created in the current directory named %q\n", archivePath)
+	}
+	return nil
+}
+
+func runAnalysis(supportBundleSpec *troubleshootv1beta2.SupportBundle, archivePath string, finishedCh chan bool, isFinishedChClosed bool) error {
 	if len(supportBundleSpec.Spec.Analyzers) > 0 {
 		tmpDir, err := ioutil.TempDir("", "troubleshoot")
 		if err != nil {
@@ -251,27 +278,6 @@ func Run(v *viper.Viper, arg string) error {
 		}
 	}
 
-	if !fileUploaded {
-		msg := archivePath
-		if appName := supportBundleSpec.Labels["applicationName"]; appName != "" {
-			f := `A support bundle for %s has been created in this directory
-named %s. Please upload it on the Troubleshoot page of
-the %s Admin Console to begin analysis.`
-			msg = fmt.Sprintf(f, appName, archivePath, appName)
-		}
-
-		fmt.Printf("%s\n", msg)
-
-		return nil
-	}
-
-	fmt.Printf("\r%s\r", cursor.ClearEntireLine())
-	if fileUploaded {
-		fmt.Printf("A support bundle has been created and uploaded to your cluster for analysis. Please visit the Troubleshoot page to continue.\n")
-		fmt.Printf("A copy of this support bundle was written to the current directory, named %q\n", archivePath)
-	} else {
-		fmt.Printf("A support bundle has been created in the current directory named %q\n", archivePath)
-	}
 	return nil
 }
 
@@ -449,7 +455,22 @@ func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, ad
 		globalRedactors = additionalRedactors.Spec.Redactors
 	}
 
-	// Run preflights collectors synchronously
+	runPreflightCollectors(cleanedCollectors, progressChan, globalRedactors, bundlePath)
+
+	filename, err := findFileName("support-bundle-"+time.Now().Format("2006-01-02T15:04:05"), "tar.gz")
+	if err != nil {
+		return "", errors.Wrap(err, "find file name")
+	}
+
+	if err := tarSupportBundleDir(bundlePath, filename); err != nil {
+		return "", errors.Wrap(err, "create bundle file")
+	}
+
+	return filename, nil
+}
+
+// runPreflightCollectors run preflights collectors synchronously
+func runPreflightCollectors(cleanedCollectors collect.Collectors, progressChan chan interface{}, globalRedactors []*troubleshootv1beta2.Redact, bundlePath string) error {
 	for _, collector := range cleanedCollectors {
 		if len(collector.RBACErrors) > 0 {
 			// don't skip clusterResources collector due to RBAC issues
@@ -475,17 +496,7 @@ func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, ad
 			}
 		}
 	}
-
-	filename, err := findFileName("support-bundle-"+time.Now().Format("2006-01-02T15:04:05"), "tar.gz")
-	if err != nil {
-		return "", errors.Wrap(err, "find file name")
-	}
-
-	if err := tarSupportBundleDir(bundlePath, filename); err != nil {
-		return "", errors.Wrap(err, "create bundle file")
-	}
-
-	return filename, nil
+	return nil
 }
 
 func saveCollectorOutput(output map[string][]byte, bundlePath string, c *collect.Collector) error {
