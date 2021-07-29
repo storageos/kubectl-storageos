@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
@@ -26,6 +27,7 @@ const (
 	// CLI flags
 	StosOperatorYamlFlag = "stos-operator-yaml"
 	StosClusterYamlFlag  = "stos-cluster-yaml"
+	StosSecretYamlFlag   = "stos-secret-yaml"
 	EtcdOperatorYamlFlag = "etcd-operator-yaml"
 	EtcdClusterYamlFlag  = "etcd-cluster-yaml"
 	SkipEtcdFlag         = "skip-etcd"
@@ -160,8 +162,19 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	if err != nil {
 		return fs, err
 	}
-	stosSubDirs[clusterDir] = stosClusterFiles
 
+	// append storageos secret yaml to cluster yaml if necessary. This will happen in the event of an
+	// uninstall of storageos version < 2.5.0.
+	stosSecretYamlFlag := v.GetString(StosSecretYamlFlag)
+	if stosSecretYamlFlag != "" {
+		stosSecretYaml, err := pullManifest(stosSecretYamlFlag)
+		if err != nil {
+			return fs, err
+		}
+		stosClusterMulti := makeMultiDoc(string(stosClusterFiles[stosClusterFile]), stosSecretYaml)
+		stosClusterFiles[stosClusterFile] = []byte(stosClusterMulti)
+	}
+	stosSubDirs[clusterDir] = stosClusterFiles
 	fsData[stosDir] = stosSubDirs
 
 	// if skip-etcd-install flag is set, create fs with storageos files and return early
@@ -196,6 +209,15 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	}
 
 	return fs, nil
+}
+
+func makeMultiDoc(manifests ...string) string {
+	manifestsSlice := make([]string, 0)
+	for _, manifest := range manifests {
+		manifestsSlice = append(manifestsSlice, manifest)
+	}
+
+	return strings.Join(manifestsSlice, "\n---\n")
 }
 
 // createFileData creates a map of two files (file name to file data).

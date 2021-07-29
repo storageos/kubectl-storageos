@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
+	github.com/hashicorp/go-version v1.1.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-isatty v0.0.9
