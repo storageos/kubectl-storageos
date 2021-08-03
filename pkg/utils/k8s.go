@@ -7,15 +7,20 @@ import (
 	"io"
 	"time"
 
+	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
+	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	storagev1 "k8s.io/client-go/kubernetes/typed/storage/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewClientConfig returns a client-go rest config
@@ -186,14 +191,23 @@ func NoPodsInNS(config *rest.Config, namespace string) error {
 	return nil
 }
 
-// NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster
-func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
+// GetNamespace return namespace object
+func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, error) {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	nsClient := clientset.CoreV1().Namespaces()
-	_, err = nsClient.Get(context.TODO(), namespace, metav1.GetOptions{})
+	ns, err := nsClient.Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return ns, nil
+}
+
+// NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster
+func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
+	_, err := GetNamespace(config, namespace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -205,14 +219,128 @@ func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
 
 // NamespaceExists returns no error only if the specified namespace exists in the k8s cluster
 func NamespaceExists(config *rest.Config, namespace string) error {
-	clientset, err := GetClientsetFromConfig(config)
-	if err != nil {
-		return err
-	}
-	nsClient := clientset.CoreV1().Namespaces()
-	_, err = nsClient.Get(context.TODO(), namespace, metav1.GetOptions{})
+	_, err := GetNamespace(config, namespace)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// GetSecret returns data of secret name/namespace
+func GetSecret(config *rest.Config, name, namespace string) (*corev1.Secret, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	secretClient := clientset.CoreV1().Secrets(namespace)
+	secret, err := secretClient.Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+// GetSecret returns data of secret name/namespace
+func CreateSecret(config *rest.Config, secret *corev1.Secret, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	secretClient := clientset.CoreV1().Secrets(namespace)
+	_, err = secretClient.Create(context.TODO(), secret, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SecretDoesNotExist returns no error only if the specified secret does not exist in the k8s cluster
+func SecretDoesNotExist(config *rest.Config, name, namespace string) error {
+	_, err := GetSecret(config, name, namespace)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("secret %v exists in cluster", namespace)
+}
+
+// SecretExists returns no error only if the specified secret exists in the k8s cluster
+func SecretExists(config *rest.Config, name, namespace string) error {
+	_, err := GetSecret(config, name, namespace)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
+// Use 'List' to discover as there can only be one object per k8s cluster and 'List' does not
+// require name/namespace - input namespace can optionally be passed to narrow the search.
+func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.StorageOSCluster, error) {
+	scheme := runtime.NewScheme()
+	operatorapi.AddToScheme(scheme)
+	stosCluster := operatorapi.StorageOSCluster{}
+
+	newClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		return stosCluster, err
+	}
+	stosClusterList := &operatorapi.StorageOSClusterList{}
+	listOption := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(namespace)})
+	err = newClient.List(context.TODO(), stosClusterList, listOption)
+	if err != nil {
+		return stosCluster, err
+	}
+
+	if len(stosClusterList.Items) == 0 {
+		return stosCluster, errors.NewNotFound(operatorapi.SchemeGroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
+	}
+
+	stosCluster = stosClusterList.Items[0]
+	return stosCluster, nil
+}
+
+// StorageOSClusterDoesNotExist return no error only if no storageoscluster object exists in k8s cluster
+func StorageOSClusterDoesNotExist(config *rest.Config, namespace string) error {
+	_, err := GetStorageOSCluster(config, namespace)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("storageoscluster exists")
+}
+
+// GetEtcdCluster returns the etcdcluster object of name and namespace.
+func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatorapi.EtcdCluster, error) {
+	scheme := runtime.NewScheme()
+	etcdoperatorapi.AddToScheme(scheme)
+	etcdCluster := &etcdoperatorapi.EtcdCluster{}
+
+	newClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		return etcdCluster, err
+	}
+	err = newClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, etcdCluster)
+	if err != nil {
+		return etcdCluster, err
+	}
+	return etcdCluster, nil
+}
+
+// EtcdClusterDoesNotExist return no error only if no etcdcluster object exists in k8s cluster
+func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error {
+	_, err := GetEtcdCluster(config, name, namespace)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("etcdcluster exists")
 }

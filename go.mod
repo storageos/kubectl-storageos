@@ -22,6 +22,7 @@ require (
 	github.com/replicatedhq/troubleshoot v0.10.24
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
+	github.com/storageos/cluster-operator v2.1.0+incompatible
 	github.com/tj/go-spin v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/zap v1.17.0 // indirect
@@ -39,6 +40,7 @@ require (
 )
 
 replace (
+	github.com/hashicorp/go-version => github.com/hashicorp/go-version v1.3.0
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
 	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20210708163802-43563c4d214a
 	k8s.io/api => k8s.io/api v0.21.1
@@ -63,4 +65,5 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.21.1
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.21.1
 	sigs.k8s.io/controller-runtime => github.com/kubernetes-sigs/controller-runtime v0.8.3
+
 )

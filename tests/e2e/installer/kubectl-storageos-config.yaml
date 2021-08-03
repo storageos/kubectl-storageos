@@ -3,9 +3,13 @@ kind: KubectlStorageOSConfig
 metadata:
   name: kubectlstorageosconfig-sample
 spec:
-  storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
-  storageOSClusterNamespace: stos-cluster-install-skip-etcd-config
   install:
+    storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
+    storageOSClusterNamespace: stos-cluster-install-skip-etcd-config  
     skipEtcd: true 
     etcdEndpoints: storageos-etcd.etcd-install-full:2379
     storageClassName: standard
+  uninstall:
+    storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
+    storageOSClusterNamespace: stos-cluster-install-skip-etcd-config
+    skipEtcd: true

@@ -10,20 +10,15 @@ import (
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
-	"github.com/spf13/viper"
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
+
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/api/filesys"
 )
 
 const (
-	// URLs to installation manifests
-	// TODO: move to storageos/kubectl-storageos.
-	stosOperatorYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/operator/storageos-operator.yaml"
-	stosClusterYamlUrl  = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
-	etcdOperatorYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/etcd/operator/etcd-operator.yaml"
-	etcdClusterYamlUrl  = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/etcd/cluster/etcd-cluster.yaml"
-
 	// CLI flags
 	StosOperatorYamlFlag = "stos-operator-yaml"
 	StosClusterYamlFlag  = "stos-cluster-yaml"
@@ -37,18 +32,26 @@ const (
 	StosOperatorNSFlag   = "stos-operator-namespace"
 	StosClusterNSFlag    = "stos-cluster-namespace"
 	StorageClassFlag     = "storage-class"
+	SecretUserFlag       = "secret-username"
+	SecretPassFlag       = "secret-password"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
-	EtcdNamespaceConfig    = "spec.etcdNamespace"
-	StosOperatorNSConfig   = "spec.storageOSOperatorNamespace"
-	StosClusterNSConfig    = "spec.storageOSClusterNamespace"
-	StosOperatorYamlConfig = "spec.install.storageOSOperatorYaml"
-	StosClusterYamlConfig  = "spec.install.storageOSClusterYaml"
-	EtcdOperatorYamlConfig = "spec.install.etcdOperatorYaml"
-	EtcdClusterYamlConfig  = "spec.install.etcdClusterYaml"
-	SkipEtcdConfig         = "spec.install.skipEtcd"
-	EtcdEndpointsConfig    = "spec.install.etcdEndpoints"
-	StorageClassConfig     = "spec.install.storageClassName"
+	InstallEtcdNamespaceConfig    = "spec.install.etcdNamespace"
+	InstallStosOperatorNSConfig   = "spec.install.storageOSOperatorNamespace"
+	InstallStosClusterNSConfig    = "spec.install.storageOSClusterNamespace"
+	StosOperatorYamlConfig        = "spec.install.storageOSOperatorYaml"
+	StosClusterYamlConfig         = "spec.install.storageOSClusterYaml"
+	EtcdOperatorYamlConfig        = "spec.install.etcdOperatorYaml"
+	EtcdClusterYamlConfig         = "spec.install.etcdClusterYaml"
+	InstallSkipEtcdConfig         = "spec.install.skipEtcd"
+	EtcdEndpointsConfig           = "spec.install.etcdEndpoints"
+	StorageClassConfig            = "spec.install.storageClassName"
+	SecretUserConfig              = "spec.install.secretUsername"
+	SecretPassConfig              = "spec.install.secretPassword"
+	UninstallEtcdNamespaceConfig  = "spec.uninstall.etcdNamespace"
+	UninstallStosOperatorNSConfig = "spec.uninstall.storageOSOperatorNamespace"
+	UninstallStosClusterNSConfig  = "spec.uninstall.storageOSClusterNamespace"
+	UninstallSkipEtcdConfig       = "spec.uninstall.skipEtcd"
 
 	// dir and file names for in memory fs
 	etcdDir           = "etcd"
@@ -71,9 +74,7 @@ resources:`
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
 	defaultEtcdClusterNS   = "storageos-etcd"
-	defaultStosClusterName = "storageoscluster-sample"
-	defaultStosOperatorNS  = "storageos"
-	defaultStosClusterNS   = "storageos"
+	stosFinalizer          = "storageos.com/finalizer"
 )
 
 // fsData represents dir name, subdir name, file name and file data.
@@ -88,10 +89,10 @@ type Installer struct {
 }
 
 // NewInstaller returns an Installer object with the kubectl client and in-memory filesystem
-func NewInstaller() (*Installer, error) {
+func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	installer := &Installer{}
 	kubectlClient := otkkubectl.New()
-	fileSys, err := buildInstallerFileSys()
+	fileSys, err := buildInstallerFileSys(config)
 	if err != nil {
 		return installer, err
 	}
@@ -107,25 +108,6 @@ func NewInstaller() (*Installer, error) {
 	}
 
 	return installer, nil
-}
-
-func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
-	kustFile, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	kustFileWithPatches, err := pluginutils.AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
-	if err != nil {
-		return err
-	}
-
-	err = in.fileSys.WriteFile(path, []byte(kustFileWithPatches))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
@@ -144,30 +126,28 @@ func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string
 //   - cluster
 //     - etcd-cluster.yaml
 //     - kustomization.yaml
-func buildInstallerFileSys() (filesys.FileSystem, error) {
-	v := viper.GetViper()
+func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig) (filesys.FileSystem, error) {
 	fs := filesys.MakeFsInMemory()
 	fsData := make(fsData)
 	stosSubDirs := make(map[string]map[string][]byte)
 
 	// build storageos/operator
-	stosOpFiles, err := createFileData(StosOperatorYamlFlag, stosOperatorYamlUrl, stosOperatorFile)
+	stosOpFiles, err := createFileData(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile)
 	if err != nil {
 		return fs, err
 	}
 	stosSubDirs[operatorDir] = stosOpFiles
 
 	// build storageos/cluster
-	stosClusterFiles, err := createFileData(StosClusterYamlFlag, stosClusterYamlUrl, stosClusterFile)
+	stosClusterFiles, err := createFileData(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), stosClusterFile)
 	if err != nil {
 		return fs, err
 	}
 
 	// append storageos secret yaml to cluster yaml if necessary. This will happen in the event of an
 	// uninstall of storageos version < 2.5.0.
-	stosSecretYamlFlag := v.GetString(StosSecretYamlFlag)
-	if stosSecretYamlFlag != "" {
-		stosSecretYaml, err := pullManifest(stosSecretYamlFlag)
+	if config.InstallerMeta.StorageOSSecretYaml != "" {
+		stosSecretYaml, err := pullManifest(config.InstallerMeta.StorageOSSecretYaml)
 		if err != nil {
 			return fs, err
 		}
@@ -178,7 +158,7 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	fsData[stosDir] = stosSubDirs
 
 	// if skip-etcd-install flag is set, create fs with storageos files and return early
-	if v.GetBool(SkipEtcdFlag) {
+	if config.Spec.Install.SkipEtcd {
 		fs, err = createDirAndFiles(fs, fsData)
 		if err != nil {
 			return fs, err
@@ -189,14 +169,14 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	etcdSubDirs := make(map[string]map[string][]byte)
 
 	// build etcd/operator
-	etcdOpFiles, err := createFileData(EtcdOperatorYamlFlag, etcdOperatorYamlUrl, etcdOperatorFile)
+	etcdOpFiles, err := createFileData(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile)
 	if err != nil {
 		return fs, err
 	}
 	etcdSubDirs[operatorDir] = etcdOpFiles
 
 	// build etcd/cluster
-	etcdClusterFiles, err := createFileData(EtcdClusterYamlFlag, etcdClusterYamlUrl, etcdClusterFile)
+	etcdClusterFiles, err := createFileData(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), etcdClusterFile)
 	if err != nil {
 		return fs, err
 	}
@@ -231,10 +211,9 @@ func makeMultiDoc(manifests ...string) string {
 // resources:
 // - <filename>
 //
-func createFileData(yamlFlag, yamlUrl, fileName string) (map[string][]byte, error) {
-	v := viper.GetViper()
+func createFileData(yamlPath, yamlUrl, fileName string) (map[string][]byte, error) {
 	files := make(map[string][]byte)
-	yamlContents, err := readOrPullManifest(v.GetString(yamlFlag), yamlUrl)
+	yamlContents, err := readOrPullManifest(yamlPath, yamlUrl)
 	if err != nil {
 		return files, err
 	}
@@ -333,6 +312,27 @@ func pullManifest(url string) (string, error) {
 	return string(contents), nil
 }
 
+// addPatchesToFSKustomize uses AddPatchesToKustomize internally to add a list of patches to a kustomization file
+// at path of in-memory fs.
+func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
+	kustFile, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	kustFileWithPatches, err := pluginutils.AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
+	if err != nil {
+		return err
+	}
+
+	err = in.fileSys.WriteFile(path, []byte(kustFileWithPatches))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // setFieldInFsManifest reads the file at path of the in-memory filesystem, uses
 // SetFieldInManiest internally to perform the update and then writes the returned file to path.
 func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields ...string) error {
@@ -359,6 +359,20 @@ func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string
 		return "", err
 	}
 	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
+	if err != nil {
+		return "", err
+	}
+	return field, nil
+}
+
+// getFieldInFsMultiDocByKind reads the file at path of the in-memory filesystem, uses
+// GetFieldInMultiiDocByKind internally to retrieve the specified field.
+func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...string) (string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	field, err := pluginutils.GetFieldInMultiDocByKind(string(data), kind, fields...)
 	if err != nil {
 		return "", err
 	}
