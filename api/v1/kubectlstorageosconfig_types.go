@@ -45,7 +45,7 @@ type Install struct {
 	StorageOSClusterYaml  string `json:"storageOSClusterYaml,omitempty"`
 	EtcdOperatorYaml      string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml       string `json:"etcdClusterYaml,omitempty"`
-	SkipEtcdInstall       bool   `json:"skipEtcdInstall,omitempty"`
+	SkipEtcd              bool   `json:"skipEtcd,omitempty"`
 	EtcdEndpoints         string `json:"etcdEndpoints,omitempty"`
 	StorageClassName      string `json:"storageClassName,omitempty"`
 }

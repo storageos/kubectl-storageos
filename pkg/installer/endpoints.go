@@ -1,4 +1,4 @@
-package install
+package installer
 
 import (
 	"context"
@@ -87,7 +87,9 @@ func validateEndpoints(endpoints, etcdShell string) error {
 		return err
 	}
 
-	err = pluginutils.PodIsRunning(config, etcdShellPodName, etcdShellPodNS, 60, 5)
+	err = pluginutils.WaitFor(func() error {
+		return pluginutils.IsPodRunning(config, etcdShellPodName, etcdShellPodNS)
+	}, 60, 5)
 	if err != nil {
 		return err
 	}

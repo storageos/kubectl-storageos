@@ -35,7 +35,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/troubleshoot/pkg/specs"
 	"github.com/spf13/viper"
-	"github.com/storageos/kubectl-storageos/pkg/install"
+	"github.com/storageos/kubectl-storageos/pkg/installer"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,7 +80,7 @@ func Run(v *viper.Viper, arg string) error {
 	}
 
 	fmt.Println(string(collectorContent))
-	if v.GetString(install.StosOperatorNSFlag) != "" || v.GetString(install.StosClusterNSFlag) != "" {
+	if v.GetString(installer.StosOperatorNSFlag) != "" || v.GetString(installer.StosClusterNSFlag) != "" {
 		collectorContent, err = kustomizeSupportBundle(v, collectorContent)
 		if err != nil {
 			return err
@@ -748,7 +748,7 @@ func kustomizeSupportBundle(v *viper.Viper, supportBundleContent []byte) ([]byte
 	// create kustomization patches for support bundle collectors
 	// patches for all namespaces except that of operator logs instruction
 	patches := make([]pluginutils.KustomizePatch, 0)
-	clusterNS := v.GetString(install.StosClusterNSFlag)
+	clusterNS := v.GetString(installer.StosClusterNSFlag)
 	if clusterNS != "" {
 		colletorPatches, err := pluginutils.GenericPatchesForSupportBundle(string(supportBundleContent), "collectors", clusterNS, []string{"namespace"}, stosOperatorLogsName, [][]string{{"logs", "name"}})
 		if err != nil {
@@ -766,7 +766,7 @@ func kustomizeSupportBundle(v *viper.Viper, supportBundleContent []byte) ([]byte
 
 	}
 	// patch for operator logs instruction
-	operatorNS := v.GetString(install.StosOperatorNSFlag)
+	operatorNS := v.GetString(installer.StosOperatorNSFlag)
 	if operatorNS != "" {
 		logsPatch, err := pluginutils.SpecificPatchForSupportBundle(string(supportBundleContent), "collectors", operatorNS, []string{"logs", "namespace"}, stosOperatorLogsName, []string{"logs", "name"})
 		if err != nil {

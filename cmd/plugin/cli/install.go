@@ -6,7 +6,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/storageos/kubectl-storageos/pkg/install"
+	"github.com/storageos/kubectl-storageos/pkg/installer"
 )
 
 func InstallCmd() *cobra.Command {
@@ -24,12 +24,12 @@ func InstallCmd() *cobra.Command {
 
 			logger.SetQuiet(v.GetBool("quiet"))
 
-			installer, err := install.NewInstaller()
+			cliInstaller, err := installer.NewInstaller()
 			if err != nil {
 				return err
 			}
 
-			err = installer.Install()
+			err = cliInstaller.Install()
 			if err != nil {
 				return err
 			}
@@ -37,17 +37,17 @@ func InstallCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().String(install.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
-	cmd.Flags().String(install.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
-	cmd.Flags().String(install.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
-	cmd.Flags().String(install.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
-	cmd.Flags().Bool(install.SkipEtcdInstallFlag, false, "skip etcd installation and enter endpoints manually")
-	cmd.Flags().String(install.EtcdEndpointsFlag, "", "etcd endpoints")
-	cmd.Flags().String(install.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
-	cmd.Flags().String(install.EtcdNamespaceFlag, "", "namespace of etcd operator and cluster")
-	cmd.Flags().String(install.StosOperatorNSFlag, "", "namespace of storageos operator")
-	cmd.Flags().String(install.StosClusterNSFlag, "", "namespace of storageos cluster")
-	cmd.Flags().String(install.StorageClassFlag, "", "name of storage class to be used by etcd cluster")
+	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
+	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
+	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
+	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
+	cmd.Flags().Bool(installer.SkipEtcdFlag, false, "skip etcd installation and enter endpoints manually")
+	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
+	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
+	cmd.Flags().String(installer.EtcdNamespaceFlag, "", "namespace of etcd operator and cluster")
+	cmd.Flags().String(installer.StosOperatorNSFlag, "", "namespace of storageos operator")
+	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster")
+	cmd.Flags().String(installer.StorageClassFlag, "", "name of storage class to be used by etcd cluster")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -55,25 +55,25 @@ func InstallCmd() *cobra.Command {
 }
 
 func setFlags(cmd *cobra.Command) {
-	viper.BindPFlag(install.ConfigPathFlag, cmd.Flags().Lookup(install.ConfigPathFlag))
+	viper.BindPFlag(installer.ConfigPathFlag, cmd.Flags().Lookup(installer.ConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(v.GetString(install.ConfigPathFlag))
+	viper.AddConfigPath(v.GetString(installer.ConfigPathFlag))
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set flags directly
-			viper.BindPFlag(install.StosOperatorYamlFlag, cmd.Flags().Lookup(install.StosOperatorYamlFlag))
-			viper.BindPFlag(install.StosClusterYamlFlag, cmd.Flags().Lookup(install.StosClusterYamlFlag))
-			viper.BindPFlag(install.SkipEtcdInstallFlag, cmd.Flags().Lookup(install.SkipEtcdInstallFlag))
-			viper.BindPFlag(install.EtcdEndpointsFlag, cmd.Flags().Lookup(install.EtcdEndpointsFlag))
-			viper.BindPFlag(install.EtcdOperatorYamlFlag, cmd.Flags().Lookup(install.EtcdOperatorYamlFlag))
-			viper.BindPFlag(install.EtcdClusterYamlFlag, cmd.Flags().Lookup(install.EtcdClusterYamlFlag))
-			viper.BindPFlag(install.EtcdNamespaceFlag, cmd.Flags().Lookup(install.EtcdNamespaceFlag))
-			viper.BindPFlag(install.StosOperatorNSFlag, cmd.Flags().Lookup(install.StosOperatorNSFlag))
-			viper.BindPFlag(install.StosClusterNSFlag, cmd.Flags().Lookup(install.StosClusterNSFlag))
-			viper.BindPFlag(install.StorageClassFlag, cmd.Flags().Lookup(install.StorageClassFlag))
+			viper.BindPFlag(installer.StosOperatorYamlFlag, cmd.Flags().Lookup(installer.StosOperatorYamlFlag))
+			viper.BindPFlag(installer.StosClusterYamlFlag, cmd.Flags().Lookup(installer.StosClusterYamlFlag))
+			viper.BindPFlag(installer.SkipEtcdFlag, cmd.Flags().Lookup(installer.SkipEtcdFlag))
+			viper.BindPFlag(installer.EtcdEndpointsFlag, cmd.Flags().Lookup(installer.EtcdEndpointsFlag))
+			viper.BindPFlag(installer.EtcdOperatorYamlFlag, cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag))
+			viper.BindPFlag(installer.EtcdClusterYamlFlag, cmd.Flags().Lookup(installer.EtcdClusterYamlFlag))
+			viper.BindPFlag(installer.EtcdNamespaceFlag, cmd.Flags().Lookup(installer.EtcdNamespaceFlag))
+			viper.BindPFlag(installer.StosOperatorNSFlag, cmd.Flags().Lookup(installer.StosOperatorNSFlag))
+			viper.BindPFlag(installer.StosClusterNSFlag, cmd.Flags().Lookup(installer.StosClusterNSFlag))
+			viper.BindPFlag(installer.StorageClassFlag, cmd.Flags().Lookup(installer.StorageClassFlag))
 
 			return
 
@@ -83,15 +83,15 @@ func setFlags(cmd *cobra.Command) {
 		}
 	}
 	// config file read without error, set flags from config
-	viper.Set(install.SkipEtcdInstallFlag, viper.Get(install.SkipEtcdInstallConfig))
-	viper.Set(install.EtcdEndpointsFlag, viper.Get(install.EtcdEndpointsConfig))
-	viper.Set(install.StosOperatorYamlFlag, viper.Get(install.StosOperatorYamlConfig))
-	viper.Set(install.StosClusterYamlFlag, viper.Get(install.StosClusterYamlConfig))
-	viper.Set(install.EtcdOperatorYamlFlag, viper.Get(install.EtcdOperatorYamlConfig))
-	viper.Set(install.EtcdNamespaceFlag, viper.Get(install.EtcdNamespaceConfig))
-	viper.Set(install.StosOperatorNSFlag, viper.Get(install.StosOperatorNSConfig))
-	viper.Set(install.StosClusterNSFlag, viper.Get(install.StosClusterNSConfig))
-	viper.Set(install.StorageClassFlag, viper.Get(install.StorageClassConfig))
+	viper.Set(installer.SkipEtcdFlag, viper.Get(installer.SkipEtcdConfig))
+	viper.Set(installer.EtcdEndpointsFlag, viper.Get(installer.EtcdEndpointsConfig))
+	viper.Set(installer.StosOperatorYamlFlag, viper.Get(installer.StosOperatorYamlConfig))
+	viper.Set(installer.StosClusterYamlFlag, viper.Get(installer.StosClusterYamlConfig))
+	viper.Set(installer.EtcdOperatorYamlFlag, viper.Get(installer.EtcdOperatorYamlConfig))
+	viper.Set(installer.EtcdNamespaceFlag, viper.Get(installer.EtcdNamespaceConfig))
+	viper.Set(installer.StosOperatorNSFlag, viper.Get(installer.StosOperatorNSConfig))
+	viper.Set(installer.StosClusterNSFlag, viper.Get(installer.StosClusterNSConfig))
+	viper.Set(installer.StorageClassFlag, viper.Get(installer.StorageClassConfig))
 
 	viper.BindPFlags(cmd.Flags())
 }

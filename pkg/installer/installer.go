@@ -1,20 +1,19 @@
-package install
+package installer
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
+	"strings"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
 	"github.com/spf13/viper"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/api/filesys"
-	"sigs.k8s.io/kustomize/api/krusty"
 )
 
 const (
@@ -28,9 +27,10 @@ const (
 	// CLI flags
 	StosOperatorYamlFlag = "stos-operator-yaml"
 	StosClusterYamlFlag  = "stos-cluster-yaml"
+	StosSecretYamlFlag   = "stos-secret-yaml"
 	EtcdOperatorYamlFlag = "etcd-operator-yaml"
 	EtcdClusterYamlFlag  = "etcd-cluster-yaml"
-	SkipEtcdInstallFlag  = "skip-etcd-install"
+	SkipEtcdFlag         = "skip-etcd"
 	EtcdEndpointsFlag    = "etcd-endpoints"
 	ConfigPathFlag       = "config-path"
 	EtcdNamespaceFlag    = "etcd-namespace"
@@ -46,7 +46,7 @@ const (
 	StosClusterYamlConfig  = "spec.install.storageOSClusterYaml"
 	EtcdOperatorYamlConfig = "spec.install.etcdOperatorYaml"
 	EtcdClusterYamlConfig  = "spec.install.etcdClusterYaml"
-	SkipEtcdInstallConfig  = "spec.install.skipEtcdInstall"
+	SkipEtcdConfig         = "spec.install.skipEtcd"
 	EtcdEndpointsConfig    = "spec.install.etcdEndpoints"
 	StorageClassConfig     = "spec.install.storageClassName"
 
@@ -83,6 +83,7 @@ type fsData map[string]map[string]map[string][]byte
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
 	kubectlClient *otkkubectl.DefaultKubectl
+	clientConfig  *rest.Config
 	fileSys       filesys.FileSystem
 }
 
@@ -94,140 +95,18 @@ func NewInstaller() (*Installer, error) {
 	if err != nil {
 		return installer, err
 	}
+	clientConfig, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return installer, err
+	}
 
 	installer = &Installer{
 		kubectlClient: kubectlClient,
+		clientConfig:  clientConfig,
 		fileSys:       fileSys,
 	}
 
 	return installer, nil
-}
-
-// Install performs storageos operator and etcd operator installation for kubectl-storageos
-func (in *Installer) Install() error {
-	var err error
-	v := viper.GetViper()
-	if v.GetBool(SkipEtcdInstallFlag) {
-		err := in.handleEndpointsInput(v.GetString(EtcdEndpointsFlag))
-		if err != nil {
-			return err
-		}
-	} else {
-		// add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
-		// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
-		// based on flags (or cli config file)
-		etcdNamespace := v.GetString(EtcdNamespaceFlag)
-		if etcdNamespace != "" {
-			err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-			if err != nil {
-				return err
-			}
-			err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), v.GetString(EtcdNamespaceFlag), "namespace", "")
-			if err != nil {
-				return err
-			}
-			err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/template/spec/containers/0/args/1", Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", etcdNamespace, ".svc")}})
-			if err != nil {
-				return err
-			}
-
-			// update endpoint for stos cluster based on etcd namespace flag
-			endpointsPatch := pluginutils.KustomizePatch{
-				Op:    "replace",
-				Path:  "/spec/kvBackend/address",
-				Value: fmt.Sprintf("%s%s%s%s", defaultEtcdClusterNS, ".", etcdNamespace, ":2379"),
-			}
-			err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointsPatch})
-			if err != nil {
-				return err
-			}
-		}
-		// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
-		// with desired storage class name to kustomization for etcd cluster
-		storageClass := v.GetString(StorageClassFlag)
-		if storageClass == "" {
-			storageClass, err = pluginutils.GetDefaultStorageClassName()
-			if err != nil {
-				return err
-			}
-		}
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{pluginutils.KustomizePatch{Op: "replace", Path: "/spec/storage/volumeClaimTemplate/storageClassName", Value: storageClass}})
-		if err != nil {
-			return err
-		}
-
-		err = in.kustomizeAndApply(filepath.Join(etcdDir, operatorDir))
-		if err != nil {
-			return err
-		}
-		time.Sleep(5 * time.Second)
-		err = in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir))
-		if err != nil {
-			return err
-		}
-	}
-	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
-	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
-	// based on flags (or cli config file)
-
-	stosOperatorNS := v.GetString(StosOperatorNSFlag)
-	if stosOperatorNS != "" {
-		err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), stosOperatorNS, "namespace", "")
-		if err != nil {
-			return err
-		}
-	}
-
-	stosClusterNS := v.GetString(StosClusterNSFlag)
-	if stosClusterNS != "" {
-		// apply the provided storageos cluster ns
-		err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(stosClusterNS), true)
-		if err != nil {
-			return err
-		}
-		err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterNS, "namespace", "")
-		if err != nil {
-			return err
-		}
-	}
-
-	err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir))
-	if err != nil {
-		return err
-	}
-	err = in.stosOperatorIsReady(stosOperatorNS)
-	if err != nil {
-		return err
-	}
-	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (in *Installer) stosOperatorIsReady(stosOperatorNS string) error {
-	if stosOperatorNS == "" {
-		stosOperatorNS = defaultStosOperatorNS
-	}
-	config, err := pluginutils.NewClientConfig()
-	if err != nil {
-		return err
-	}
-	stosOperatorDeployment, err := in.getManifestFromFsMultiDoc(filepath.Join(stosDir, operatorDir, stosOperatorFile), "Deployment")
-	if err != nil {
-		return err
-	}
-	stosOperatorName, err := pluginutils.GetFieldInManifest(stosOperatorDeployment, "metadata", "name")
-	if err != nil {
-		return err
-	}
-	err = pluginutils.DeploymentIsReady(config, stosOperatorName, stosOperatorNS, 90, 5)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
@@ -283,12 +162,23 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	if err != nil {
 		return fs, err
 	}
-	stosSubDirs[clusterDir] = stosClusterFiles
 
+	// append storageos secret yaml to cluster yaml if necessary. This will happen in the event of an
+	// uninstall of storageos version < 2.5.0.
+	stosSecretYamlFlag := v.GetString(StosSecretYamlFlag)
+	if stosSecretYamlFlag != "" {
+		stosSecretYaml, err := pullManifest(stosSecretYamlFlag)
+		if err != nil {
+			return fs, err
+		}
+		stosClusterMulti := makeMultiDoc(string(stosClusterFiles[stosClusterFile]), stosSecretYaml)
+		stosClusterFiles[stosClusterFile] = []byte(stosClusterMulti)
+	}
+	stosSubDirs[clusterDir] = stosClusterFiles
 	fsData[stosDir] = stosSubDirs
 
 	// if skip-etcd-install flag is set, create fs with storageos files and return early
-	if v.GetBool(SkipEtcdInstallFlag) {
+	if v.GetBool(SkipEtcdFlag) {
 		fs, err = createDirAndFiles(fs, fsData)
 		if err != nil {
 			return fs, err
@@ -319,6 +209,15 @@ func buildInstallerFileSys() (filesys.FileSystem, error) {
 	}
 
 	return fs, nil
+}
+
+func makeMultiDoc(manifests ...string) string {
+	manifestsSlice := make([]string, 0)
+	for _, manifest := range manifests {
+		manifestsSlice = append(manifestsSlice, manifest)
+	}
+
+	return strings.Join(manifestsSlice, "\n---\n")
 }
 
 // createFileData creates a map of two files (file name to file data).
@@ -376,27 +275,6 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 		}
 	}
 	return fs, nil
-}
-
-// kustomize and apply performs kustomize run on the provided dir and kubect apply on the files in dir.
-// It is the equivalent of:
-// `kustomize build <dir> | kubectl apply -f -
-func (in *Installer) kustomizeAndApply(dir string) error {
-	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
-	resMap, err := kustomizer.Run(in.fileSys, dir)
-	if err != nil {
-		return err
-	}
-	resYaml, err := resMap.AsYaml()
-	if err != nil {
-		return err
-	}
-	err = in.kubectlClient.Apply(context.TODO(), "", string(resYaml), true)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // readOrPullManifest returns a string of the manifest from path or url provided
@@ -499,4 +377,37 @@ func (in *Installer) getManifestFromFsMultiDoc(path, kind string) (string, error
 		return "", err
 	}
 	return singleManifest, nil
+}
+
+// getAllManifestsOfKindFromFsMultiDoc reads the file at path of the in-memory filesystem, uses
+// GetManifestFromMultiDoc internally to retrieve all manifests ok 'kind'.
+func (in *Installer) getAllManifestsOfKindFromFsMultiDoc(path, kind string) ([]string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	manifests, err := pluginutils.GetAllManifestsOfKindFromMultiDoc(string(data), kind)
+	if err != nil {
+		return nil, err
+	}
+	return manifests, nil
+}
+
+// omitAndReturnKindFromFSMultiDoc reads the file at path of the in-memory filesystem, uses
+// OmitAndReturnKindFromMultiDoc internally to perform the update and then writes the returned file to path,
+// also returninng a []string of the objects omitted.
+func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	dataStr, objsOfKind, err := pluginutils.OmitAndReturnKindFromMultiDoc(string(data), kind)
+	if err != nil {
+		return nil, err
+	}
+	err = in.fileSys.WriteFile(path, []byte(dataStr))
+	if err != nil {
+		return nil, err
+	}
+	return objsOfKind, nil
 }

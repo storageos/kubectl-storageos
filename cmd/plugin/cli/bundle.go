@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/storageos/kubectl-storageos/pkg/install"
+	"github.com/storageos/kubectl-storageos/pkg/installer"
 	"github.com/storageos/kubectl-storageos/pkg/troubleshoot"
 )
 
@@ -41,8 +41,8 @@ from a server that can be used to assist when troubleshooting a StorageOS cluste
 	}
 
 	cmd.AddCommand(AnalyzeCmd())
-	cmd.Flags().String(install.StosOperatorNSFlag, "", "namespace of storageos operator")
-	cmd.Flags().String(install.StosClusterNSFlag, "", "namespace of storageos cluster")
+	cmd.Flags().String(installer.StosOperatorNSFlag, "", "namespace of storageos operator")
+	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster")
 	cmd.Flags().StringSlice("redactors", []string{}, "names of the additional redactors to use")
 	cmd.Flags().Bool("redact", true, "enable/disable default redactions")
 	cmd.Flags().Bool("interactive", true, "enable/disable interactive mode")

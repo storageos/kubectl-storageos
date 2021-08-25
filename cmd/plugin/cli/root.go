@@ -73,6 +73,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(BundleCmd())
 	cmd.AddCommand(InstallCmd())
+	cmd.AddCommand(UninstallCmd())
 
 	return cmd
 }

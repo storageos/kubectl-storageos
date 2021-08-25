@@ -9,6 +9,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
+	github.com/hashicorp/go-version v1.1.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-isatty v0.0.9
@@ -24,7 +25,6 @@ require (
 	github.com/tj/go-spin v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/zap v1.17.0 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.1
