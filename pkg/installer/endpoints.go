@@ -88,7 +88,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 	}
 
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.PodIsRunning(config, etcdShellPodName, etcdShellPodNS)
+		return pluginutils.IsPodRunning(config, etcdShellPodName, etcdShellPodNS)
 	}, 60, 5)
 	if err != nil {
 		return err

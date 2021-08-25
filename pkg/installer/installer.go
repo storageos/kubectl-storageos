@@ -393,24 +393,6 @@ func (in *Installer) getAllManifestsOfKindFromFsMultiDoc(path, kind string) ([]s
 	return manifests, nil
 }
 
-// omitKindFromFSMultiDoc reads the file at path of the in-memory filesystem, uses OmitKindFromMultiDoc
-// internally to perform the update and then writes the returned file to path.
-func (in *Installer) omitKindFromFSMultiDoc(path, kind string) error {
-	data, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	dataStr, err := pluginutils.OmitKindFromMultiDoc(string(data), kind)
-	if err != nil {
-		return err
-	}
-	err = in.fileSys.WriteFile(path, []byte(dataStr))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // omitAndReturnKindFromFSMultiDoc reads the file at path of the in-memory filesystem, uses
 // OmitAndReturnKindFromMultiDoc internally to perform the update and then writes the returned file to path,
 // also returninng a []string of the objects omitted.

@@ -104,10 +104,8 @@ func GetDefaultStorageClassName() (string, error) {
 		return "", err
 	}
 	for _, storageClass := range storageClasses.Items {
-		for k, v := range storageClass.GetObjectMeta().GetAnnotations() {
-			if k == "storageclass.kubernetes.io/is-default-class" && v == "true" {
-				return storageClass.GetObjectMeta().GetName(), nil
-			}
+		if defaultSC, ok := storageClass.GetObjectMeta().GetAnnotations()["storageclass.kubernetes.io/is-default-class"]; ok && defaultSC == "true" {
+			return storageClass.GetObjectMeta().GetName(), nil
 		}
 	}
 
@@ -134,9 +132,9 @@ func WaitFor(fn func() error, limit, interval time.Duration) error {
 	}
 }
 
-// DeploymentIsReady attempts to `get` a deployment by name and namespace, the function returns no error
+// IsDeploymentReady attempts to `get` a deployment by name and namespace, the function returns no error
 // if no deployment replicas are ready.
-func DeploymentIsReady(config *rest.Config, name, namespace string) error {
+func IsDeploymentReady(config *rest.Config, name, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err
@@ -153,9 +151,9 @@ func DeploymentIsReady(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
-// PodIsRunning attempts to `get` a pod by name and namespace, the function returns no error
+// IsPodRunning attempts to `get` a pod by name and namespace, the function returns no error
 // if the pod is in running phase.
-func PodIsRunning(config *rest.Config, name, namespace string) error {
+func IsPodRunning(config *rest.Config, name, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err

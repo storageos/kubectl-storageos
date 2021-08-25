@@ -150,7 +150,7 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 			return err
 		}
 		err = pluginutils.WaitFor(func() error {
-			return pluginutils.DeploymentIsReady(in.clientConfig, deploymentName, deploymentNamespace)
+			return pluginutils.IsDeploymentReady(in.clientConfig, deploymentName, deploymentNamespace)
 		}, 90, 5)
 		if err != nil {
 			return err

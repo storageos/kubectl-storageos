@@ -20,13 +20,14 @@ func GetManifestFromMultiDoc(multiDoc, kind string) (string, error) {
 		return "", err
 	}
 	for _, obj := range objs.Items {
-		if obj.UnstructuredObject().GetKind() == kind {
-			objYaml, err := yaml.Marshal(obj.UnstructuredObject())
-			if err != nil {
-				return "", err
-			}
-			return string(objYaml), nil
+		if obj.UnstructuredObject().GetKind() != kind {
+			continue
 		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return "", err
+		}
+		return string(objYaml), nil
 	}
 	return "", fmt.Errorf("no object of kind: %s found in multi doc manifest", kind)
 }
@@ -40,13 +41,14 @@ func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) 
 	}
 	objsOfKind := make([]string, 0)
 	for _, obj := range objs.Items {
-		if obj.UnstructuredObject().GetKind() == kind {
-			objYaml, err := yaml.Marshal(obj.UnstructuredObject())
-			if err != nil {
-				return nil, err
-			}
-			objsOfKind = append(objsOfKind, string(objYaml))
+		if obj.UnstructuredObject().GetKind() != kind {
+			continue
 		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return nil, err
+		}
+		objsOfKind = append(objsOfKind, string(objYaml))
 	}
 	return objsOfKind, nil
 }
