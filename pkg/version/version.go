@@ -32,8 +32,9 @@ const (
 	// TODO: set properly once releases.
 	stosOperatorYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/operator/storageos-operator.yaml"
 	stosClusterYamlUrl  = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
-	etcdOperatorYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/etcd/operator/etcd-operator.yaml"
-	etcdClusterYamlUrl  = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/etcd/cluster/etcd-cluster.yaml"
+
+	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster-operator.yaml"
+	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster.yaml"
 )
 
 func GetExistingOperatorVersion(namespace string) (string, error) {
