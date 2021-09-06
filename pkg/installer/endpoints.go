@@ -59,7 +59,12 @@ func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
 		Value: etcdEndpoints,
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, defaultStosClusterName, []pluginutils.KustomizePatch{endpointPatch})
+	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
+	if err != nil {
+		return err
+	}
+
+	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointPatch})
 	if err != nil {
 		return err
 	}

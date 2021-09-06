@@ -27,10 +27,8 @@ import (
 type KubectlStorageOSConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
-	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
-	EtcdOperatorNamespace      string `json:"etcdNamespace,omitempty"`
+	Install   Install   `json:"install,omitempty"`
+	Uninstall Uninstall `json:"uninstall,omitempty"`
 }
 
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
@@ -41,13 +39,32 @@ type KubectlStorageOSConfigStatus struct {
 
 // Install defines options for cli install subcommand
 type Install struct {
-	StorageOSOperatorYaml string `json:"storageOSOperatorYaml,omitempty"`
-	StorageOSClusterYaml  string `json:"storageOSClusterYaml,omitempty"`
-	EtcdOperatorYaml      string `json:"etcdOperatorYaml,omitempty"`
-	EtcdClusterYaml       string `json:"etcdClusterYaml,omitempty"`
-	SkipEtcd              bool   `json:"skipEtcd,omitempty"`
-	EtcdEndpoints         string `json:"etcdEndpoints,omitempty"`
-	StorageClassName      string `json:"storageClassName,omitempty"`
+	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
+	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
+	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
+	StorageOSOperatorYaml      string `json:"storageOSOperatorYaml,omitempty"`
+	StorageOSClusterYaml       string `json:"storageOSClusterYaml,omitempty"`
+	EtcdOperatorYaml           string `json:"etcdOperatorYaml,omitempty"`
+	EtcdClusterYaml            string `json:"etcdClusterYaml,omitempty"`
+	SkipEtcd                   bool   `json:"skipEtcd,omitempty"`
+	EtcdEndpoints              string `json:"etcdEndpoints,omitempty"`
+	StorageClassName           string `json:"storageClassName,omitempty"`
+}
+
+// Uninstall defines options for cli uninstall subcommand
+type Uninstall struct {
+	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
+	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
+	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
+	SkipEtcd                   bool   `json:"skipEtcd,omitempty"`
+}
+
+type InstallerMeta struct {
+	StorageOSSecretYaml string `json:"storageOSSecretYaml,omitempty"`
+	SecretUsername      string `json:"secretUsername,omitempty"`
+	SecretPassword      string `json:"secretPassword,omitempty"`
+	SecretName          string `json:"secretName,omitempty"`
+	SecretNamespace     string `json:"secretNamespace,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -58,8 +75,9 @@ type KubectlStorageOSConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KubectlStorageOSConfigSpec   `json:"spec,omitempty"`
-	Status KubectlStorageOSConfigStatus `json:"status,omitempty"`
+	Spec          KubectlStorageOSConfigSpec   `json:"spec,omitempty"`
+	Status        KubectlStorageOSConfigStatus `json:"status,omitempty"`
+	InstallerMeta InstallerMeta                `json:"installerMeta,omitempty"`
 }
 
 //+kubebuilder:object:root=true

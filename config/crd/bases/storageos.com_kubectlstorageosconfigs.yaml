@@ -27,6 +27,19 @@ spec:
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
+          installerMeta:
+            properties:
+              secretName:
+                type: string
+              secretNamespace:
+                type: string
+              secretPassword:
+                type: string
+              secretUsername:
+                type: string
+              storageOSSecretYaml:
+                type: string
+            type: object
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
@@ -37,12 +50,43 @@ spec:
           spec:
             description: KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
             properties:
-              etcdNamespace:
-                type: string
-              storageOSClusterNamespace:
-                type: string
-              storageOSOperatorNamespace:
-                type: string
+              install:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                properties:
+                  etcdClusterYaml:
+                    type: string
+                  etcdEndpoints:
+                    type: string
+                  etcdNamespace:
+                    type: string
+                  etcdOperatorYaml:
+                    type: string
+                  skipEtcd:
+                    type: boolean
+                  storageClassName:
+                    type: string
+                  storageOSClusterNamespace:
+                    type: string
+                  storageOSClusterYaml:
+                    type: string
+                  storageOSOperatorNamespace:
+                    type: string
+                  storageOSOperatorYaml:
+                    type: string
+                type: object
+              uninstall:
+                description: Uninstall defines options for cli uninstall subcommand
+                properties:
+                  etcdNamespace:
+                    type: string
+                  skipEtcd:
+                    type: boolean
+                  storageOSClusterNamespace:
+                    type: string
+                  storageOSOperatorNamespace:
+                    type: string
+                type: object
             type: object
           status:
             description: KubectlStorageOSConfigStatus defines the observed state of

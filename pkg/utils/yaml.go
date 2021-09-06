@@ -136,6 +136,20 @@ func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 	return strings.TrimSpace(val.MustString()), nil
 }
 
+// GetFieldInMultiDocByKind uses GetManifestFromMultiDoc and GetFieldInManifest internally
+// to find a single manifest in a multi-doc and return the value at path defined by fields.
+func GetFieldInMultiDocByKind(multidoc, kind string, fields ...string) (string, error) {
+	manifest, err := GetManifestFromMultiDoc(multidoc, kind)
+	if err != nil {
+		return "", err
+	}
+	field, err := GetFieldInManifest(manifest, fields...)
+	if err != nil {
+		return "", err
+	}
+	return field, nil
+}
+
 // KustomizePatch is useed to pass a new patch to a kustomization file, see AddPatchesToKustomize
 type KustomizePatch struct {
 	Op    string
