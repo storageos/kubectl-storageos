@@ -40,7 +40,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, "", "namespace of storageos operator to be uninstalled")
 	cmd.Flags().String(uninstallStosClusterNSFlag, "", "namespace of storageos cluster to be uninstalled")
-	cmd.Flags().String(installStosOperatorNSFlag, "", "namespace of storageos operator to be installed")
+	cmd.Flags().String(installStosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator to be installed")
 	cmd.Flags().String(installStosClusterNSFlag, "", "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be installed")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be installed")
