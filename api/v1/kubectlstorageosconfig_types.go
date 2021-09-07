@@ -31,7 +31,7 @@ type KubectlStorageOSConfigSpec struct {
 	Uninstall Uninstall `json:"uninstall,omitempty"`
 }
 
-// GetNamespace
+// GetNamespace tries to figure out namespace
 func (spec *KubectlStorageOSConfigSpec) GetNamespace() (namespace string) {
 	namespace = spec.Install.StorageOSOperatorNamespace
 	if namespace == "" {

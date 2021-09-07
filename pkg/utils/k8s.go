@@ -452,6 +452,16 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		delErr := jobClient.Delete(context.Background(), job.Name, metav1.DeleteOptions{})
+		if delErr != nil {
+			println(fmt.Sprintf(`
+Unable to delete helper job.
+Reason: %s
+Please delete it manually by executing the following command:
+kubectl delete job -n %s %s`, delErr.Error(), namespace, job.Name))
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -484,6 +494,16 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 		if err != nil {
 			return "", err
 		}
+		defer func() {
+			delErr := clientset.CoreV1().Pods(namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+			if delErr != nil {
+				println(fmt.Sprintf(`
+Unable to delete helper pod.
+Reason: %s
+Please delete it manually by executing the following command:
+kubectl delete pod -n %s %s`, delErr.Error(), namespace, pod.Name))
+			}
+		}()
 
 		return FetchPodLogs(config, pod.Name, namespace)
 	}

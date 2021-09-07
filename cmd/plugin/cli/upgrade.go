@@ -122,7 +122,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.StorageOSClusterYaml = toString(viper.Get(installer.StosClusterYamlConfig))
 	config.Spec.Install.SkipEtcd = true
 	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toStringOrdefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
 	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil

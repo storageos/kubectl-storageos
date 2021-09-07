@@ -102,7 +102,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdOperatorYaml = toString(viper.Get(installer.EtcdOperatorYamlConfig))
 	config.Spec.Install.EtcdClusterYaml = toString(viper.Get(installer.EtcdClusterYamlConfig))
 	config.Spec.Install.SkipEtcd = toBool(viper.Get(installer.InstallSkipEtcdConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toStringOrdefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
 	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
 	config.Spec.Install.EtcdNamespace = toString(viper.Get(installer.InstallEtcdNamespaceConfig))
 	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
@@ -125,7 +125,7 @@ func toString(value interface{}) string {
 	return ""
 }
 
-func toStringOrdefault(value interface{}, def string) string {
+func toStringOrDefault(value interface{}, def string) string {
 	if value != nil {
 		return value.(string)
 	}
