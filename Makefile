@@ -60,7 +60,10 @@ e2e:
 
 ##@ Build
 
-build: test ## Build manager binary.
+build: test ## test and build manager binary.
+	make _build
+
+_build: ## Build manager binary.
 	go build ${BUILDFLAGS} -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 run: fmt vet generate ## Run a controller from your host.

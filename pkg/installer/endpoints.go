@@ -149,7 +149,7 @@ func etcdEndpointsPrompt() (string, error) {
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("^[a-z0-9,.:-]+$", input)
 		if !match {
-			return errors.New("Invalid entry")
+			return errors.New("invalid entry")
 		}
 		return nil
 	}

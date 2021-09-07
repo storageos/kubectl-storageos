@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func InstallCmd() *cobra.Command {
@@ -36,7 +37,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, "", "namespace of etcd operator and cluster to be installed")
-	cmd.Flags().String(installer.StosOperatorNSFlag, "", "namespace of storageos operator to be installed")
+	cmd.Flags().String(installer.StosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator to be installed")
 	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StorageClassFlag, "", "name of storage class to be used by etcd cluster")
 
@@ -54,7 +55,7 @@ func installCmd(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	cliInstaller, err := installer.NewInstaller(ksConfig)
+	cliInstaller, err := installer.NewInstaller(ksConfig, true)
 	if err != nil {
 		return err
 	}
@@ -101,7 +102,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdOperatorYaml = toString(viper.Get(installer.EtcdOperatorYamlConfig))
 	config.Spec.Install.EtcdClusterYaml = toString(viper.Get(installer.EtcdClusterYamlConfig))
 	config.Spec.Install.SkipEtcd = toBool(viper.Get(installer.InstallSkipEtcdConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toString(viper.Get(installer.InstallStosOperatorNSConfig))
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrdefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
 	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
 	config.Spec.Install.EtcdNamespace = toString(viper.Get(installer.InstallEtcdNamespaceConfig))
 	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
@@ -122,4 +123,11 @@ func toString(value interface{}) string {
 		return value.(string)
 	}
 	return ""
+}
+
+func toStringOrdefault(value interface{}, def string) string {
+	if value != nil {
+		return value.(string)
+	}
+	return def
 }

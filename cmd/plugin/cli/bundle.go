@@ -10,6 +10,7 @@ import (
 
 	"github.com/storageos/kubectl-storageos/pkg/installer"
 	"github.com/storageos/kubectl-storageos/pkg/troubleshoot"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const (
@@ -41,7 +42,7 @@ from a server that can be used to assist when troubleshooting a StorageOS cluste
 	}
 
 	cmd.AddCommand(AnalyzeCmd())
-	cmd.Flags().String(installer.StosOperatorNSFlag, "", "namespace of storageos operator")
+	cmd.Flags().String(installer.StosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator")
 	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster")
 	cmd.Flags().StringSlice("redactors", []string{}, "names of the additional redactors to use")
 	cmd.Flags().Bool("redact", true, "enable/disable default redactions")

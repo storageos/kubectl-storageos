@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -10,8 +11,9 @@ import (
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -89,6 +91,48 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+// FetchPodLogs fetches logs of the given pod.
+func FetchPodLogs(config *rest.Config, name, namespace string) (string, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	logs := clientset.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{})
+	logs.Timeout(time.Minute)
+	result := logs.Do(context.Background())
+	if result.Error() != nil {
+		return "", fmt.Errorf("unable to read job logs: %s", result.Error())
+	}
+
+	raw, err := result.Raw()
+	if err != nil {
+		return "", fmt.Errorf("unable to read job output: %s", err.Error())
+	}
+
+	return string(raw), nil
+}
+
+// FindFirstPodByLabel finds first pod by label or returns error.
+func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.Pod, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: label,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to list job pods: %s", err.Error())
+	}
+	if len(pods.Items) == 0 {
+		return nil, errors.New("unable to find job pod")
+	}
+
+	return &pods.Items[0], nil
 }
 
 // GetDefaultStorageClassName returns the name of the default storage class in the cluster, if more
@@ -209,7 +253,7 @@ func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, err
 func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
 	_, err := GetNamespace(config, namespace)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return err
@@ -260,7 +304,7 @@ func CreateSecret(config *rest.Config, secret *corev1.Secret, namespace string) 
 func SecretDoesNotExist(config *rest.Config, name, namespace string) error {
 	_, err := GetSecret(config, name, namespace)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return err
@@ -297,7 +341,7 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.Sto
 	}
 
 	if len(stosClusterList.Items) == 0 {
-		return stosCluster, errors.NewNotFound(operatorapi.SchemeGroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
+		return stosCluster, kerrors.NewNotFound(operatorapi.SchemeGroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
 	}
 
 	stosCluster = stosClusterList.Items[0]
@@ -308,7 +352,7 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.Sto
 func StorageOSClusterDoesNotExist(config *rest.Config, namespace string) error {
 	_, err := GetStorageOSCluster(config, namespace)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return err
@@ -337,10 +381,110 @@ func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatora
 func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error {
 	_, err := GetEtcdCluster(config, name, namespace)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
 	return fmt.Errorf("etcdcluster exists")
+}
+
+// EnsureNamespace Creates namespace if not exists.
+func EnsureNamespace(config *rest.Config, name string) error {
+	err := NamespaceExists(config, name)
+	if err == nil {
+		return nil
+	}
+
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+
+	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = WaitFor(func() error {
+		return NamespaceExists(config, name)
+	}, 120, 5)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string) (string, error) {
+	jobMeta := metav1.ObjectMeta{
+		Name: name,
+	}
+	job := &batchv1.Job{
+		ObjectMeta: jobMeta,
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  name,
+							Image: image,
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
+				},
+			},
+		},
+	}
+
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	jobClient := clientset.BatchV1().Jobs(namespace)
+
+	_, err = jobClient.Create(context.Background(), job, metav1.CreateOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	watch, err := jobClient.Watch(ctx, metav1.SingleObject(jobMeta))
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		res, ok := <-watch.ResultChan()
+		if !ok {
+			return "", errors.New("unable to read job events")
+		}
+
+		job, ok := res.Object.(*batchv1.Job)
+		if !ok {
+			return "", errors.New("unable to convert event to job")
+		}
+
+		if job.Status.CompletionTime == nil {
+			continue
+		}
+
+		if job.Status.Failed > 0 {
+			return "", errors.New("unable to fetch manifests")
+		}
+
+		pod, err := FindFirstPodByLabel(config, namespace, "job-name="+name)
+		if err != nil {
+			return "", err
+		}
+
+		return FetchPodLogs(config, pod.Name, namespace)
+	}
 }
