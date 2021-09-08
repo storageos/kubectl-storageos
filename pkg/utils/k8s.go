@@ -389,7 +389,7 @@ func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error 
 	return fmt.Errorf("etcdcluster exists")
 }
 
-// EnsureNamespace Creates namespace if not exists.
+// EnsureNamespace Creates namespace if it does not exists.
 func EnsureNamespace(config *rest.Config, name string) error {
 	err := NamespaceExists(config, name)
 	if err == nil {
@@ -420,6 +420,7 @@ func EnsureNamespace(config *rest.Config, name string) error {
 	return nil
 }
 
+// CreateJobAndFetchResult Creates a job, fetches the output of the job and deletes the created resources.
 func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string) (string, error) {
 	jobMeta := metav1.ObjectMeta{
 		Name: name,
