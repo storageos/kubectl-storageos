@@ -30,12 +30,16 @@ const (
 
 	// URLs to installation manifests
 	// TODO: set properly once releases.
-	stosOperatorYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/operator/storageos-operator.yaml"
-	stosClusterYamlUrl  = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
+	stosOperatorImageUrl = "docker.io/storageos/operator-manifests:develop"
+	stosClusterYamlUrl   = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster.yaml"
 )
+
+func GetDefaultNamespace() string {
+	return newOperatorNamespace
+}
 
 func GetExistingOperatorVersion(namespace string) (string, error) {
 	oldNS := oldOperatorNamespace
@@ -172,8 +176,8 @@ func VersionIsEqualTo(version, marker string) (bool, error) {
 
 func OperatorLatestSupportedURL() string {
 	// TODO
-	//return fmt.Sprintf("%s%s%s", newOperatorYamlUrlPrefix, OperatorLatestSupportedVersion(), newOperatorYamlUrlSuffix)
-	return stosOperatorYamlUrl
+	//return fmt.Sprintf("%s%s%s", newOperatorImageRepository, newOperatorImageName, OperatorLatestSupportedVersion())
+	return stosOperatorImageUrl
 }
 
 func ClusterLatestSupportedURL() string {

@@ -31,6 +31,16 @@ type KubectlStorageOSConfigSpec struct {
 	Uninstall Uninstall `json:"uninstall,omitempty"`
 }
 
+// GetNamespace tries to figure out namespace
+func (spec *KubectlStorageOSConfigSpec) GetNamespace() (namespace string) {
+	namespace = spec.Install.StorageOSOperatorNamespace
+	if namespace == "" {
+		namespace = spec.Uninstall.StorageOSOperatorNamespace
+	}
+
+	return
+}
+
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
 type KubectlStorageOSConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

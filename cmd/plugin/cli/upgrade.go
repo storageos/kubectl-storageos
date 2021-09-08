@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -39,7 +40,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, "", "namespace of storageos operator to be uninstalled")
 	cmd.Flags().String(uninstallStosClusterNSFlag, "", "namespace of storageos cluster to be uninstalled")
-	cmd.Flags().String(installStosOperatorNSFlag, "", "namespace of storageos operator to be installed")
+	cmd.Flags().String(installStosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator to be installed")
 	cmd.Flags().String(installStosClusterNSFlag, "", "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be installed")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be installed")
@@ -121,7 +122,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.StorageOSClusterYaml = toString(viper.Get(installer.StosClusterYamlConfig))
 	config.Spec.Install.SkipEtcd = true
 	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toString(viper.Get(installer.InstallStosOperatorNSConfig))
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.Get(installer.InstallStosOperatorNSConfig), version.GetDefaultNamespace())
 	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
