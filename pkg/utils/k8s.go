@@ -333,6 +333,7 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.Sto
 	if err != nil {
 		return stosCluster, err
 	}
+
 	stosClusterList := &operatorapi.StorageOSClusterList{}
 	listOption := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(namespace)})
 	err = newClient.List(context.TODO(), stosClusterList, listOption)

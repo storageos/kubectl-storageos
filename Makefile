@@ -66,6 +66,9 @@ build: test ## test and build manager binary.
 _build: ## Build manager binary.
 	go build ${BUILDFLAGS} -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
+_build-pre: ## Build manager binary.
+	go build ${BUILDFLAGS} -ldflags "-X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+
 run: fmt vet generate ## Run a controller from your host.
 	go run ./main.go
 
