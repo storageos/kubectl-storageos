@@ -3,6 +3,8 @@ package version
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	goversion "github.com/hashicorp/go-version"
@@ -11,9 +13,7 @@ import (
 )
 
 const (
-	operatorLatestSupportedVersion = "v2.5.0"
 	operatorOldestSupportedVersion = "v2.2.0"
-	clusterOperatorLastVersion     = "v2.4.2"
 
 	oldOperatorYamlUrlPrefix = "https://github.com/storageos/cluster-operator/releases/download/"
 	oldOperatorYamlUrlSuffix = "/storageos-operator.yaml"
@@ -29,13 +29,39 @@ const (
 	newOperatorNamespace = "storageos"
 
 	// URLs to installation manifests
+	stosOperatorImageUrl = "docker.io/storageos/operator-manifests"
 	// TODO: set properly once releases.
-	stosOperatorImageUrl = "docker.io/storageos/operator-manifests:develop"
-	stosClusterYamlUrl   = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
+	stosClusterYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.0/storageos-etcd-cluster.yaml"
 )
+
+var (
+	// EnableUnofficialRelease allows the installer to install not official of operator.
+	// This could be change with build flag:
+	// -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true
+	EnableUnofficialRelease string
+	enableUnofficialRelease bool
+
+	versionRegexp *regexp.Regexp
+)
+
+func init() {
+	var err error
+
+	if EnableUnofficialRelease != "" {
+		enableUnofficialRelease, err = strconv.ParseBool(EnableUnofficialRelease)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	versionRegexp, err = regexp.Compile("v([0-9]+.[0-9]+.[0-9]+)")
+	if err != nil {
+		panic(err)
+	}
+}
 
 func GetDefaultNamespace() string {
 	return newOperatorNamespace
@@ -69,21 +95,22 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	splitImageName := strings.SplitAfter(imageName, ":")
 	version := splitImageName[len(splitImageName)-1]
 
-	//TODO: this check exists for testing purposes while new operator has not been released
-	// if the operator image tag is 'develop', return v2.5.0 string to default to placeholder repo manifest.
-	// Remove when new operator image is released with version tag.
-	if version == "develop" {
-		fmt.Println("discovered operator version 'develop' - treating this as v2.5.0 while in production")
-		return OperatorLatestSupportedVersion(), nil
-	}
-	lessThan, err := VersionIsLessThan(version, OperatorOldestSupportedVersion())
+	lessThan, err := VersionIsLessThan(version, operatorOldestSupportedVersion)
 	if err != nil {
 		return "", err
 	}
 	if lessThan {
-		return "", fmt.Errorf("kubectl storageos does not support storageos operator version less than v2.2.0")
+		return "", fmt.Errorf("kubectl storageos does not support storageos operator version less than %s", operatorOldestSupportedVersion)
 	}
+
 	return version, nil
+}
+
+func cleanupVersion(version string) string {
+	if version == "develop" {
+		return OperatorLatestSupportedVersion()
+	}
+	return versionRegexp.FindString(version)
 }
 
 func OperatorUrlByVersion(version string) (string, error) {
@@ -95,10 +122,7 @@ func OperatorUrlByVersion(version string) (string, error) {
 		return fmt.Sprintf("%s%s%s", oldOperatorYamlUrlPrefix, version, oldOperatorYamlUrlSuffix), nil
 	}
 
-	// TODO: return new operator yaml url once released
-	//return fmt.Sprintf("%s%s%s", newOperatorYamlUrlPrefix, version, newOperatorYamlUrlSuffix)
-
-	return "", nil
+	return fmt.Sprintf("%s:%s", stosOperatorImageUrl, version), nil
 }
 
 func ClusterUrlByVersion(version string) (string, error) {
@@ -130,6 +154,9 @@ func SecretUrlByVersion(version string) (string, error) {
 }
 
 func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
+	version = cleanupVersion(version)
+	marker = cleanupVersion(marker)
+
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
 		return false, err
@@ -138,13 +165,14 @@ func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if ver.LessThanOrEqual(mar) {
-		return true, nil
-	}
-	return false, nil
+
+	return ver.LessThanOrEqual(mar), nil
 }
 
 func VersionIsLessThan(version, marker string) (bool, error) {
+	version = cleanupVersion(version)
+	marker = cleanupVersion(marker)
+
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
 		return false, err
@@ -153,13 +181,14 @@ func VersionIsLessThan(version, marker string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if ver.LessThan(mar) {
-		return true, nil
-	}
-	return false, nil
+
+	return ver.LessThan(mar), nil
 }
 
 func VersionIsEqualTo(version, marker string) (bool, error) {
+	version = cleanupVersion(version)
+	marker = cleanupVersion(marker)
+
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
 		return false, err
@@ -168,16 +197,12 @@ func VersionIsEqualTo(version, marker string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if ver.Equal(mar) {
-		return true, nil
-	}
-	return false, nil
+
+	return ver.Equal(mar), nil
 }
 
 func OperatorLatestSupportedURL() string {
-	// TODO
-	//return fmt.Sprintf("%s%s%s", newOperatorImageRepository, newOperatorImageName, OperatorLatestSupportedVersion())
-	return stosOperatorImageUrl
+	return fmt.Sprintf("%s:%s", stosOperatorImageUrl, OperatorLatestSupportedVersion())
 }
 
 func ClusterLatestSupportedURL() string {
@@ -196,16 +221,4 @@ func EtcdClusterLatestSupportedURL() string {
 	// TODO
 	//return fmt.Sprintf("%s%s%s", newEtcdClusterYamlUrlPrefix, OperatorLatestSupportedVersion(), newEtcdClusterYamlUrlSuffix)
 	return etcdClusterYamlUrl
-}
-
-func OperatorLatestSupportedVersion() string {
-	return operatorLatestSupportedVersion
-}
-
-func OperatorOldestSupportedVersion() string {
-	return operatorOldestSupportedVersion
-}
-
-func ClusterOperatorLastVersion() string {
-	return clusterOperatorLastVersion
 }

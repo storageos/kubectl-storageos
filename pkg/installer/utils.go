@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -165,43 +166,34 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 
 // readOrPullManifest returns a string of the manifest from path or url provided
 func readOrPullManifest(path, url string, config *rest.Config, namespace string) (string, error) {
-	var contents string
-	var err error
-	if util.IsURL(path) {
-		contents, err = pullManifest(path)
+	location := path
+	if location == "" {
+		location = url
+	}
+	if location == "" {
+		return "", errors.New("manifest location not set")
+	}
+
+	if util.IsURL(location) {
+		contents, err := pullManifest(location)
 		if err != nil {
-			return contents, err
+			return "", err
 		}
 		return contents, nil
-	} else if path != "" {
-		contents, err = readManifest(path)
+	}
+
+	if _, err := os.Stat(location); err == nil {
+		contents, err := ioutil.ReadFile(location)
 		if err != nil {
-			return contents, err
+			return "", err
 		}
-		return contents, nil
-	} else if util.IsURL(url) {
-		contents, err = pullManifest(url)
-		if err != nil {
-			return contents, err
-		}
-		return contents, nil
+		return string(contents), nil
+	} else if !os.IsNotExist(err) {
+		return "", err
 	}
 
 	jobName := "storageos-operator-manifests-fetch-" + strconv.FormatInt(time.Now().Unix(), 10)
-	return pluginutils.CreateJobAndFetchResult(config, jobName, namespace, url)
-}
-
-// readManifest returns string of contents at path
-func readManifest(path string) (string, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", fmt.Errorf("%s was not found", path)
-	}
-
-	contents, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return string(contents), nil
+	return pluginutils.CreateJobAndFetchResult(config, jobName, namespace, location)
 }
 
 // pullManifest returns a string of contents at url
