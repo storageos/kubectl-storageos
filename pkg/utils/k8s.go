@@ -13,6 +13,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	kstoragev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -270,6 +271,36 @@ func NamespaceExists(config *rest.Config, namespace string) error {
 	return nil
 }
 
+// GetStorageClass returns storage class of name.
+func GetStorageClass(config *rest.Config, name string) (*kstoragev1.StorageClass, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	scClient := clientset.StorageV1().StorageClasses()
+	storageClass, err := scClient.Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return storageClass, nil
+}
+
+// CreateStorageClass creates k8s storage class.
+func CreateStorageClass(config *rest.Config, storageClass *kstoragev1.StorageClass) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	scClient := clientset.StorageV1().StorageClasses()
+	_, err = scClient.Create(context.TODO(), storageClass, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetSecret returns data of secret name/namespace
 func GetSecret(config *rest.Config, name, namespace string) (*corev1.Secret, error) {
 	clientset, err := GetClientsetFromConfig(config)
@@ -285,7 +316,7 @@ func GetSecret(config *rest.Config, name, namespace string) (*corev1.Secret, err
 	return secret, nil
 }
 
-// GetSecret returns data of secret name/namespace
+// CreateSecret creates k8s secret.
 func CreateSecret(config *rest.Config, secret *corev1.Secret, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
