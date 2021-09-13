@@ -1,14 +1,13 @@
 package installer
 
 import (
-	"fmt"
+	"context"
+	"path/filepath"
 	"time"
 
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
-	corev1 "k8s.io/api/core/v1"
-	kstoragev1 "k8s.io/api/storage/v1"
 )
 
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
@@ -29,36 +28,13 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	// discover existing secret username and password for upgrade. Here we use the (un)installer
-	// as it contains the manifests to be uninstalled, and the installConfig so we can set existing
-	// secret username and password in the secret manifest to be installed
-	err = uninstaller.storeExistingStorageOSSecretData(installConfig)
+	err = uninstaller.prepareForUpgrade(installConfig, versionToUninstall)
 	if err != nil {
 		return err
 	}
 
-	// if the version being uninstalled during upgrade is that of the 'old' operator (pre v2.5) existing
-	// CSI secrets and 'fast' storage class must be stored so that they can be recreated after upgrade.
-	storeData, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
-	if err != nil {
-		return err
-	}
-	var csiSecrets []*corev1.Secret
-	var storageClass *kstoragev1.StorageClass
-	if storeData {
-		// discover and store the old (pre v2.5) CSI secrets in kube-system
-		csiSecrets, err = uninstaller.storeExistingCSISecrets()
-		if err != nil {
-			return err
-		}
-		// get old (pre v2.5) storage class 'fast'
-		storageClass, err = pluginutils.GetStorageClass(uninstaller.clientConfig, "fast")
-		if err != nil {
-			return err
-		}
-	}
 	// uninstall existing storageos operator and cluster
-	err = uninstaller.Uninstall(uninstallConfig)
+	err = uninstaller.Uninstall(uninstallConfig, true)
 	if err != nil {
 		return err
 	}
@@ -73,106 +49,116 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	if storeData {
-		// recreate previously stored storage class from uninstalled version
-		err = installer.recreateStorageClass(storageClass)
+	return nil
+}
+
+// prepareForUpgrade performs necessary steps before upgrade commences
+func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
+	storageOSCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
+	if err != nil {
+		return err
+	}
+
+	// write storageoscluster, secret and storageclass manifests to disk
+	err = in.writeBackupFileSystem(storageOSCluster)
+	if err != nil {
+		return err
+	}
+
+	// apply the storageclass manifest written to disk (now with finalizer to prevent deletion by operator)
+	err = in.applyBackupManifestWithFinalizer(stosStorageClassFile)
+	if err != nil {
+		return err
+	}
+
+	// if the version being uninstalled during upgrade is that of the 'old' operator (pre v2.5) existing
+	// CSI secrets are applied with finalizer to prevent deletion by operator
+	storageosV1, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
+	if err != nil {
+		return err
+	}
+	if storageosV1 {
+		err = in.applyBackupManifestWithFinalizer(csiSecretsFile)
 		if err != nil {
 			return err
 		}
+	}
 
-		// recreate previously stored CSI secrets from uninstalled version
-		err = installer.recreateCSISecrets(csiSecrets)
+	// discover uninstalled secret username and password for upgrade. Here we use (1) the (un)installer
+	// as it contains the on-disk FS of the uninstalled secrets and (2) the installConfig so we can
+	// set secret username and password in the secret manifest to be installed later
+	err = in.copyStorageOSSecretData(installConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// copyStorageOSSecretData uses the (un)installer's on-disk filesystem to read the username and password
+// of the storageos secret which is to be uninstalled. This data is then copied to the installConfig so
+// that it can be added to the new storageos secret to be created during the install phase of the upgrade
+func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorageOSConfig) error {
+	backupPath, err := in.getBackupPath()
+	if err != nil {
+		return err
+	}
+	stosSecrets, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosSecretsFile))
+	if err != nil {
+		return err
+	}
+	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-api")
+	if err != nil {
+		return err
+	}
+	secretUsername, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiUsername")
+	if err != nil {
+		return err
+	}
+	secretPassword, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiPassword")
+	if err != nil {
+		return err
+	}
+
+	installConfig.InstallerMeta.SecretUsername = secretUsername
+	installConfig.InstallerMeta.SecretPassword = secretPassword
+
+	return nil
+}
+
+// applyBackupManifest applies file from the (un)installer's on-disk filesystem with finalizer
+func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
+	backupPath, err := in.getBackupPath()
+	if err != nil {
+		return err
+	}
+
+	multidoc, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, file))
+	if err != nil {
+		return err
+	}
+
+	manifests := splitMultiDoc(string(multidoc))
+	for _, manifest := range manifests {
+		// if a finalizer already exists for this object, continue.
+		// This may be the case if an upgrade has already occured.
+		existingFinalizers, err := pluginutils.GetFieldInManifest(string(manifest), "metadata", "finalizers")
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (in *Installer) storeExistingStorageOSSecretData(installConfig *apiv1.KubectlStorageOSConfig) error {
-	stosCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
-	if err != nil {
-		return err
-	}
-
-	secret, err := pluginutils.GetSecret(in.clientConfig, stosCluster.Spec.SecretRefName, stosCluster.Spec.SecretRefNamespace)
-	if err != nil {
-		return err
-	}
-
-	installConfig.InstallerMeta.SecretUsername = string(secret.Data["username"])
-	installConfig.InstallerMeta.SecretPassword = string(secret.Data["password"])
-	return nil
-}
-
-func (in *Installer) storeExistingCSISecrets() ([]*corev1.Secret, error) {
-	fmt.Println("Storing existing CSI secrets...")
-	secrets := make([]*corev1.Secret, 0)
-	secretNames := []string{
-		"csi-controller-expand-secret",
-		"csi-controller-publish-secret",
-		"csi-node-publish-secret",
-		"csi-provisioner-secret",
-	}
-	for _, name := range secretNames {
-		secret, err := pluginutils.GetSecret(in.clientConfig, name, "kube-system")
-		if err != nil {
-			return nil, err
-		}
-		secrets = append(secrets, secret)
-	}
-	return secrets, nil
-}
-
-func (in *Installer) recreateStorageClass(storageClass *kstoragev1.StorageClass) error {
-	fmt.Println("Recreating StorageClass...")
-	storageClass.SetResourceVersion("")
-	err := pluginutils.CreateStorageClass(in.clientConfig, storageClass)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (in *Installer) recreateCSISecrets(secrets []*corev1.Secret) error {
-	fmt.Println("Recreating CSI secrets...")
-	for _, secret := range secrets {
-		// In the event that the secret already has finalizer(s), continue,
-		// as it will not have been deleted during the operator uninstall
-		// phase of the upgrade. This might happen if there has previously
-		// been an upgrade and finalizers have been added to the secret.
-		finalizers := secret.GetFinalizers()
-		if len(finalizers) != 0 {
+		if existingFinalizers != "" {
 			continue
 		}
-		secret.SetFinalizers([]string{stosFinalizer})
-		secret.SetResourceVersion("")
-		err := in.gracefullyCreateSecret(secret)
+
+		// add finalizer to manifest (mutated manifest is not written to disk)
+		manifestWithFinaliser, err := pluginutils.SetFieldInManifest(string(manifest), "- "+stosFinalizer, "finalizers", "metadata")
+		if err != nil {
+			return err
+		}
+		err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
-}
-
-func (in *Installer) gracefullyCreateSecret(secret *corev1.Secret) error {
-	err := pluginutils.WaitFor(func() error {
-		return pluginutils.SecretDoesNotExist(in.clientConfig, secret.GetObjectMeta().GetName(), secret.GetObjectMeta().GetNamespace())
-	}, 180, 5)
-	if err != nil {
-		return err
-	}
-
-	err = pluginutils.CreateSecret(in.clientConfig, secret, secret.GetObjectMeta().GetNamespace())
-	if err != nil {
-		return err
-	}
-	err = pluginutils.WaitFor(func() error {
-		return pluginutils.SecretExists(in.clientConfig, secret.GetObjectMeta().GetName(), secret.GetObjectMeta().GetNamespace())
-	}, 180, 5)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

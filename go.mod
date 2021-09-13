@@ -8,6 +8,8 @@ require (
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/frankban/quicktest v1.13.0 // indirect
+	github.com/ghodss/yaml v1.0.0
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/hashicorp/go-version v1.1.0
 	github.com/improbable-eng/etcd-cluster-operator v0.2.0

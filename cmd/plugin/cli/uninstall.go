@@ -68,7 +68,7 @@ func uninstallCmd(cmd *cobra.Command) error {
 		return err
 	}
 
-	err = cliInstaller.Uninstall(ksConfig)
+	err = cliInstaller.Uninstall(ksConfig, false)
 	if err != nil {
 		return err
 	}

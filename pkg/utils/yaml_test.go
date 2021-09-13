@@ -18,6 +18,47 @@ func TestSetFieldInManifest(t *testing.T) {
 		expError    bool
 	}{
 		{
+			name: "set pod finalizer",
+			manifest: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-pod
+  namespace: default
+  labels:
+    app: java
+  annotations:
+    a.b.c: d.e.f
+spec:
+  templates:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+`,
+			value:     "- storageos",
+			valueName: "finalizers",
+			fields:    []string{"metadata"},
+			expManifest: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-pod
+  namespace: default
+  labels:
+    app: java
+  annotations:
+    a.b.c: d.e.f
+  finalizers:
+    - storageos
+spec:
+  templates:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest	
+`,
+		},
+
+		{
 			name: "set pod name",
 			manifest: `apiVersion: apps/v1
 kind: Deployment
@@ -316,7 +357,7 @@ patches:
 	}
 }
 
-func TestGetManifestFromMultiDoc(t *testing.T) {
+func TestGetManifestFromMultiDocByKind(t *testing.T) {
 	tcases := []struct {
 		name          string
 		multiManifest string
@@ -385,7 +426,7 @@ spec:
 		},
 	}
 	for _, tc := range tcases {
-		man, err := GetManifestFromMultiDoc(tc.multiManifest, tc.kind)
+		man, err := GetManifestFromMultiDocByKind(tc.multiManifest, tc.kind)
 		if err != nil {
 			if !tc.expError {
 				t.Errorf("unexpected error %v", err)
