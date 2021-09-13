@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
-	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -32,8 +32,8 @@ func UninstallCmd() *cobra.Command {
 	}
 	cmd.Flags().Bool(installer.SkipEtcdFlag, false, "uninstall storageos only, leaving ETCD untouched")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, "", "namespace of etcd operator and cluster to be uninstalled")
-	cmd.Flags().String(installer.StosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator to be uninstalled")
-	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster to be uninstalled")
+	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
+	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be uninstalled")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 
 	viper.BindPFlags(cmd.Flags())

@@ -2,6 +2,7 @@ package installer
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
@@ -9,6 +10,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
+
+const skipNamespaceDeletionMessage = `Namespace %s still has resources.
+Deletion of namespace has skipped.
+Reason: %s
+Please check the existing resources by executing the following command:
+kubectl get all -n %s
+To delete namespace please execute the command below:
+kubectl delete namespace %s`
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
 func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
@@ -120,16 +129,23 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		return err
 	}
 
-	if uninstallConfig.StorageOSClusterNamespace != "" {
-		err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSClusterNamespace))
-		if err != nil {
-			return err
-		}
-	}
-
 	err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
 	if err != nil {
 		return err
+	}
+
+	err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSClusterNamespace))
+	if err != nil {
+		println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSClusterNamespace, err.Error(), uninstallConfig.StorageOSClusterNamespace, uninstallConfig.StorageOSClusterNamespace))
+		return err
+	}
+
+	if uninstallConfig.StorageOSClusterNamespace != uninstallConfig.StorageOSOperatorNamespace {
+		err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSOperatorNamespace))
+		if err != nil {
+			println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSOperatorNamespace, err.Error(), uninstallConfig.StorageOSOperatorNamespace, uninstallConfig.StorageOSOperatorNamespace))
+			return err
+		}
 	}
 
 	return nil
@@ -238,7 +254,7 @@ func (in *Installer) gracefullyDeleteNS(namespaceManifest string) error {
 		return err
 	}
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NoPodsInNS(in.clientConfig, namespaceName)
+		return pluginutils.NoResourcesInNS(in.clientConfig, namespaceName)
 	}, 120, 5)
 	if err != nil {
 		return err

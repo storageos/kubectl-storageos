@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +26,11 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const helperDeletionErrorMessage = `Unable to delete helper %s.
+Reason: %s
+Please delete it manually by executing the following command:
+kubectl delete %s -n %s %s`
 
 // NewClientConfig returns a client-go rest config
 func NewClientConfig() (*rest.Config, error) {
@@ -219,21 +225,120 @@ func IsPodRunning(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
-// NoPodsInNS returns no error only if no pod exists in the provided namespace.
-func NoPodsInNS(config *rest.Config, namespace string) error {
+// NoResourcesInNS returns no error only if no resource exists in the provided namespace.
+func NoResourcesInNS(config *rest.Config, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err
 	}
-	podClient := clientset.CoreV1().Pods(namespace)
-	pods, err := podClient.List(context.TODO(), metav1.ListOptions{})
+
+	resources, err := clientset.DiscoveryClient.ServerPreferredNamespacedResources()
 	if err != nil {
 		return err
 	}
-	if len(pods.Items) > 0 {
-		return fmt.Errorf("pods still exist in namespace %s", namespace)
+
+	for _, resource := range resources {
+		apiClient := getClient(clientset, resource.GroupVersion)
+		if apiClient == nil {
+			continue
+		}
+
+		for _, apiResource := range resource.APIResources {
+			if !apiResource.Namespaced {
+				continue
+			}
+
+			res := apiClient.Get().Namespace(namespace).Name(apiResource.Name).Do(context.Background())
+			if res.Error() != nil {
+				if kerrors.IsMethodNotSupported(res.Error()) {
+					continue
+				}
+				return err
+			}
+
+			obj, err := res.Get()
+			if err != nil {
+				return err
+			}
+
+			items, err := countItems(obj)
+			if err != nil {
+				return err
+			}
+
+			if items > 0 {
+				return fmt.Errorf("%s/%s still exists in namespace %s", resource.GroupVersion, apiResource.Name, namespace)
+			}
+		}
 	}
+
 	return nil
+}
+
+type itemList struct {
+	Items []interface{} `json:"items,omitempty"`
+}
+
+func countItems(obj runtime.Object) (int, error) {
+	marshalled, err := json.Marshal(obj)
+	if err != nil {
+		return 0, err
+	}
+
+	unmarshalled := &itemList{}
+	err = json.Unmarshal(marshalled, unmarshalled)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(unmarshalled.Items), nil
+}
+
+func getClient(clientset *kubernetes.Clientset, groupVersion string) rest.Interface {
+	switch groupVersion {
+	case "apps/v1":
+		return clientset.AppsV1().RESTClient()
+	case "app/v1beta1":
+		return clientset.AppsV1beta1().RESTClient()
+	case "app/v1beta2":
+		return clientset.AppsV1beta2().RESTClient()
+	case "authorization.k8s.io/v1":
+		return clientset.AuthorizationV1().RESTClient()
+	case "authorization.k8s.io/v1beta1":
+		return clientset.AuthorizationV1beta1().RESTClient()
+	case "autoscaling/v1":
+		return clientset.AutoscalingV1().RESTClient()
+	case "autoscaling/v2beta1":
+		return clientset.AutoscalingV2beta1().RESTClient()
+	case "autoscaling/v2beta2":
+		return clientset.AutoscalingV2beta2().RESTClient()
+	case "batch/v1":
+		return clientset.BatchV1().RESTClient()
+	case "batch/v1beta1":
+		return clientset.BatchV1beta1().RESTClient()
+	case "coordination.k8s.io/v1":
+		return clientset.CoordinationV1().RESTClient()
+	case "coordination.k8s.io/v1beta1":
+		return clientset.CoordinationV1beta1().RESTClient()
+	case "v1":
+		return clientset.CoreV1().RESTClient()
+	case "events.k8s.io/v1":
+		return nil
+	case "events.k8s.io/v1beta1":
+		return nil
+	case "extensions/v1beta1":
+		return clientset.ExtensionsV1beta1().RESTClient()
+	case "networking.k8s.io/v1":
+		return clientset.NetworkingV1().RESTClient()
+	case "networking.k8s.io/v1beta1":
+		return clientset.NetworkingV1beta1().RESTClient()
+	case "policy/v1":
+		return clientset.PolicyV1().RESTClient()
+	case "policy/v1beta1":
+		return clientset.PolicyV1beta1().RESTClient()
+	default:
+		return nil
+	}
 }
 
 // GetNamespace return namespace object
@@ -516,11 +621,7 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 	defer func() {
 		delErr := jobClient.Delete(context.Background(), job.Name, metav1.DeleteOptions{})
 		if delErr != nil {
-			println(fmt.Sprintf(`
-Unable to delete helper job.
-Reason: %s
-Please delete it manually by executing the following command:
-kubectl delete job -n %s %s`, delErr.Error(), namespace, job.Name))
+			println(fmt.Sprintf(helperDeletionErrorMessage, "job", delErr.Error(), "job", namespace, job.Name))
 		}
 	}()
 
@@ -558,11 +659,7 @@ kubectl delete job -n %s %s`, delErr.Error(), namespace, job.Name))
 		defer func() {
 			delErr := clientset.CoreV1().Pods(namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 			if delErr != nil {
-				println(fmt.Sprintf(`
-Unable to delete helper pod.
-Reason: %s
-Please delete it manually by executing the following command:
-kubectl delete pod -n %s %s`, delErr.Error(), namespace, pod.Name))
+				println(fmt.Sprintf(helperDeletionErrorMessage, "pod", delErr.Error(), "pod", namespace, pod.Name))
 			}
 		}()
 
