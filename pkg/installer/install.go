@@ -264,12 +264,12 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 		return err
 	}
 
-	namespaceName, err := pluginutils.GetFieldInManifest(namespaceManifest, "metadata", "name")
+	namespace, err := pluginutils.GetFieldInManifest(namespaceManifest, "metadata", "name")
 	if err != nil {
 		return err
 	}
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NamespaceExists(in.clientConfig, namespaceName)
+		return pluginutils.NamespaceExists(in.clientConfig, namespace)
 	}, 120, 5)
 	if err != nil {
 		return err

@@ -29,9 +29,9 @@ import (
 )
 
 const helperDeletionErrorMessage = `Unable to delete helper %s.
-Reason: %s
-Please delete it manually by executing the following command:
-kubectl delete %s -n %s %s`
+	Reason: %s
+	Please delete it manually by executing the following command:
+	kubectl delete %s -n %s %s`
 
 // ResourcesStillExists contains all the existing resource types in namespace
 type ResourcesStillExists struct {
@@ -190,7 +190,7 @@ func WaitFor(fn func() error, limit, interval time.Duration) error {
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("timeout with error: %v", err)
+			return fmt.Errorf("timeout with error: %w", err)
 		case <-ticker.C:
 			err = fn()
 			if err == nil {
@@ -260,7 +260,8 @@ func NoResourcesInNS(config *rest.Config, namespace string) error {
 
 	for _, resource := range resources {
 		for _, apiResource := range resource.APIResources {
-			if !apiResource.Namespaced {
+			if !apiResource.Namespaced ||
+				(resource.GroupVersion == "v1" && apiResource.Name == "events") {
 				continue
 			}
 
@@ -304,6 +305,16 @@ func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, err
 		return nil, err
 	}
 	return ns, nil
+}
+
+// DeleteNamespace deletes the given namespace
+func DeleteNamespace(config *rest.Config, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+
+	return clientset.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
 }
 
 // NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster

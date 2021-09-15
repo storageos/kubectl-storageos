@@ -2,22 +2,23 @@ package installer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
 
 const skipNamespaceDeletionMessage = `Namespace %s still has resources.
-Deletion of namespace has skipped.
-Reason: %s
-Please check the existing resources by executing the following command:
-kubectl get all -n %s
-To delete namespace please execute the command below:
-kubectl delete namespace %s`
+	Deletion of namespace has skipped.
+	Reason: %s
+	Please check the existing resources by executing the following command:
+	kubectl get all -n %s
+	To delete namespace please execute the command below:
+	kubectl delete namespace %s`
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
 func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
@@ -116,10 +117,23 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 			return err
 		}
 	}
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+
+	_, err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
 	if err != nil {
 		return err
 	}
+
+	// if _, ok := removedNamespaces[uninstallConfig.StorageOSClusterNamespace]; !ok {
+	// 	err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSClusterNamespace))
+	// 	if err != nil {
+	// 		if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
+	// 			return err
+	// 		}
+	// 		println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSClusterNamespace, err.Error(), uninstallConfig.StorageOSClusterNamespace, uninstallConfig.StorageOSClusterNamespace))
+	// 	}
+
+	// 	removedNamespaces[uninstallConfig.StorageOSClusterNamespace] = true
+	// }
 
 	// allow storageoscluster object to be deleted before continuing uninstall process
 	err = in.waitForCustomResourceDeletion(func() error {
@@ -129,28 +143,20 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		return err
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
+	_, err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
 	if err != nil {
 		return err
 	}
 
-	err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSClusterNamespace))
-	if err != nil {
-		if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
-			return err
-		}
-		println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSClusterNamespace, err.Error(), uninstallConfig.StorageOSClusterNamespace, uninstallConfig.StorageOSClusterNamespace))
-	}
-
-	if uninstallConfig.StorageOSClusterNamespace != uninstallConfig.StorageOSOperatorNamespace {
-		err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSOperatorNamespace))
-		if err != nil {
-			if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
-				return err
-			}
-			println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSOperatorNamespace, err.Error(), uninstallConfig.StorageOSOperatorNamespace, uninstallConfig.StorageOSOperatorNamespace))
-		}
-	}
+	// if _, ok := removedNamespaces[uninstallConfig.StorageOSOperatorNamespace]; !ok {
+	// 	err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSOperatorNamespace))
+	// 	if err != nil {
+	// 		if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
+	// 			return err
+	// 		}
+	// 		println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSOperatorNamespace, err.Error(), uninstallConfig.StorageOSOperatorNamespace, uninstallConfig.StorageOSOperatorNamespace))
+	// 	}
+	// }
 
 	return nil
 }
@@ -171,7 +177,7 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 
 	}
 
-	err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
+	_, err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
 	if err != nil {
 		return err
 	}
@@ -194,7 +200,7 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 		return err
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
+	_, err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 	if err != nil {
 		return err
 	}
@@ -207,70 +213,79 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 // - write the resulting kustomized manifest to dir/file of in-mem fs.
 // - remove any namespaces from dir/file of in-mem fs.
 // - delete objects by dir/file.
-// - safely delete the removed namespaces.
-func (in *Installer) kustomizeAndDelete(dir, file string) error {
+// - safely delete the removed namespaces and returns them.
+func (in *Installer) kustomizeAndDelete(dir, file string) (map[string]bool, error) {
 	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	resMap, err := kustomizer.Run(in.fileSys, dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	resYaml, err := resMap.AsYaml()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	removedNamespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	manifest, err := in.fileSys.ReadFile(filepath.Join(dir, file))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	sucessfullyRemovedNamespaces := map[string]bool{}
 
 	// gracefully delete removed namespaces (there is likely only one)
 	for _, removedNamespace := range removedNamespaces {
-		err = in.gracefullyDeleteNS(removedNamespace)
+		namespace, err := pluginutils.GetFieldInManifest(removedNamespace, "metadata", "name")
 		if err != nil {
-			return err
+			return sucessfullyRemovedNamespaces, err
 		}
+		err = in.gracefullyDeleteNS(namespace)
+		if err != nil {
+			parentErr := errors.Unwrap(err)
+			if _, ok := parentErr.(pluginutils.ResourcesStillExists); ok {
+				println(fmt.Sprintf(skipNamespaceDeletionMessage, namespace, err.Error(), namespace, namespace))
+				continue
+			}
+			return sucessfullyRemovedNamespaces, err
+		}
+
+		sucessfullyRemovedNamespaces[namespace] = true
 	}
 
-	return nil
+	return sucessfullyRemovedNamespaces, nil
 }
 
 // gracefullyDeleteNS deletes a k8s namespace only once there are no pod running in said namespace,
 // then waits for the namespace to be removed from the cluster before returning no error
-func (in *Installer) gracefullyDeleteNS(namespaceManifest string) error {
-	namespaceName, err := pluginutils.GetFieldInManifest(namespaceManifest, "metadata", "name")
-	if err != nil {
-		return err
-	}
-	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NoResourcesInNS(in.clientConfig, namespaceName)
+func (in *Installer) gracefullyDeleteNS(namespacename string) error {
+	err := pluginutils.WaitFor(func() error {
+		return pluginutils.NoResourcesInNS(in.clientConfig, namespacename)
 	}, 180, 10)
 	if err != nil {
 		return err
 	}
 
-	err = in.kubectlClient.Delete(context.TODO(), "", namespaceManifest, true)
+	err = pluginutils.DeleteNamespace(in.clientConfig, namespacename)
 	if err != nil {
 		return err
 	}
 
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NamespaceDoesNotExist(in.clientConfig, namespaceName)
+		return pluginutils.NamespaceDoesNotExist(in.clientConfig, namespacename)
 	}, 120, 5)
 	if err != nil {
 		return err
@@ -283,10 +298,7 @@ func (in *Installer) waitForCustomResourceDeletion(fn func() error) error {
 	err := pluginutils.WaitFor(func() error {
 		return fn()
 	}, 120, 5)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
+	if err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
 	return nil
