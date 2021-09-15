@@ -238,35 +238,27 @@ func NoResourcesInNS(config *rest.Config, namespace string) error {
 	}
 
 	for _, resource := range resources {
-		apiClient := getClient(clientset, resource.GroupVersion)
-		if apiClient == nil {
-			continue
-		}
-
 		for _, apiResource := range resource.APIResources {
 			if !apiResource.Namespaced {
 				continue
 			}
 
-			res := apiClient.Get().Namespace(namespace).Name(apiResource.Name).Do(context.Background())
-			if res.Error() != nil {
-				if kerrors.IsMethodNotSupported(res.Error()) {
+			uri := fmt.Sprintf("/api/%s/namespaces/%s/%s", resource.GroupVersion, namespace, apiResource.Name)
+			res, err := clientset.RESTClient().Get().RequestURI(uri).DoRaw(context.Background())
+			if err != nil {
+				if kerrors.IsMethodNotSupported(err) || kerrors.IsNotFound(err) {
 					continue
 				}
 				return err
 			}
 
-			obj, err := res.Get()
+			itemList := &itemList{}
+			err = json.Unmarshal(res, itemList)
 			if err != nil {
 				return err
 			}
 
-			items, err := countItems(obj)
-			if err != nil {
-				return err
-			}
-
-			if items > 0 {
+			if len(itemList.Items) > 0 {
 				return fmt.Errorf("%s/%s still exists in namespace %s", resource.GroupVersion, apiResource.Name, namespace)
 			}
 		}
@@ -277,68 +269,6 @@ func NoResourcesInNS(config *rest.Config, namespace string) error {
 
 type itemList struct {
 	Items []interface{} `json:"items,omitempty"`
-}
-
-func countItems(obj runtime.Object) (int, error) {
-	marshalled, err := json.Marshal(obj)
-	if err != nil {
-		return 0, err
-	}
-
-	unmarshalled := &itemList{}
-	err = json.Unmarshal(marshalled, unmarshalled)
-	if err != nil {
-		return 0, err
-	}
-
-	return len(unmarshalled.Items), nil
-}
-
-func getClient(clientset *kubernetes.Clientset, groupVersion string) rest.Interface {
-	switch groupVersion {
-	case "apps/v1":
-		return clientset.AppsV1().RESTClient()
-	case "app/v1beta1":
-		return clientset.AppsV1beta1().RESTClient()
-	case "app/v1beta2":
-		return clientset.AppsV1beta2().RESTClient()
-	case "authorization.k8s.io/v1":
-		return clientset.AuthorizationV1().RESTClient()
-	case "authorization.k8s.io/v1beta1":
-		return clientset.AuthorizationV1beta1().RESTClient()
-	case "autoscaling/v1":
-		return clientset.AutoscalingV1().RESTClient()
-	case "autoscaling/v2beta1":
-		return clientset.AutoscalingV2beta1().RESTClient()
-	case "autoscaling/v2beta2":
-		return clientset.AutoscalingV2beta2().RESTClient()
-	case "batch/v1":
-		return clientset.BatchV1().RESTClient()
-	case "batch/v1beta1":
-		return clientset.BatchV1beta1().RESTClient()
-	case "coordination.k8s.io/v1":
-		return clientset.CoordinationV1().RESTClient()
-	case "coordination.k8s.io/v1beta1":
-		return clientset.CoordinationV1beta1().RESTClient()
-	case "v1":
-		return clientset.CoreV1().RESTClient()
-	case "events.k8s.io/v1":
-		return nil
-	case "events.k8s.io/v1beta1":
-		return nil
-	case "extensions/v1beta1":
-		return clientset.ExtensionsV1beta1().RESTClient()
-	case "networking.k8s.io/v1":
-		return clientset.NetworkingV1().RESTClient()
-	case "networking.k8s.io/v1beta1":
-		return clientset.NetworkingV1beta1().RESTClient()
-	case "policy/v1":
-		return clientset.PolicyV1().RESTClient()
-	case "policy/v1beta1":
-		return clientset.PolicyV1beta1().RESTClient()
-	default:
-		return nil
-	}
 }
 
 // GetNamespace return namespace object
