@@ -36,7 +36,9 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	// uninstall existing storageos operator and cluster
 	err = uninstaller.Uninstall(uninstallConfig, true)
 	if err != nil {
-		return err
+		if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
+			return err
+		}
 	}
 
 	// sleep to allow CRDs to be removed

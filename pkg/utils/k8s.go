@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
@@ -31,6 +32,17 @@ const helperDeletionErrorMessage = `Unable to delete helper %s.
 Reason: %s
 Please delete it manually by executing the following command:
 kubectl delete %s -n %s %s`
+
+// ResourcesStillExists contains all the existing resource types in namespace
+type ResourcesStillExists struct {
+	namespace string
+	resources []string
+}
+
+// Error generates error message
+func (e ResourcesStillExists) Error() string {
+	return fmt.Sprintf("resource(s) still found in namespace %s: %s", e.namespace, strings.Join(e.resources, ", "))
+}
 
 // NewClientConfig returns a client-go rest config
 func NewClientConfig() (*rest.Config, error) {
@@ -225,6 +237,10 @@ func IsPodRunning(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
+type itemList struct {
+	Items []interface{} `json:"items,omitempty"`
+}
+
 // NoResourcesInNS returns no error only if no resource exists in the provided namespace.
 func NoResourcesInNS(config *rest.Config, namespace string) error {
 	clientset, err := GetClientsetFromConfig(config)
@@ -235,6 +251,11 @@ func NoResourcesInNS(config *rest.Config, namespace string) error {
 	resources, err := clientset.DiscoveryClient.ServerPreferredNamespacedResources()
 	if err != nil {
 		return err
+	}
+
+	rst := ResourcesStillExists{
+		namespace: namespace,
+		resources: []string{},
 	}
 
 	for _, resource := range resources {
@@ -259,16 +280,16 @@ func NoResourcesInNS(config *rest.Config, namespace string) error {
 			}
 
 			if len(itemList.Items) > 0 {
-				return fmt.Errorf("%s/%s still exists in namespace %s", resource.GroupVersion, apiResource.Name, namespace)
+				rst.resources = append(rst.resources, fmt.Sprintf("%s/%s", resource.GroupVersion, apiResource.Name))
 			}
 		}
 	}
 
-	return nil
-}
+	if len(rst.resources) != 0 {
+		return rst
+	}
 
-type itemList struct {
-	Items []interface{} `json:"items,omitempty"`
+	return nil
 }
 
 // GetNamespace return namespace object
