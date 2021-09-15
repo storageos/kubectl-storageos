@@ -255,7 +255,7 @@ func (in *Installer) gracefullyDeleteNS(namespaceManifest string) error {
 	}
 	err = pluginutils.WaitFor(func() error {
 		return pluginutils.NoResourcesInNS(in.clientConfig, namespaceName)
-	}, 120, 5)
+	}, 300, 30)
 	if err != nil {
 		return err
 	}
