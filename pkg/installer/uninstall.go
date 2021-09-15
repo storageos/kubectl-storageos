@@ -118,7 +118,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		}
 	}
 
-	_, err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		return err
 	}
 
-	_, err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
+	err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 
 	}
 
-	_, err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
+	err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 		return err
 	}
 
-	_, err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
+	err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 	if err != nil {
 		return err
 	}
@@ -214,44 +214,42 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 // - remove any namespaces from dir/file of in-mem fs.
 // - delete objects by dir/file.
 // - safely delete the removed namespaces and returns them.
-func (in *Installer) kustomizeAndDelete(dir, file string) (map[string]bool, error) {
+func (in *Installer) kustomizeAndDelete(dir, file string) error {
 	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	resMap, err := kustomizer.Run(in.fileSys, dir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	resYaml, err := resMap.AsYaml()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	removedNamespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	manifest, err := in.fileSys.ReadFile(filepath.Join(dir, file))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	sucessfullyRemovedNamespaces := map[string]bool{}
 
 	// gracefully delete removed namespaces (there is likely only one)
 	for _, removedNamespace := range removedNamespaces {
 		namespace, err := pluginutils.GetFieldInManifest(removedNamespace, "metadata", "name")
 		if err != nil {
-			return sucessfullyRemovedNamespaces, err
+			return err
 		}
 		err = in.gracefullyDeleteNS(namespace)
 		if err != nil {
@@ -260,13 +258,11 @@ func (in *Installer) kustomizeAndDelete(dir, file string) (map[string]bool, erro
 				println(fmt.Sprintf(skipNamespaceDeletionMessage, namespace, err.Error(), namespace, namespace))
 				continue
 			}
-			return sucessfullyRemovedNamespaces, err
+			return err
 		}
-
-		sucessfullyRemovedNamespaces[namespace] = true
 	}
 
-	return sucessfullyRemovedNamespaces, nil
+	return nil
 }
 
 // gracefullyDeleteNS deletes a k8s namespace only once there are no pod running in said namespace,
