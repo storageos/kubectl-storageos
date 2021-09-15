@@ -136,15 +136,19 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 
 	err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSClusterNamespace))
 	if err != nil {
+		if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
+			return err
+		}
 		println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSClusterNamespace, err.Error(), uninstallConfig.StorageOSClusterNamespace, uninstallConfig.StorageOSClusterNamespace))
-		return err
 	}
 
 	if uninstallConfig.StorageOSClusterNamespace != uninstallConfig.StorageOSOperatorNamespace {
 		err = in.gracefullyDeleteNS(pluginutils.NamespaceYaml(uninstallConfig.StorageOSOperatorNamespace))
 		if err != nil {
+			if _, ok := err.(pluginutils.ResourcesStillExists); !ok {
+				return err
+			}
 			println(fmt.Sprintf(skipNamespaceDeletionMessage, uninstallConfig.StorageOSOperatorNamespace, err.Error(), uninstallConfig.StorageOSOperatorNamespace, uninstallConfig.StorageOSOperatorNamespace))
-			return err
 		}
 	}
 
