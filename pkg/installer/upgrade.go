@@ -17,6 +17,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	if err != nil {
 		return err
 	}
+
 	err = installer.handleEndpointsInput(installConfig.Spec.Install.EtcdEndpoints)
 	if err != nil {
 		return err
