@@ -21,6 +21,7 @@ import (
 const (
 	// CLI flags
 	SkipNamespaceDeletionFlag = "skip-namespace-deletion"
+	VersionFlag               = "version"
 	StosOperatorYamlFlag      = "stos-operator-yaml"
 	StosClusterYamlFlag       = "stos-cluster-yaml"
 	StosSecretYamlFlag        = "stos-secret-yaml"
@@ -38,6 +39,7 @@ const (
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	SkipNamespaceDeletionConfig   = "spec.skipNmespaceDeletion"
+	InstallVersionConfig          = "spec.install.version"
 	InstallEtcdNamespaceConfig    = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig   = "spec.install.storageOSOperatorNamespace"
 	InstallStosClusterNSConfig    = "spec.install.storageOSClusterNamespace"

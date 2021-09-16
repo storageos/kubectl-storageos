@@ -72,6 +72,8 @@ spec:
                     type: string
                   storageOSOperatorYaml:
                     type: string
+                  version:
+                    type: string
                 type: object
               skipEtcd:
                 type: boolean

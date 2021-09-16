@@ -47,6 +47,7 @@ type KubectlStorageOSConfigStatus struct {
 
 // Install defines options for cli install subcommand
 type Install struct {
+	Version                    string `json:"version,omitempty"`
 	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
 	EtcdNamespace              string `json:"etcdNamespace,omitempty"`

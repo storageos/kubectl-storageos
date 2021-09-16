@@ -41,6 +41,7 @@ func UpgradeCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
@@ -100,6 +101,11 @@ func upgradeCmd(cmd *cobra.Command) error {
 		return err
 	}
 
+	// user specified the version
+	if ksInstallConfig.Spec.Install.Version != "" {
+		version.SetOperatorLatestSupportedVersion(ksInstallConfig.Spec.Install.Version)
+	}
+
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
 	if ksInstallConfig.Spec.Install.EtcdEndpoints == "" {
 		ksInstallConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
@@ -126,6 +132,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			config.Spec.SkipEtcd = true
 			// Config file not found; set fields in new config object directly
+			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installStosOperatorNSFlag).Value.String()
@@ -141,6 +148,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.SkipEtcd = true
+	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
