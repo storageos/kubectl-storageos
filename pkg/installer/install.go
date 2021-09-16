@@ -15,18 +15,17 @@ import (
 func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 2)
-
-	if config.Spec.SkipEtcd {
-		if err := in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints); err != nil {
-			return err
-		}
-	} else {
+	if config.Spec.IncludeEtcd {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
 			errChan <- in.installEtcd(config.Spec.Install)
 		}()
+	} else {
+		if err := in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints); err != nil {
+			return err
+		}
 	}
 
 	if serialInstall {

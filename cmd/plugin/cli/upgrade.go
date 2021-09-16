@@ -122,7 +122,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			config.Spec.SkipEtcd = true
+			config.Spec.IncludeEtcd = false
 			// Config file not found; set fields in new config object directly
 			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
@@ -139,7 +139,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.SkipEtcd = true
+	config.Spec.IncludeEtcd = false
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
@@ -163,7 +163,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 			if err != nil {
 				return err
 			}
-			config.Spec.SkipEtcd = true
+			config.Spec.IncludeEtcd = false
 			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(uninstallStosOperatorNSFlag).Value.String()
 			config.Spec.Uninstall.StorageOSClusterNamespace = cmd.Flags().Lookup(uninstallStosClusterNSFlag).Value.String()
 			return nil
@@ -174,7 +174,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
-	config.Spec.SkipEtcd = true
+	config.Spec.IncludeEtcd = false
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
 	config.Spec.Uninstall.StorageOSClusterNamespace = viper.GetString(installer.UninstallStosClusterNSConfig)
 	return nil

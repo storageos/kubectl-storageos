@@ -35,7 +35,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
-	cmd.Flags().Bool(installer.SkipEtcdFlag, false, "skip etcd installation and enter endpoints manually")
+	cmd.Flags().Bool(installer.IncludeEtcdFlag, false, "install non-production etcd from github.com/storageos/etcd-cluster-operator")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, consts.EtcdOperatorNamespace, "namespace of etcd operator and cluster to be installed")
@@ -64,7 +64,7 @@ func installCmd(cmd *cobra.Command) error {
 	}
 
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
-	if ksConfig.Spec.SkipEtcd && ksConfig.Spec.Install.EtcdEndpoints == "" {
+	if !ksConfig.Spec.IncludeEtcd && ksConfig.Spec.Install.EtcdEndpoints == "" {
 		ksConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
 		if err != nil {
 			return err
@@ -94,7 +94,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
-			config.Spec.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
+			config.Spec.IncludeEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
 			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
@@ -114,7 +114,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.SkipEtcd = viper.GetBool(installer.InstallSkipEtcdConfig)
+	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
