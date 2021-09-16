@@ -115,11 +115,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		}
 	}
 	// config file read without error, set fields in new config object
-	var err error
-	config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(viper.GetString(installer.SkipNamespaceDeletionConfig))
-	if err != nil {
-		return err
-	}
+	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.SkipEtcd = viper.GetBool(installer.UninstallSkipEtcdConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
 	config.Spec.Uninstall.StorageOSClusterNamespace = viper.GetString(installer.UninstallStosClusterNSConfig)
