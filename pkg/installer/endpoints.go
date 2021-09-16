@@ -2,12 +2,9 @@ package installer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
-	"regexp"
 
-	"github.com/manifoldco/promptui"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"k8s.io/client-go/rest"
@@ -41,13 +38,6 @@ func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
 		return nil
 	}()
 
-	// if etcdEndpoints were not passed via flag or config, prompt user to enter manually
-	if etcdEndpoints == "" {
-		etcdEndpoints, err = etcdEndpointsPrompt()
-		if err != nil {
-			return err
-		}
-	}
 	err = validateEndpoints(etcdEndpoints, string(etcdShell))
 	if err != nil {
 		return err
@@ -139,31 +129,4 @@ func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, e
 	}
 
 	return nil
-}
-
-// etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
-// func is run on each character as it is entered as per the regexp - it does not refer to actual
-// endpoint validation which is handled later.
-func etcdEndpointsPrompt() (string, error) {
-	logger.Printf("   Please enter ETCD endpoints. If more than one endpoint exists, enter endpoints as a comma-delimited list of machine addresses in the cluster.\n\n   Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379\n\n")
-	validate := func(input string) error {
-		match, _ := regexp.MatchString("^[a-z0-9,.:-]+$", input)
-		if !match {
-			return errors.New("invalid entry")
-		}
-		return nil
-	}
-
-	prompt := promptui.Prompt{
-		Label:    "ETCD endpoint(s)",
-		Validate: validate,
-	}
-
-	result, err := prompt.Run()
-	if err != nil {
-		logger.Printf("Prompt failed %v\n", err)
-		return "", err
-	}
-
-	return result, nil
 }

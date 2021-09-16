@@ -1,0 +1,51 @@
+package cli
+
+import (
+	"regexp"
+
+	"github.com/manifoldco/promptui"
+	"github.com/pkg/errors"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+)
+
+// etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
+// func is run on each character as it is entered as per the regexp - it does not refer to actual
+// endpoint validation which is handled later.
+func etcdEndpointsPrompt() (string, error) {
+	logger.Printf("   Please enter ETCD endpoints. If more than one endpoint exists, enter endpoints as a comma-delimited list of machine addresses in the cluster.\n\n   Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379\n\n")
+	validate := func(input string) error {
+		match, _ := regexp.MatchString("^[a-z0-9,.:-]+$", input)
+		if !match {
+			return errors.New("invalid entry")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    "ETCD endpoint(s)",
+		Validate: validate,
+	}
+
+	return pluginutils.AskUser(prompt)
+}
+
+// skipNamespaceDeletionPrompt uses promptui to prompt the user to enter decision of skipping namespace deletion
+func skipNamespaceDeletionPrompt() (bool, error) {
+	logger.Printf("   Please confirm namespace deletion.")
+	prompt := promptui.Prompt{
+		Label:     "Skip namespace deletion",
+		IsConfirm: true,
+	}
+
+	_, err := pluginutils.AskUser(prompt)
+
+	return err == nil, err
+}
+
+func toStringOrDefault(value string, def string) string {
+	if value != "" {
+		return value
+	}
+	return def
+}

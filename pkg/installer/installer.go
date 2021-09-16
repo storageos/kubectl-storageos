@@ -20,22 +20,24 @@ import (
 
 const (
 	// CLI flags
-	StosOperatorYamlFlag = "stos-operator-yaml"
-	StosClusterYamlFlag  = "stos-cluster-yaml"
-	StosSecretYamlFlag   = "stos-secret-yaml"
-	EtcdOperatorYamlFlag = "etcd-operator-yaml"
-	EtcdClusterYamlFlag  = "etcd-cluster-yaml"
-	SkipEtcdFlag         = "skip-etcd"
-	EtcdEndpointsFlag    = "etcd-endpoints"
-	ConfigPathFlag       = "config-path"
-	EtcdNamespaceFlag    = "etcd-namespace"
-	StosOperatorNSFlag   = "stos-operator-namespace"
-	StosClusterNSFlag    = "stos-cluster-namespace"
-	StorageClassFlag     = "storage-class"
-	SecretUserFlag       = "secret-username"
-	SecretPassFlag       = "secret-password"
+	SkipNamespaceDeletionFlag = "skip-namespace-deletion"
+	StosOperatorYamlFlag      = "stos-operator-yaml"
+	StosClusterYamlFlag       = "stos-cluster-yaml"
+	StosSecretYamlFlag        = "stos-secret-yaml"
+	EtcdOperatorYamlFlag      = "etcd-operator-yaml"
+	EtcdClusterYamlFlag       = "etcd-cluster-yaml"
+	SkipEtcdFlag              = "skip-etcd"
+	EtcdEndpointsFlag         = "etcd-endpoints"
+	ConfigPathFlag            = "config-path"
+	EtcdNamespaceFlag         = "etcd-namespace"
+	StosOperatorNSFlag        = "stos-operator-namespace"
+	StosClusterNSFlag         = "stos-cluster-namespace"
+	StorageClassFlag          = "storage-class"
+	SecretUserFlag            = "secret-username"
+	SecretPassFlag            = "secret-password"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
+	SkipNamespaceDeletionConfig   = "spec.skipNmespaceDeletion"
 	InstallEtcdNamespaceConfig    = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig   = "spec.install.storageOSOperatorNamespace"
 	InstallStosClusterNSConfig    = "spec.install.storageOSClusterNamespace"
@@ -94,6 +96,7 @@ type Installer struct {
 	kubectlClient *otkkubectl.DefaultKubectl
 	clientConfig  *rest.Config
 	kubeClusterID types.UID
+	stosConfig    *apiv1.KubectlStorageOSConfig
 	fileSys       filesys.FileSystem
 	onDiskFileSys filesys.FileSystem
 }
@@ -128,6 +131,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*
 		kubectlClient: otkkubectl.New(),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
+		stosConfig:    config,
 		fileSys:       fileSys,
 		onDiskFileSys: filesys.MakeFsOnDisk(),
 	}

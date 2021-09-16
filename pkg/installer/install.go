@@ -13,7 +13,7 @@ import (
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 	var err error
-	if config.Spec.Install.SkipEtcd {
+	if config.Spec.SkipEtcd {
 		err = in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints)
 		if err != nil {
 			return err

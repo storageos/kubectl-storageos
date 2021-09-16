@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
+	"github.com/mattn/go-isatty"
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,6 +41,7 @@ func UpgradeCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
 	cmd.Flags().String(uninstallStosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be uninstalled")
@@ -61,6 +65,15 @@ func upgradeCmd(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
+
+	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
+	if !ksUninstallConfig.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
+		ksUninstallConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
+		if err != nil {
+			return err
+		}
+	}
+
 	existingVersion, err := pluginversion.GetExistingOperatorVersion(ksUninstallConfig.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -87,6 +100,14 @@ func upgradeCmd(cmd *cobra.Command) error {
 		return err
 	}
 
+	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
+	if ksInstallConfig.Spec.Install.EtcdEndpoints == "" {
+		ksInstallConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
+		if err != nil {
+			return err
+		}
+	}
+
 	err = installer.Upgrade(ksUninstallConfig, ksInstallConfig, existingVersion)
 	if err != nil {
 		return err
@@ -103,10 +124,10 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			config.Spec.SkipEtcd = true
 			// Config file not found; set fields in new config object directly
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
-			config.Spec.Install.SkipEtcd = true
 			config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installStosOperatorNSFlag).Value.String()
 			config.Spec.Install.StorageOSClusterNamespace = cmd.Flags().Lookup(installStosClusterNSFlag).Value.String()
 			config.Spec.Install.EtcdEndpoints = cmd.Flags().Lookup(installer.EtcdEndpointsFlag).Value.String()
@@ -119,12 +140,12 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.Install.StorageOSOperatorYaml = toString(viper.Get(installer.StosOperatorYamlConfig))
-	config.Spec.Install.StorageOSClusterYaml = toString(viper.Get(installer.StosClusterYamlConfig))
-	config.Spec.Install.SkipEtcd = true
-	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.Get(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
-	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
+	config.Spec.SkipEtcd = true
+	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
+	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
+	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
+	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.InstallStosClusterNSConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }
@@ -138,9 +159,11 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
-			config.Spec.Uninstall.SkipEtcd = true
-			// Also set install skip-etcd to ignore unnecessary fs building
-			config.Spec.Install.SkipEtcd = true
+			config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
+			if err != nil {
+				return err
+			}
+			config.Spec.SkipEtcd = true
 			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(uninstallStosOperatorNSFlag).Value.String()
 			config.Spec.Uninstall.StorageOSClusterNamespace = cmd.Flags().Lookup(uninstallStosClusterNSFlag).Value.String()
 			return nil
@@ -150,10 +173,13 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.Uninstall.SkipEtcd = true
-	// Also set install skip-etcd to ignore unnecessary fs building
-	config.Spec.Install.SkipEtcd = true
-	config.Spec.Uninstall.StorageOSOperatorNamespace = toString(viper.Get(installer.UninstallStosOperatorNSConfig))
-	config.Spec.Uninstall.StorageOSClusterNamespace = toString(viper.Get(installer.UninstallStosClusterNSConfig))
+	var err error
+	config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(viper.GetString(installer.SkipNamespaceDeletionConfig))
+	if err != nil {
+		return err
+	}
+	config.Spec.SkipEtcd = true
+	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
+	config.Spec.Uninstall.StorageOSClusterNamespace = viper.GetString(installer.UninstallStosClusterNSConfig)
 	return nil
 }

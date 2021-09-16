@@ -13,11 +13,11 @@ import (
 )
 
 const skipNamespaceDeletionMessage = `Namespace %s still has resources.
-	Deletion of namespace has skipped.
+	Skipped namespace removal.
 	Reason: %s
-	Please check the existing resources by executing the following command:
+	Check for resources remaining in the namespace with:
 	kubectl get all -n %s
-	To delete namespace please execute the command below:
+	To remove the namespace and all remaining resources within it, run:
 	kubectl delete namespace %s`
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
@@ -28,7 +28,7 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade boo
 	}
 
 	// return early if user only wishes to delete storageos, leaving etcd untouched
-	if config.Spec.Uninstall.SkipEtcd {
+	if config.Spec.SkipEtcd {
 		return nil
 	}
 	err = in.uninstallEtcd(config.Spec.Uninstall.EtcdNamespace)
@@ -223,12 +223,20 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 		return err
 	}
 
+	if in.stosConfig.Spec.SkipNamespaceDeletion {
+		return nil
+	}
+
 	// gracefully delete removed namespaces (there is likely only one)
 	for _, removedNamespace := range removedNamespaces {
 		namespace, err := pluginutils.GetFieldInManifest(removedNamespace, "metadata", "name")
 		if err != nil {
 			return err
 		}
+		if namespace == "kube-system" {
+			continue
+		}
+
 		err = in.gracefullyDeleteNS(namespace)
 		if err != nil {
 			parentErr := errors.Unwrap(err)
@@ -243,17 +251,10 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 	return nil
 }
 
-// gracefullyDeleteNS deletes a k8s namespace only once there are no pod running in said namespace,
+// gracefullyDeleteNS deletes a k8s namespace only once there are no resources running in said namespace,
 // then waits for the namespace to be removed from the cluster before returning no error
 func (in *Installer) gracefullyDeleteNS(namespacename string) error {
-	err := pluginutils.WaitFor(func() error {
-		return pluginutils.NoResourcesInNS(in.clientConfig, namespacename)
-	}, 180, 10)
-	if err != nil {
-		return err
-	}
-
-	err = pluginutils.DeleteNamespace(in.clientConfig, namespacename)
+	err := pluginutils.DeleteNamespace(in.clientConfig, namespacename)
 	if err != nil {
 		return err
 	}

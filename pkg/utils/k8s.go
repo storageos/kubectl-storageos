@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -237,62 +236,6 @@ func IsPodRunning(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
-type itemList struct {
-	Items []interface{} `json:"items,omitempty"`
-}
-
-// NoResourcesInNS returns no error only if no resource exists in the provided namespace.
-func NoResourcesInNS(config *rest.Config, namespace string) error {
-	clientset, err := GetClientsetFromConfig(config)
-	if err != nil {
-		return err
-	}
-
-	resources, err := clientset.DiscoveryClient.ServerPreferredNamespacedResources()
-	if err != nil {
-		return err
-	}
-
-	rst := ResourcesStillExists{
-		namespace: namespace,
-		resources: []string{},
-	}
-
-	for _, resource := range resources {
-		for _, apiResource := range resource.APIResources {
-			if !apiResource.Namespaced ||
-				(resource.GroupVersion == "v1" && apiResource.Name == "events") {
-				continue
-			}
-
-			uri := fmt.Sprintf("/api/%s/namespaces/%s/%s", resource.GroupVersion, namespace, apiResource.Name)
-			res, err := clientset.RESTClient().Get().RequestURI(uri).DoRaw(context.Background())
-			if err != nil {
-				if kerrors.IsMethodNotSupported(err) || kerrors.IsNotFound(err) {
-					continue
-				}
-				return err
-			}
-
-			itemList := &itemList{}
-			err = json.Unmarshal(res, itemList)
-			if err != nil {
-				return err
-			}
-
-			if len(itemList.Items) > 0 {
-				rst.resources = append(rst.resources, fmt.Sprintf("%s/%s", resource.GroupVersion, apiResource.Name))
-			}
-		}
-	}
-
-	if len(rst.resources) != 0 {
-		return rst
-	}
-
-	return nil
-}
-
 // GetNamespace return namespace object
 func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, error) {
 	clientset, err := GetClientsetFromConfig(config)
@@ -314,7 +257,12 @@ func DeleteNamespace(config *rest.Config, namespace string) error {
 		return err
 	}
 
-	return clientset.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+	err = clientset.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+	if err != nil && kerrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 // NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster

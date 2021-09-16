@@ -55,6 +55,15 @@ func installCmd(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
+
+	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
+	if ksConfig.Spec.SkipEtcd && ksConfig.Spec.Install.EtcdEndpoints == "" {
+		ksConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
+		if err != nil {
+			return err
+		}
+	}
+
 	cliInstaller, err := installer.NewInstaller(ksConfig, true)
 	if err != nil {
 		return err
@@ -78,11 +87,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
+			config.Spec.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 			config.Spec.Install.EtcdOperatorYaml = cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag).Value.String()
 			config.Spec.Install.EtcdClusterYaml = cmd.Flags().Lookup(installer.EtcdClusterYamlFlag).Value.String()
-			config.Spec.Install.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
 			config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 			config.Spec.Install.StorageOSClusterNamespace = cmd.Flags().Lookup(installer.StosClusterNSFlag).Value.String()
 			config.Spec.Install.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
@@ -97,37 +106,16 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.Install.StorageOSOperatorYaml = toString(viper.Get(installer.StosOperatorYamlConfig))
-	config.Spec.Install.StorageOSClusterYaml = toString(viper.Get(installer.StosClusterYamlConfig))
-	config.Spec.Install.EtcdOperatorYaml = toString(viper.Get(installer.EtcdOperatorYamlConfig))
-	config.Spec.Install.EtcdClusterYaml = toString(viper.Get(installer.EtcdClusterYamlConfig))
-	config.Spec.Install.SkipEtcd = toBool(viper.Get(installer.InstallSkipEtcdConfig))
-	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.Get(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
-	config.Spec.Install.StorageOSClusterNamespace = toString(viper.Get(installer.InstallStosClusterNSConfig))
-	config.Spec.Install.EtcdNamespace = toString(viper.Get(installer.InstallEtcdNamespaceConfig))
-	config.Spec.Install.EtcdEndpoints = toString(viper.Get(installer.EtcdEndpointsConfig))
-	config.Spec.Install.StorageClassName = toString(viper.Get(installer.StorageClassConfig))
+	config.Spec.SkipEtcd = viper.GetBool(installer.InstallSkipEtcdConfig)
+	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
+	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
+	config.Spec.Install.EtcdOperatorYaml = viper.GetString(installer.EtcdOperatorYamlConfig)
+	config.Spec.Install.EtcdClusterYaml = viper.GetString(installer.EtcdClusterYamlConfig)
+	config.Spec.Install.StorageOSOperatorNamespace = toStringOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
+	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.InstallStosClusterNSConfig)
+	config.Spec.Install.EtcdNamespace = viper.GetString(installer.InstallEtcdNamespaceConfig)
+	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
+	config.Spec.Install.StorageClassName = viper.GetString(installer.StorageClassConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
-}
-
-func toBool(value interface{}) bool {
-	if value != nil {
-		return value.(bool)
-	}
-	return false
-}
-
-func toString(value interface{}) string {
-	if value != nil {
-		return value.(string)
-	}
-	return ""
-}
-
-func toStringOrDefault(value interface{}, def string) string {
-	if value != nil {
-		return value.(string)
-	}
-	return def
 }
