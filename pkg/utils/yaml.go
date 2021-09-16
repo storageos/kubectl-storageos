@@ -12,9 +12,29 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// GetManifestFromMultiDoc returns an individual object string from a multi-doc yaml file
+// GetManifestFromMultiDocByName returns an individual object string from a multi-doc yaml file
+// after searching by name..
+func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
+	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	if err != nil {
+		return "", err
+	}
+	for _, obj := range objs.Items {
+		if obj.UnstructuredObject().GetName() != name {
+			continue
+		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return "", err
+		}
+		return string(objYaml), nil
+	}
+	return "", fmt.Errorf("no object of name: %s found in multi doc manifest", name)
+}
+
+// GetManifestFromMultiDocByKind returns an individual object string from a multi-doc yaml file
 // after searching by kind. Note: the first object in multiManifest matching kind is returned.
-func GetManifestFromMultiDoc(multiDoc, kind string) (string, error) {
+func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
 		return "", err
@@ -118,7 +138,6 @@ func SetFieldInManifest(manifest, value, valueName string, fields ...string) (st
 		return "", err
 	}
 	return obj.MustString(), nil
-
 }
 
 // GetFieldInManifest returns the string value at path in manifest defined by fields.
@@ -136,10 +155,10 @@ func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 	return strings.TrimSpace(val.MustString()), nil
 }
 
-// GetFieldInMultiDocByKind uses GetManifestFromMultiDoc and GetFieldInManifest internally
+// GetFieldInMultiDocByKind uses GetManifestFromMultiDocByKind and GetFieldInManifest internally
 // to find a single manifest in a multi-doc and return the value at path defined by fields.
 func GetFieldInMultiDocByKind(multidoc, kind string, fields ...string) (string, error) {
-	manifest, err := GetManifestFromMultiDoc(multidoc, kind)
+	manifest, err := GetManifestFromMultiDocByKind(multidoc, kind)
 	if err != nil {
 		return "", err
 	}

@@ -11,8 +11,8 @@ import (
 )
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
-func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig) error {
-	err := in.uninstallStorageOS(config.Spec.Uninstall)
+func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
+	err := in.uninstallStorageOS(config.Spec.Uninstall, upgrade)
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig) error {
 	return nil
 }
 
-func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall) error {
+func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade bool) error {
 	// add changes to storageos kustomizations here before kustomizeAndDelete calls ie make changes
 	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
 	// based on flags (or cli config file)
@@ -41,12 +41,12 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall) error {
 
 	}
 
-	storageOSCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
+	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
 	if err != nil {
 		return err
 	}
 
-	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
+	storageOSCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
 	if err != nil {
 		return err
 	}
@@ -100,6 +100,13 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall) error {
 		return err
 	}
 
+	// if this is not an upgrade, write manifests to disk before deletion
+	if !upgrade {
+		err = in.writeBackupFileSystem(storageOSCluster)
+		if err != nil {
+			return err
+		}
+	}
 	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
 	if err != nil {
 		return err

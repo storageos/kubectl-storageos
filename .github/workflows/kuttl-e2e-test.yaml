@@ -23,4 +23,4 @@ jobs:
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS      
       - name: Run kuttl
-        run: kubectl-kuttl test --config tests/e2e/kuttl-test.yaml
+        run: sudo kubectl-kuttl test --config tests/e2e/kuttl-test.yaml

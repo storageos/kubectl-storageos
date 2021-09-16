@@ -286,6 +286,20 @@ func GetStorageClass(config *rest.Config, name string) (*kstoragev1.StorageClass
 	return storageClass, nil
 }
 
+// ListStorageClasses returns StorageClassList
+func ListStorageClasses(config *rest.Config, listOptions metav1.ListOptions) (*kstoragev1.StorageClassList, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	storageClasses, err := clientset.StorageV1().StorageClasses().List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return storageClasses, nil
+}
+
 // CreateStorageClass creates k8s storage class.
 func CreateStorageClass(config *rest.Config, storageClass *kstoragev1.StorageClass) error {
 	clientset, err := GetClientsetFromConfig(config)
@@ -314,6 +328,20 @@ func GetSecret(config *rest.Config, name, namespace string) (*corev1.Secret, err
 	}
 
 	return secret, nil
+}
+
+// ListSecrets returns SecretList
+func ListSecrets(config *rest.Config, listOptions metav1.ListOptions) (*corev1.SecretList, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	secrets, err := clientset.CoreV1().Secrets("").List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return secrets, nil
 }
 
 // CreateSecret creates k8s secret.
@@ -355,10 +383,10 @@ func SecretExists(config *rest.Config, name, namespace string) error {
 // GetStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
 // Use 'List' to discover as there can only be one object per k8s cluster and 'List' does not
 // require name/namespace - input namespace can optionally be passed to narrow the search.
-func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.StorageOSCluster, error) {
+func GetStorageOSCluster(config *rest.Config, namespace string) (*operatorapi.StorageOSCluster, error) {
 	scheme := runtime.NewScheme()
 	operatorapi.AddToScheme(scheme)
-	stosCluster := operatorapi.StorageOSCluster{}
+	stosCluster := &operatorapi.StorageOSCluster{}
 
 	newClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
@@ -376,7 +404,7 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (operatorapi.Sto
 		return stosCluster, kerrors.NewNotFound(operatorapi.SchemeGroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
 	}
 
-	stosCluster = stosClusterList.Items[0]
+	stosCluster = &stosClusterList.Items[0]
 	return stosCluster, nil
 }
 

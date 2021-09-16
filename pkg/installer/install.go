@@ -2,7 +2,6 @@ package installer
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"path/filepath"
 
@@ -145,7 +144,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		usernamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/username",
-			Value: base64.StdEncoding.EncodeToString([]byte(config.InstallerMeta.SecretUsername)),
+			Value: config.InstallerMeta.SecretUsername,
 		}
 
 		err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch})
@@ -159,7 +158,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		passwordPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/password",
-			Value: base64.StdEncoding.EncodeToString([]byte(config.InstallerMeta.SecretPassword)),
+			Value: config.InstallerMeta.SecretPassword,
 		}
 
 		err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch})
