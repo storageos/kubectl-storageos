@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	goversion "github.com/hashicorp/go-version"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,12 +22,6 @@ const (
 	oldClusterYamlUrlSuffix  = "/deploy/crds/storageos.com_v1_storageoscluster_cr.yaml"
 	oldSecretYamlUrlPrefix   = "https://raw.githubusercontent.com/storageos/cluster-operator/"
 	oldSecretYamlUrlSuffix   = "/deploy/secret.yaml"
-	oldOperatorName          = "storageos-cluster-operator"
-	oldOperatorNamespace     = "storageos-operator"
-	oldClusterNamespace      = "kube-system"
-
-	newOperatorName      = "storageos-controller-manager"
-	newOperatorNamespace = "storageos"
 
 	// URLs to installation manifests
 	stosOperatorImageUrl = "docker.io/storageos/operator-manifests"
@@ -63,13 +58,9 @@ func init() {
 	}
 }
 
-func GetDefaultNamespace() string {
-	return newOperatorNamespace
-}
-
 func GetExistingOperatorVersion(namespace string) (string, error) {
-	oldNS := oldOperatorNamespace
-	newNS := newOperatorNamespace
+	oldNS := consts.OldOperatorNamespace
+	newNS := consts.NewOperatorNamespace
 	if namespace != "" {
 		oldNS = namespace
 		newNS = namespace
@@ -84,9 +75,9 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 		return "", err
 	}
 
-	stosDeployment, err := clientset.AppsV1().Deployments(oldNS).Get(context.TODO(), oldOperatorName, metav1.GetOptions{})
+	stosDeployment, err := clientset.AppsV1().Deployments(oldNS).Get(context.TODO(), consts.OldOperatorName, metav1.GetOptions{})
 	if err != nil {
-		stosDeployment, err = clientset.AppsV1().Deployments(newNS).Get(context.TODO(), newOperatorName, metav1.GetOptions{})
+		stosDeployment, err = clientset.AppsV1().Deployments(newNS).Get(context.TODO(), consts.NewOperatorName, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}

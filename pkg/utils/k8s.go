@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
@@ -25,6 +26,22 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const helperDeletionErrorMessage = `Unable to delete helper %s.
+	Reason: %s
+	Please delete it manually by executing the following command:
+	kubectl delete %s -n %s %s`
+
+// ResourcesStillExists contains all the existing resource types in namespace
+type ResourcesStillExists struct {
+	namespace string
+	resources []string
+}
+
+// Error generates error message
+func (e ResourcesStillExists) Error() string {
+	return fmt.Sprintf("resource(s) still found in namespace %s: %s", e.namespace, strings.Join(e.resources, ", "))
+}
 
 // NewClientConfig returns a client-go rest config
 func NewClientConfig() (*rest.Config, error) {
@@ -172,7 +189,7 @@ func WaitFor(fn func() error, limit, interval time.Duration) error {
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("timeout with error: %v", err)
+			return fmt.Errorf("timeout with error: %w", err)
 		case <-ticker.C:
 			err = fn()
 			if err == nil {
@@ -219,23 +236,6 @@ func IsPodRunning(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
-// NoPodsInNS returns no error only if no pod exists in the provided namespace.
-func NoPodsInNS(config *rest.Config, namespace string) error {
-	clientset, err := GetClientsetFromConfig(config)
-	if err != nil {
-		return err
-	}
-	podClient := clientset.CoreV1().Pods(namespace)
-	pods, err := podClient.List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	if len(pods.Items) > 0 {
-		return fmt.Errorf("pods still exist in namespace %s", namespace)
-	}
-	return nil
-}
-
 // GetNamespace return namespace object
 func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, error) {
 	clientset, err := GetClientsetFromConfig(config)
@@ -248,6 +248,21 @@ func GetNamespace(config *rest.Config, namespace string) (*corev1.Namespace, err
 		return nil, err
 	}
 	return ns, nil
+}
+
+// DeleteNamespace deletes the given namespace
+func DeleteNamespace(config *rest.Config, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+
+	err = clientset.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
+	if err != nil && kerrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 // NamespaceDoesNotExist returns no error only if the specified namespace does not exist in the k8s cluster
@@ -516,11 +531,7 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 	defer func() {
 		delErr := jobClient.Delete(context.Background(), job.Name, metav1.DeleteOptions{})
 		if delErr != nil {
-			println(fmt.Sprintf(`
-Unable to delete helper job.
-Reason: %s
-Please delete it manually by executing the following command:
-kubectl delete job -n %s %s`, delErr.Error(), namespace, job.Name))
+			println(fmt.Sprintf(helperDeletionErrorMessage, "job", delErr.Error(), "job", namespace, job.Name))
 		}
 	}()
 
@@ -558,11 +569,7 @@ kubectl delete job -n %s %s`, delErr.Error(), namespace, job.Name))
 		defer func() {
 			delErr := clientset.CoreV1().Pods(namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 			if delErr != nil {
-				println(fmt.Sprintf(`
-Unable to delete helper pod.
-Reason: %s
-Please delete it manually by executing the following command:
-kubectl delete pod -n %s %s`, delErr.Error(), namespace, pod.Name))
+				println(fmt.Sprintf(helperDeletionErrorMessage, "pod", delErr.Error(), "pod", namespace, pod.Name))
 			}
 		}()
 

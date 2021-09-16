@@ -242,6 +242,9 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
   patch: |`)
 
 	patch, err := kyaml.Parse(strings.Join([]string{targetString, allPatchesStr}, ""))
+	if err != nil {
+		return "", err
+	}
 
 	_, err = obj.Pipe(
 		kyaml.LookupCreate(kyaml.SequenceNode, "patches"),

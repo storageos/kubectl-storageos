@@ -10,11 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	oldOperatorName = "storageos-cluster-operator"
-	newOperatorName = "storageos-controller-manager"
-)
-
 func RunPlugin(configFlags *genericclioptions.ConfigFlags, outputCh chan string) error {
 	config, err := configFlags.ToRESTConfig()
 	if err != nil {

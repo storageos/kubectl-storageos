@@ -20,22 +20,24 @@ import (
 
 const (
 	// CLI flags
-	StosOperatorYamlFlag = "stos-operator-yaml"
-	StosClusterYamlFlag  = "stos-cluster-yaml"
-	StosSecretYamlFlag   = "stos-secret-yaml"
-	EtcdOperatorYamlFlag = "etcd-operator-yaml"
-	EtcdClusterYamlFlag  = "etcd-cluster-yaml"
-	SkipEtcdFlag         = "skip-etcd"
-	EtcdEndpointsFlag    = "etcd-endpoints"
-	ConfigPathFlag       = "config-path"
-	EtcdNamespaceFlag    = "etcd-namespace"
-	StosOperatorNSFlag   = "stos-operator-namespace"
-	StosClusterNSFlag    = "stos-cluster-namespace"
-	StorageClassFlag     = "storage-class"
-	SecretUserFlag       = "secret-username"
-	SecretPassFlag       = "secret-password"
+	SkipNamespaceDeletionFlag = "skip-namespace-deletion"
+	StosOperatorYamlFlag      = "stos-operator-yaml"
+	StosClusterYamlFlag       = "stos-cluster-yaml"
+	StosSecretYamlFlag        = "stos-secret-yaml"
+	EtcdOperatorYamlFlag      = "etcd-operator-yaml"
+	EtcdClusterYamlFlag       = "etcd-cluster-yaml"
+	SkipEtcdFlag              = "skip-etcd"
+	EtcdEndpointsFlag         = "etcd-endpoints"
+	ConfigPathFlag            = "config-path"
+	EtcdNamespaceFlag         = "etcd-namespace"
+	StosOperatorNSFlag        = "stos-operator-namespace"
+	StosClusterNSFlag         = "stos-cluster-namespace"
+	StorageClassFlag          = "storage-class"
+	SecretUserFlag            = "secret-username"
+	SecretPassFlag            = "secret-password"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
+	SkipNamespaceDeletionConfig   = "spec.skipNmespaceDeletion"
 	InstallEtcdNamespaceConfig    = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig   = "spec.install.storageOSOperatorNamespace"
 	InstallStosClusterNSConfig    = "spec.install.storageOSClusterNamespace"
@@ -94,6 +96,7 @@ type Installer struct {
 	kubectlClient *otkkubectl.DefaultKubectl
 	clientConfig  *rest.Config
 	kubeClusterID types.UID
+	stosConfig    *apiv1.KubectlStorageOSConfig
 	fileSys       filesys.FileSystem
 	onDiskFileSys filesys.FileSystem
 }
@@ -128,6 +131,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*
 		kubectlClient: otkkubectl.New(),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
+		stosConfig:    config,
 		fileSys:       fileSys,
 		onDiskFileSys: filesys.MakeFsOnDisk(),
 	}
@@ -174,20 +178,6 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 	return nil
 }
 
-// getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
-// GetFieldInManiest internally to retrieve the specified field.
-func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string, error) {
-	data, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
-	if err != nil {
-		return "", err
-	}
-	return field, nil
-}
-
 // getFieldInFsMultiDocByKind reads the file at path of the in-memory filesystem, uses
 // GetFieldInMultiiDocByKind internally to retrieve the specified field.
 func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...string) (string, error) {
@@ -200,20 +190,6 @@ func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...str
 		return "", err
 	}
 	return field, nil
-}
-
-// getManifestFromFsMultiDocByKind reads the file at path of the in-memory filesystem, uses
-// GetManifestFromMultiDocByKind internally to retrieve the individual manifest by kind.
-func (in *Installer) getManifestFromFsMultiDocByKind(path, kind string) (string, error) {
-	data, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	singleManifest, err := pluginutils.GetManifestFromMultiDocByKind(string(data), kind)
-	if err != nil {
-		return "", err
-	}
-	return singleManifest, nil
 }
 
 // getAllManifestsOfKindFromFsMultiDoc reads the file at path of the in-memory filesystem, uses

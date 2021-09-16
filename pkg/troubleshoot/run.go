@@ -383,17 +383,15 @@ func canTryInsecure(v *viper.Viper) bool {
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		return false
 	}
+
 	prompt := promptui.Prompt{
 		Label:     "Connection appears to be insecure. Would you like to attempt to create a support bundle anyway?",
 		IsConfirm: true,
 	}
 
-	_, err := prompt.Run()
-	if err != nil {
-		return false
-	}
+	_, err := pluginutils.AskUser(prompt)
 
-	return true
+	return err == nil
 }
 
 func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, additionalRedactors *troubleshootv1beta2.Redactor, progressChan chan interface{}) (string, error) {

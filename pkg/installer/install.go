@@ -13,7 +13,7 @@ import (
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 	var err error
-	if config.Spec.Install.SkipEtcd {
+	if config.Spec.SkipEtcd {
 		err = in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints)
 		if err != nil {
 			return err
@@ -264,12 +264,12 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 		return err
 	}
 
-	namespaceName, err := pluginutils.GetFieldInManifest(namespaceManifest, "metadata", "name")
+	namespace, err := pluginutils.GetFieldInManifest(namespaceManifest, "metadata", "name")
 	if err != nil {
 		return err
 	}
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NamespaceExists(in.clientConfig, namespaceName)
+		return pluginutils.NamespaceExists(in.clientConfig, namespace)
 	}, 120, 5)
 	if err != nil {
 		return err

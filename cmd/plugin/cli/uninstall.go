@@ -2,14 +2,16 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
+	"github.com/mattn/go-isatty"
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
-	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -30,10 +32,11 @@ func UninstallCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().Bool(installer.SkipEtcdFlag, false, "uninstall storageos only, leaving ETCD untouched")
-	cmd.Flags().String(installer.EtcdNamespaceFlag, "", "namespace of etcd operator and cluster to be uninstalled")
-	cmd.Flags().String(installer.StosOperatorNSFlag, version.GetDefaultNamespace(), "namespace of storageos operator to be uninstalled")
-	cmd.Flags().String(installer.StosClusterNSFlag, "", "namespace of storageos cluster to be uninstalled")
+	cmd.Flags().String(installer.EtcdNamespaceFlag, consts.EtcdOperatorNamespace, "namespace of etcd operator and cluster to be uninstalled")
+	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
+	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be uninstalled")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 
 	viper.BindPFlags(cmd.Flags())
@@ -52,6 +55,15 @@ func uninstallCmd(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
+
+	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
+	if !ksConfig.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
+		ksConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
+		if err != nil {
+			return err
+		}
+	}
+
 	version, err := pluginversion.GetExistingOperatorVersion(ksConfig.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -86,12 +98,14 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
+			config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
+			if err != nil {
+				return err
+			}
+			config.Spec.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
 			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 			config.Spec.Uninstall.StorageOSClusterNamespace = cmd.Flags().Lookup(installer.StosClusterNSFlag).Value.String()
 			config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
-			config.Spec.Uninstall.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
-			// also set SkipEtcd value for Installer (used during installer fs build)
-			config.Spec.Install.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
 
 			return nil
 
@@ -101,12 +115,11 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.Uninstall.StorageOSOperatorNamespace = toString(viper.Get(installer.UninstallStosOperatorNSConfig))
-	config.Spec.Uninstall.StorageOSClusterNamespace = toString(viper.Get(installer.UninstallStosClusterNSConfig))
-	config.Spec.Uninstall.EtcdNamespace = toString(viper.Get(installer.UninstallEtcdNamespaceConfig))
-	config.Spec.Uninstall.SkipEtcd = toBool(viper.Get(installer.UninstallSkipEtcdConfig))
-	// also set SkipEtcd value for Installer (used during installer fs build)
-	config.Spec.Install.SkipEtcd = toBool(viper.Get(installer.UninstallSkipEtcdConfig))
+	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
+	config.Spec.SkipEtcd = viper.GetBool(installer.UninstallSkipEtcdConfig)
+	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
+	config.Spec.Uninstall.StorageOSClusterNamespace = viper.GetString(installer.UninstallStosClusterNSConfig)
+	config.Spec.Uninstall.EtcdNamespace = valueOrDefault(viper.GetString(installer.UninstallEtcdNamespaceConfig), consts.EtcdOperatorNamespace)
 	return nil
 }
 

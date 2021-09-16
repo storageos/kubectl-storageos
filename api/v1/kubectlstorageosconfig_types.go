@@ -20,11 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
 type KubectlStorageOSConfigSpec struct {
+	SkipNamespaceDeletion bool `json:"skipNmespaceDeletion,omitempty"`
+	SkipEtcd              bool `json:"skipEtcd,omitempty"`
+
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Install   Install   `json:"install,omitempty"`
@@ -43,8 +43,6 @@ func (spec *KubectlStorageOSConfigSpec) GetNamespace() (namespace string) {
 
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
 type KubectlStorageOSConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // Install defines options for cli install subcommand
@@ -56,7 +54,6 @@ type Install struct {
 	StorageOSClusterYaml       string `json:"storageOSClusterYaml,omitempty"`
 	EtcdOperatorYaml           string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml            string `json:"etcdClusterYaml,omitempty"`
-	SkipEtcd                   bool   `json:"skipEtcd,omitempty"`
 	EtcdEndpoints              string `json:"etcdEndpoints,omitempty"`
 	StorageClassName           string `json:"storageClassName,omitempty"`
 }
@@ -66,7 +63,6 @@ type Uninstall struct {
 	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
 	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
-	SkipEtcd                   bool   `json:"skipEtcd,omitempty"`
 }
 
 type InstallerMeta struct {
