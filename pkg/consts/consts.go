@@ -9,4 +9,6 @@ const (
 	NewOperatorNamespace = "storageos"
 	OldOperatorNamespace = "storageos-operator"
 	OldClusterNamespace  = "kube-system"
+
+	EtcdOperatorNamespace = "storageos-etcd"
 )

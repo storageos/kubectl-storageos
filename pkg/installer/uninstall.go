@@ -20,6 +20,10 @@ const skipNamespaceDeletionMessage = `Namespace %s still has resources.
 	To remove the namespace and all remaining resources within it, run:
 	kubectl delete namespace %s`
 
+var protectedNamespaces = map[string]bool{
+	"kube-system": true,
+}
+
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
 func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
 	err := in.uninstallStorageOS(config.Spec.Uninstall, upgrade)
@@ -121,6 +125,14 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
 	if err != nil {
 		return err
+	}
+
+	// StorageOS cluster resources should be in a different namespace, on that case need to delete
+	if in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	// allow storageoscluster object to be deleted before continuing uninstall process
@@ -233,17 +245,9 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 		if err != nil {
 			return err
 		}
-		if namespace == "kube-system" {
-			continue
-		}
 
 		err = in.gracefullyDeleteNS(namespace)
 		if err != nil {
-			parentErr := errors.Unwrap(err)
-			if _, ok := parentErr.(pluginutils.ResourcesStillExists); ok {
-				println(fmt.Sprintf(skipNamespaceDeletionMessage, namespace, err.Error(), namespace, namespace))
-				continue
-			}
 			return err
 		}
 	}
@@ -253,17 +257,25 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 
 // gracefullyDeleteNS deletes a k8s namespace only once there are no resources running in said namespace,
 // then waits for the namespace to be removed from the cluster before returning no error
-func (in *Installer) gracefullyDeleteNS(namespacename string) error {
-	err := pluginutils.DeleteNamespace(in.clientConfig, namespacename)
-	if err != nil {
+func (in *Installer) gracefullyDeleteNS(namespace string) error {
+	if _, ok := protectedNamespaces[namespace]; ok || in.stosConfig.Spec.SkipNamespaceDeletion {
+		return nil
+	}
+
+	if err := pluginutils.DeleteNamespace(in.clientConfig, namespace); err != nil {
 		return err
 	}
 
-	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NamespaceDoesNotExist(in.clientConfig, namespacename)
+	err := pluginutils.WaitFor(func() error {
+		return pluginutils.NamespaceDoesNotExist(in.clientConfig, namespace)
 	}, 120, 5)
 	if err != nil {
-		return err
+		parentErr := errors.Unwrap(err)
+		if _, ok := parentErr.(pluginutils.ResourcesStillExists); !ok {
+			return err
+		}
+
+		println(fmt.Sprintf(skipNamespaceDeletionMessage, namespace, err.Error(), namespace, namespace))
 	}
 
 	return nil

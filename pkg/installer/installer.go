@@ -178,20 +178,6 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 	return nil
 }
 
-// getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
-// GetFieldInManiest internally to retrieve the specified field.
-func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string, error) {
-	data, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
-	if err != nil {
-		return "", err
-	}
-	return field, nil
-}
-
 // getFieldInFsMultiDocByKind reads the file at path of the in-memory filesystem, uses
 // GetFieldInMultiiDocByKind internally to retrieve the specified field.
 func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...string) (string, error) {
@@ -204,20 +190,6 @@ func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...str
 		return "", err
 	}
 	return field, nil
-}
-
-// getManifestFromFsMultiDocByKind reads the file at path of the in-memory filesystem, uses
-// GetManifestFromMultiDocByKind internally to retrieve the individual manifest by kind.
-func (in *Installer) getManifestFromFsMultiDocByKind(path, kind string) (string, error) {
-	data, err := in.fileSys.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	singleManifest, err := pluginutils.GetManifestFromMultiDocByKind(string(data), kind)
-	if err != nil {
-		return "", err
-	}
-	return singleManifest, nil
 }
 
 // getAllManifestsOfKindFromFsMultiDoc reads the file at path of the in-memory filesystem, uses

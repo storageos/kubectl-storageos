@@ -62,8 +62,6 @@ spec:
                     type: string
                   etcdOperatorYaml:
                     type: string
-                  skipEtcd:
-                    type: boolean
                   storageClassName:
                     type: string
                   storageOSClusterNamespace:
@@ -75,13 +73,15 @@ spec:
                   storageOSOperatorYaml:
                     type: string
                 type: object
+              skipEtcd:
+                type: boolean
+              skipNmespaceDeletion:
+                type: boolean
               uninstall:
                 description: Uninstall defines options for cli uninstall subcommand
                 properties:
                   etcdNamespace:
                     type: string
-                  skipEtcd:
-                    type: boolean
                   storageOSClusterNamespace:
                     type: string
                   storageOSOperatorNamespace:
