@@ -32,6 +32,8 @@ const helperDeletionErrorMessage = `Unable to delete helper %s.
 	Please delete it manually by executing the following command:
 	kubectl delete %s -n %s %s`
 
+const jobTimeout = time.Minute
+
 // ResourcesStillExists contains all the existing resource types in namespace
 type ResourcesStillExists struct {
 	namespace string
@@ -500,6 +502,8 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 	jobMeta := metav1.ObjectMeta{
 		Name: name,
 	}
+
+	bofl := int32(1)
 	job := &batchv1.Job{
 		ObjectMeta: jobMeta,
 		Spec: batchv1.JobSpec{
@@ -514,6 +518,7 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 					RestartPolicy: corev1.RestartPolicyNever,
 				},
 			},
+			BackoffLimit: &bofl,
 		},
 	}
 
@@ -524,7 +529,10 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 
 	jobClient := clientset.BatchV1().Jobs(namespace)
 
-	_, err = jobClient.Create(context.Background(), job, metav1.CreateOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), jobTimeout)
+	defer cancel()
+
+	_, err = jobClient.Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -535,9 +543,6 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	watch, err := jobClient.Watch(ctx, metav1.SingleObject(jobMeta))
 	if err != nil {
 		return "", err
@@ -546,7 +551,7 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 	for {
 		res, ok := <-watch.ResultChan()
 		if !ok {
-			return "", errors.New("unable to read job events")
+			return "", fmt.Errorf("unable to read job events of %s", image)
 		}
 
 		job, ok := res.Object.(*batchv1.Job)

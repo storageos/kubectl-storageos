@@ -10,6 +10,7 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func InstallCmd() *cobra.Command {
@@ -29,6 +30,7 @@ func InstallCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
@@ -54,6 +56,11 @@ func installCmd(cmd *cobra.Command) error {
 	err := setInstallValues(cmd, ksConfig)
 	if err != nil {
 		return err
+	}
+
+	// user specified the version
+	if ksConfig.Spec.Install.Version != "" {
+		version.SetOperatorLatestSupportedVersion(ksConfig.Spec.Install.Version)
 	}
 
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
@@ -88,6 +95,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
 			config.Spec.SkipEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdFlag).Value.String())
+			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 			config.Spec.Install.EtcdOperatorYaml = cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag).Value.String()
@@ -107,6 +115,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.SkipEtcd = viper.GetBool(installer.InstallSkipEtcdConfig)
+	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
 	config.Spec.Install.EtcdOperatorYaml = viper.GetString(installer.EtcdOperatorYamlConfig)

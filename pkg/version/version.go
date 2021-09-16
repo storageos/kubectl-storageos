@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	operatorOldestSupportedVersion = "v2.2.0"
-
 	oldOperatorYamlUrlPrefix = "https://github.com/storageos/cluster-operator/releases/download/"
 	oldOperatorYamlUrlSuffix = "/storageos-operator.yaml"
 	oldClusterYamlUrlPrefix  = "https://raw.githubusercontent.com/storageos/cluster-operator/"
@@ -24,7 +22,7 @@ const (
 	oldSecretYamlUrlSuffix   = "/deploy/secret.yaml"
 
 	// URLs to installation manifests
-	stosOperatorImageUrl = "docker.io/storageos/operator-manifests"
+	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
 	// TODO: set properly once releases.
 	stosClusterYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
 
@@ -86,12 +84,12 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	splitImageName := strings.SplitAfter(imageName, ":")
 	version := splitImageName[len(splitImageName)-1]
 
-	lessThan, err := VersionIsLessThan(version, operatorOldestSupportedVersion)
+	lessThan, err := VersionIsLessThan(version, consts.OperatorOldestSupportedVersion)
 	if err != nil {
 		return "", err
 	}
 	if lessThan {
-		return "", fmt.Errorf("kubectl storageos does not support storageos operator version less than %s", operatorOldestSupportedVersion)
+		return "", fmt.Errorf("kubectl storageos does not support storageos operator version less than %s", consts.OperatorOldestSupportedVersion)
 	}
 
 	return version, nil
@@ -113,7 +111,7 @@ func OperatorUrlByVersion(version string) (string, error) {
 		return fmt.Sprintf("%s%s%s", oldOperatorYamlUrlPrefix, version, oldOperatorYamlUrlSuffix), nil
 	}
 
-	return fmt.Sprintf("%s:%s", stosOperatorImageUrl, version), nil
+	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, version), nil
 }
 
 func ClusterUrlByVersion(version string) (string, error) {
@@ -193,7 +191,7 @@ func VersionIsEqualTo(version, marker string) (bool, error) {
 }
 
 func OperatorLatestSupportedURL() string {
-	return fmt.Sprintf("%s:%s", stosOperatorImageUrl, OperatorLatestSupportedVersion())
+	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, OperatorLatestSupportedVersion())
 }
 
 func ClusterLatestSupportedURL() string {

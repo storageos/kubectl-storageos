@@ -65,11 +65,18 @@ type GithubRelease struct {
 
 func OperatorLatestSupportedVersion() string {
 	fetchOperatorVersionOnce.Do(func() {
+		if operatorLatestVersion != "" {
+			return
+		}
 		releases := fetchVersionsOrPanic(operatorReleasesUrl)
 		operatorLatestVersion = selectLatestVersionOrPanic(releases)
 	})
 
 	return operatorLatestVersion
+}
+
+func SetOperatorLatestSupportedVersion(version string) {
+	operatorLatestVersion = version
 }
 
 func ClusterOperatorLastVersion() string {
