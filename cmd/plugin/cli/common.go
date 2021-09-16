@@ -2,6 +2,7 @@ package cli
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -33,17 +34,44 @@ func etcdEndpointsPrompt() (string, error) {
 // skipNamespaceDeletionPrompt uses promptui to prompt the user to enter decision of skipping namespace deletion
 func skipNamespaceDeletionPrompt() (bool, error) {
 	logger.Printf("   Please confirm namespace deletion.")
-	prompt := promptui.Prompt{
-		Label:     "Skip namespace deletion",
-		IsConfirm: true,
+	yesValues := map[string]bool{
+		"y":   true,
+		"yes": true,
+	}
+	noValues := map[string]bool{
+		"":   true,
+		"n":  true,
+		"no": true,
 	}
 
-	_, err := pluginutils.AskUser(prompt)
+	validate := func(input string) error {
+		ilc := strings.ToLower(input)
+		_, yes := yesValues[ilc]
+		_, no := noValues[ilc]
 
-	return err == nil, err
+		if !yes && !no {
+			return errors.New("invalid input")
+		}
+
+		return nil
+	}
+	prompt := promptui.Prompt{
+		Label:    "Skip namespace deletion [y/N]",
+		Validate: validate,
+	}
+
+	input, err := pluginutils.AskUser(prompt)
+	if err != nil {
+		return false, err
+	}
+
+	ilc := strings.ToLower(input)
+	_, yes := yesValues[ilc]
+
+	return yes, nil
 }
 
-func toStringOrDefault(value string, def string) string {
+func valueOrDefault(value string, def string) string {
 	if value != "" {
 		return value
 	}

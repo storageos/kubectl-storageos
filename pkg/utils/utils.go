@@ -21,7 +21,7 @@ func AskUser(prompt promptui.Prompt) (string, error) {
 	go func() {
 		result, err := prompt.Run()
 		if err != nil {
-			logger.Printf("Prompt failed %v\n", err)
+			logger.Printf("Prompt failed %s\n", err.Error())
 			errorChan <- err
 		}
 
