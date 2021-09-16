@@ -31,6 +31,11 @@ func TestEndpointsSplitter(t *testing.T) {
 			endpoints:    "storageos.default:2379,storageos.system:2379",
 			expEndpoints: "\"http://storageos.default:2379,http://storageos.system:2379\"",
 		},
+		{
+			name:         "multiple domains with prefix",
+			endpoints:    "http://storageos.default:2379,https://storageos.system:2379",
+			expEndpoints: "\"http://storageos.default:2379,http://storageos.system:2379\"",
+		},
 	}
 	for _, tc := range tcases {
 		endpoints := endpointsSplitter(tc.endpoints)
@@ -50,18 +55,22 @@ func TestEtcdctlMemberList(t *testing.T) {
 			name:      "test 1",
 			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" member list",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"member",
+				"list",
 			},
 		},
 		{
 			name:      "test 2",
 			endpoints: "\"http://1.2.3.4:2379\"",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" member list",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379\"",
+				"member",
+				"list",
 			},
 		},
 	}
@@ -87,9 +96,12 @@ func TestEtcdctlPutCmd(t *testing.T) {
 			key:       "foo",
 			value:     "bar",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" put foo bar",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"put",
+				"foo",
+				"bar",
 			},
 		},
 		{
@@ -98,9 +110,12 @@ func TestEtcdctlPutCmd(t *testing.T) {
 			key:       "test-key",
 			value:     "test-val",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" put test-key test-val",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379\"",
+				"put",
+				"test-key",
+				"test-val",
 			},
 		},
 	}
@@ -124,9 +139,11 @@ func TestEtcdctlGetCmd(t *testing.T) {
 			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
 			key:       "foo",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" get foo",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"get",
+				"foo",
 			},
 		},
 		{
@@ -134,9 +151,11 @@ func TestEtcdctlGetCmd(t *testing.T) {
 			endpoints: "\"http://1.2.3.4:2379\"",
 			key:       "test-key",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" get test-key",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379\"",
+				"get",
+				"test-key",
 			},
 		},
 	}
@@ -160,9 +179,11 @@ func TestEtcdctlDelCmd(t *testing.T) {
 			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
 			key:       "foo",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379,http://5.6.7.8:2379\" del foo",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"del",
+				"foo",
 			},
 		},
 		{
@@ -170,9 +191,11 @@ func TestEtcdctlDelCmd(t *testing.T) {
 			endpoints: "\"http://1.2.3.4:2379\"",
 			key:       "test-key",
 			cmd: []string{
-				"/bin/bash",
-				"-c",
-				"etcdctl --endpoints \"http://1.2.3.4:2379\" del test-key",
+				"etcdctl",
+				"--endpoints",
+				"\"http://1.2.3.4:2379\"",
+				"del",
+				"test-key",
 			},
 		},
 	}

@@ -53,7 +53,7 @@ ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: fmt vet generate ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ${BUILDFLAGS} github.com/storageos/kubectl-storageos
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ${BUILDFLAGS} github.com/storageos/kubectl-storageos/...
 
 e2e:
 	kubectl-kuttl test --config tests/e2e/kuttl-test.yaml

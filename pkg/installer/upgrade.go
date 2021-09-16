@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
+	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
@@ -16,6 +17,15 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	installer, err := NewInstaller(installConfig, true)
 	if err != nil {
 		return err
+	}
+	storageOSCluster, err := pluginutils.GetStorageOSCluster(installer.clientConfig, "")
+	if err != nil {
+		return err
+	}
+
+	// if etcdEndpoints was not passed via config, use that of existing cluster
+	if installConfig.Spec.Install.EtcdEndpoints == "" {
+		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
 	}
 
 	err = installer.handleEndpointsInput(installConfig.Spec.Install.EtcdEndpoints)
@@ -29,7 +39,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	err = uninstaller.prepareForUpgrade(installConfig, versionToUninstall)
+	err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall)
 	if err != nil {
 		return err
 	}
@@ -54,14 +64,9 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
-func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
-	storageOSCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
-	if err != nil {
-		return err
-	}
-
+func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string) error {
 	// write storageoscluster, secret and storageclass manifests to disk
-	err = in.writeBackupFileSystem(storageOSCluster)
+	err := in.writeBackupFileSystem(storageOSCluster)
 	if err != nil {
 		return err
 	}
