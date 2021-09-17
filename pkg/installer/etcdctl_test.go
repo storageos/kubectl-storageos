@@ -33,7 +33,7 @@ func TestEndpointsSplitter(t *testing.T) {
 		},
 		{
 			name:         "multiple domains with prefix",
-			endpoints:    "http://storageos.default:2379,https://storageos.system:2379",
+			endpoints:    "http://storageos.default:2379,http://storageos.system:2379",
 			expEndpoints: "\"http://storageos.default:2379,http://storageos.system:2379\"",
 		},
 	}

@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	httpPrefix  = "http://"
-	httpsPrefix = "https://"
+	httpPrefix = "http://"
 )
 
 // etcdctlMemberList returns a slice of strings representing the etcdctl command for members list to
@@ -49,7 +48,6 @@ func endpointsSplitter(endpoints string) string {
 	endpointsSlice := strings.Split(endpoints, ",")
 	httpEndpointsSlice := make([]string, 0)
 	for _, endpoint := range endpointsSlice {
-		endpoint = strings.TrimPrefix(endpoint, httpsPrefix)
 		if !strings.HasPrefix(endpoint, httpPrefix) {
 			endpoint = fmt.Sprintf("%s%s", httpPrefix, endpoint)
 		}
