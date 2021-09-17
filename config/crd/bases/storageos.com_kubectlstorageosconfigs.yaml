@@ -64,6 +64,8 @@ spec:
                     type: string
                   etcdOperatorYaml:
                     type: string
+                  etcdTLSEnabled:
+                    type: boolean
                   storageClassName:
                     type: string
                   storageOSClusterNamespace:
