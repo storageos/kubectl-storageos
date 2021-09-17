@@ -343,3 +343,29 @@ func separateSecrets(secretList *corev1.SecretList) (*corev1.SecretList, *corev1
 	}
 	return stosSecretList, csiSecretList
 }
+
+// collectErrors collects all errors on the channel
+func collectErrors(errChan <-chan error) error {
+	mErr := multipleErrors{
+		errors: []string{},
+	}
+
+	for {
+		err, ok := <-errChan
+
+		if !ok {
+			switch len(mErr.errors) {
+			case 0:
+				return nil
+			case 1:
+				return errors.New(mErr.errors[0])
+			default:
+				return mErr
+			}
+		}
+
+		if err != nil {
+			mErr.errors = append(mErr.errors, err.Error())
+		}
+	}
+}

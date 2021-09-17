@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
@@ -26,21 +27,34 @@ var protectedNamespaces = map[string]bool{
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos
 func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
-	err := in.uninstallStorageOS(config.Spec.Uninstall, upgrade)
-	if err != nil {
-		return err
+	wg := sync.WaitGroup{}
+	errChan := make(chan error, 2)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		errChan <- in.uninstallStorageOS(config.Spec.Uninstall, upgrade)
+	}()
+
+	if serialInstall {
+		wg.Wait()
 	}
 
 	// return early if user only wishes to delete storageos, leaving etcd untouched
-	if config.Spec.SkipEtcd {
-		return nil
-	}
-	err = in.uninstallEtcd(config.Spec.Uninstall.EtcdNamespace)
-	if err != nil {
-		return err
+	if !config.Spec.SkipEtcd {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			errChan <- in.uninstallEtcd(config.Spec.Uninstall.EtcdNamespace)
+		}()
 	}
 
-	return nil
+	wg.Wait()
+	go close(errChan)
+
+	return collectErrors(errChan)
 }
 
 func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade bool) error {

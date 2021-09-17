@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
@@ -88,6 +89,26 @@ resources:`
 	stosSCProvisioner      = "csi.storageos.com"
 	stosAppLabel           = "app=storageos"
 )
+
+var (
+	// SerialInstall allows the installer to install operators serially not parallel.
+	// This could be change with build flag:
+	// -X github.com/storageos/kubectl-storageos/pkg/installer.SerialInstall=ANY_VALUE
+	SerialInstall string
+	serialInstall bool
+)
+
+func init() {
+	serialInstall = SerialInstall != ""
+}
+
+type multipleErrors struct {
+	errors []string
+}
+
+func (me multipleErrors) Error() string {
+	return "Multiple errors: \n" + strings.Join(me.errors, "\n---\n")
+}
 
 // fsData represents dir name, subdir name, file name and file data.
 // It is used to create the Installer's in-memory file system.

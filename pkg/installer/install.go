@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
@@ -12,24 +13,37 @@ import (
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
-	var err error
+	wg := sync.WaitGroup{}
+	errChan := make(chan error, 2)
+
 	if config.Spec.SkipEtcd {
-		err = in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints)
-		if err != nil {
+		if err := in.handleEndpointsInput(config.Spec.Install.EtcdEndpoints); err != nil {
 			return err
 		}
 	} else {
-		err = in.installEtcd(config.Spec.Install)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			errChan <- in.installEtcd(config.Spec.Install)
+		}()
 	}
 
-	err = in.installStorageOS(config)
-	if err != nil {
-		return err
+	if serialInstall {
+		wg.Wait()
 	}
-	return nil
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		errChan <- in.installStorageOS(config)
+	}()
+
+	wg.Wait()
+	go close(errChan)
+
+	return collectErrors(errChan)
 }
 
 func (in *Installer) installEtcd(configInstall apiv1.Install) error {
