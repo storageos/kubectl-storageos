@@ -31,6 +31,7 @@ const (
 	EtcdClusterYamlFlag       = "etcd-cluster-yaml"
 	IncludeEtcdFlag           = "include-etcd"
 	EtcdEndpointsFlag         = "etcd-endpoints"
+	SkipEtcdEndpointsValFlag  = "skip-etcd-endpoints-validation"
 	EtcdTLSEnabledFlag        = "etcd-tls-enabled"
 	ConfigPathFlag            = "config-path"
 	EtcdNamespaceFlag         = "etcd-namespace"
@@ -53,6 +54,7 @@ const (
 	EtcdOperatorYamlConfig        = "spec.install.etcdOperatorYaml"
 	EtcdClusterYamlConfig         = "spec.install.etcdClusterYaml"
 	EtcdEndpointsConfig           = "spec.install.etcdEndpoints"
+	SkipEtcdEndpointsValConfig    = "spec.install.skipEtcdEndpointsValidation"
 	EtcdTLSEnabledConfig          = "spec.install.etcdTLSEnabled"
 	StorageClassConfig            = "spec.install.storageClassName"
 	SecretUserConfig              = "spec.install.secretUsername"
@@ -88,6 +90,7 @@ resources:`
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
 	defaultEtcdClusterNS   = "storageos-etcd"
+	defaultEtcdSecretName  = "storageos-etcd-secret"
 	stosFinalizer          = "storageos.com/finalizer"
 	stosSCProvisioner      = "csi.storageos.com"
 	stosAppLabel           = "app=storageos"
@@ -202,6 +205,20 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 		return err
 	}
 	return nil
+}
+
+// getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
+// GetFieldInManiest internally to perform the update and then writes the returned file to path.
+func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
+	if err != nil {
+		return "", err
+	}
+	return field, nil
 }
 
 // getFieldInFsMultiDocByKind reads the file at path of the in-memory filesystem, uses

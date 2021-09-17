@@ -66,6 +66,8 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
+                  skipEtcdEndpointsValidation:
+                    type: boolean
                   storageClassName:
                     type: string
                   storageOSClusterNamespace:

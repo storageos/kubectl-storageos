@@ -47,18 +47,19 @@ type KubectlStorageOSConfigStatus struct {
 
 // Install defines options for cli install subcommand
 type Install struct {
-	Wait                       bool   `json:"wait,omitempty"`
-	Version                    string `json:"version,omitempty"`
-	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
-	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
-	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
-	StorageOSOperatorYaml      string `json:"storageOSOperatorYaml,omitempty"`
-	StorageOSClusterYaml       string `json:"storageOSClusterYaml,omitempty"`
-	EtcdOperatorYaml           string `json:"etcdOperatorYaml,omitempty"`
-	EtcdClusterYaml            string `json:"etcdClusterYaml,omitempty"`
-	EtcdEndpoints              string `json:"etcdEndpoints,omitempty"`
-	EtcdTLSEnabled             bool   `json:"etcdTLSEnabled,omitempty"`
-	StorageClassName           string `json:"storageClassName,omitempty"`
+	Wait                        bool   `json:"wait,omitempty"`
+	Version                     string `json:"version,omitempty"`
+	StorageOSOperatorNamespace  string `json:"storageOSOperatorNamespace,omitempty"`
+	StorageOSClusterNamespace   string `json:"storageOSClusterNamespace,omitempty"`
+	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
+	StorageOSOperatorYaml       string `json:"storageOSOperatorYaml,omitempty"`
+	StorageOSClusterYaml        string `json:"storageOSClusterYaml,omitempty"`
+	EtcdOperatorYaml            string `json:"etcdOperatorYaml,omitempty"`
+	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`
+	EtcdEndpoints               string `json:"etcdEndpoints,omitempty"`
+	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
+	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
+	StorageClassName            string `json:"storageClassName,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
