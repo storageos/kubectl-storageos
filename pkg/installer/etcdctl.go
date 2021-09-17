@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	httpPrefix = "http://"
+)
+
 // etcdctlMemberList returns a slice of strings representing the etcdctl command for members list to
 // be interpreted by the pod exec:
 // {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" member list`}
@@ -44,7 +48,10 @@ func endpointsSplitter(endpoints string) string {
 	endpointsSlice := strings.Split(endpoints, ",")
 	httpEndpointsSlice := make([]string, 0)
 	for _, endpoint := range endpointsSlice {
-		httpEndpointsSlice = append(httpEndpointsSlice, fmt.Sprintf("%s%s", "http://", endpoint))
+		if !strings.HasPrefix(endpoint, httpPrefix) {
+			endpoint = fmt.Sprintf("%s%s", httpPrefix, endpoint)
+		}
+		httpEndpointsSlice = append(httpEndpointsSlice, endpoint)
 	}
 
 	return strings.Join([]string{"\"", strings.Join(httpEndpointsSlice, ","), "\""}, "")

@@ -106,14 +106,6 @@ func upgradeCmd(cmd *cobra.Command) error {
 		version.SetOperatorLatestSupportedVersion(ksInstallConfig.Spec.Install.Version)
 	}
 
-	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
-	if ksInstallConfig.Spec.Install.EtcdEndpoints == "" {
-		ksInstallConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
-		if err != nil {
-			return err
-		}
-	}
-
 	err = installer.Upgrade(ksUninstallConfig, ksInstallConfig, existingVersion)
 	if err != nil {
 		return err

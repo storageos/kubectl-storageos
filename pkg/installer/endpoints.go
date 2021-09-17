@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
@@ -12,6 +13,7 @@ import (
 
 const (
 	etcdShellUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/storageos-etcd-shell.yaml"
+	httpsPrefix  = "https://"
 )
 
 // handleEndpointsInput:
@@ -21,6 +23,11 @@ const (
 // - validates the endpoints using the etcd-shell-pod
 // - adds validated endpoints patch to kustomization file for storageos-cluster.yaml
 func (in *Installer) handleEndpointsInput(etcdEndpoints string) error {
+	fmt.Println("Warning: TLS endpoints are not supported")
+	if strings.HasPrefix(etcdEndpoints, httpsPrefix) {
+		return fmt.Errorf("TLS endpoint discovered")
+	}
+
 	etcdShell, err := pullManifest(etcdShellUrl)
 	if err != nil {
 		return err
