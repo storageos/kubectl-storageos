@@ -23,7 +23,7 @@ import (
 // KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
 type KubectlStorageOSConfigSpec struct {
 	SkipNamespaceDeletion bool `json:"skipNmespaceDeletion,omitempty"`
-	SkipEtcd              bool `json:"skipEtcd,omitempty"`
+	IncludeEtcd           bool `json:"includeEtcd,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file

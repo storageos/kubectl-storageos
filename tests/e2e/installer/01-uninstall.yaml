@@ -1,4 +1,4 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl-storageos uninstall --skip-etcd --stos-cluster-namespace=stos-cluster-install-full --stos-operator-namespace=stos-operator-install-full
+  - command: kubectl-storageos uninstall --stos-cluster-namespace=stos-cluster-install-full --stos-operator-namespace=stos-operator-install-full

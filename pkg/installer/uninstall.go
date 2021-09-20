@@ -41,8 +41,7 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade boo
 		wg.Wait()
 	}
 
-	// return early if user only wishes to delete storageos, leaving etcd untouched
-	if !config.Spec.SkipEtcd {
+	if config.Spec.IncludeEtcd {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

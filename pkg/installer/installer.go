@@ -28,7 +28,7 @@ const (
 	StosSecretYamlFlag        = "stos-secret-yaml"
 	EtcdOperatorYamlFlag      = "etcd-operator-yaml"
 	EtcdClusterYamlFlag       = "etcd-cluster-yaml"
-	SkipEtcdFlag              = "skip-etcd"
+	IncludeEtcdFlag           = "include-etcd"
 	EtcdEndpointsFlag         = "etcd-endpoints"
 	ConfigPathFlag            = "config-path"
 	EtcdNamespaceFlag         = "etcd-namespace"
@@ -41,6 +41,7 @@ const (
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	SkipNamespaceDeletionConfig   = "spec.skipNmespaceDeletion"
 	InstallVersionConfig          = "spec.install.version"
+	IncludeEtcdConfig             = "spec.includeEtcd"
 	InstallEtcdNamespaceConfig    = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig   = "spec.install.storageOSOperatorNamespace"
 	InstallStosClusterNSConfig    = "spec.install.storageOSClusterNamespace"
@@ -48,7 +49,6 @@ const (
 	StosClusterYamlConfig         = "spec.install.storageOSClusterYaml"
 	EtcdOperatorYamlConfig        = "spec.install.etcdOperatorYaml"
 	EtcdClusterYamlConfig         = "spec.install.etcdClusterYaml"
-	InstallSkipEtcdConfig         = "spec.install.skipEtcd"
 	EtcdEndpointsConfig           = "spec.install.etcdEndpoints"
 	StorageClassConfig            = "spec.install.storageClassName"
 	SecretUserConfig              = "spec.install.secretUsername"
@@ -56,7 +56,6 @@ const (
 	UninstallEtcdNamespaceConfig  = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig = "spec.uninstall.storageOSOperatorNamespace"
 	UninstallStosClusterNSConfig  = "spec.uninstall.storageOSClusterNamespace"
-	UninstallSkipEtcdConfig       = "spec.uninstall.skipEtcd"
 
 	// dir and file names for in memory fs
 	etcdDir              = "etcd"

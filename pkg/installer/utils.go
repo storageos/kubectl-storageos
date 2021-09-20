@@ -71,8 +71,8 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	stosSubDirs[clusterDir] = stosClusterFiles
 	fsData[stosDir] = stosSubDirs
 
-	// if skip-etcd-install flag is set, create fs with storageos files and return early
-	if config.Spec.SkipEtcd {
+	// if include-etcd flag is not set, create fs with storageos files and return early
+	if !config.Spec.IncludeEtcd {
 		fs, err = createDirAndFiles(fs, fsData)
 		if err != nil {
 			return fs, err
