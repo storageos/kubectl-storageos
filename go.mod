@@ -9,7 +9,6 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/hashicorp/go-version v1.1.0
 	github.com/improbable-eng/etcd-cluster-operator v0.2.0
@@ -21,7 +20,7 @@ require (
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851
-	github.com/replicatedhq/troubleshoot v0.10.24
+	github.com/replicatedhq/troubleshoot v0.13.5
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
 	github.com/storageos/cluster-operator v2.1.0+incompatible
@@ -44,7 +43,7 @@ replace (
 	github.com/hashicorp/go-version => github.com/hashicorp/go-version v1.3.0
 	github.com/improbable-eng/etcd-cluster-operator => github.com/storageos/etcd-cluster-operator v0.3.0
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
-	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20210708163802-43563c4d214a
+	github.com/replicatedhq/troubleshoot => github.com/croomes/troubleshoot v0.9.48-0.20210913135808-c77d9dc3a04a
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.1

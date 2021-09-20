@@ -34,11 +34,13 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/k8sutil"
 	"github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/troubleshoot/pkg/specs"
+	"github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 	"github.com/spf13/viper"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
@@ -65,6 +67,19 @@ type InMemory struct {
 func Run(v *viper.Viper, arg string) error {
 	fmt.Print(cursor.Hide())
 	defer fmt.Print(cursor.Show())
+
+	k8sConfig, err := k8sutil.GetRESTConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to convert kube flags to rest config")
+	}
+
+	var sinceTime *time.Time
+	if v.GetString("since-time") != "" || v.GetString("since") != "" {
+		sinceTime, err = parseTimeFlags(v)
+		if err != nil {
+			return errors.Wrap(err, "failed parse since time")
+		}
+	}
 
 	if v.GetBool("allow-insecure-connections") || v.GetBool("insecure-skip-tls-verify") {
 		httpClient = &http.Client{Transport: &http.Transport{
@@ -175,7 +190,20 @@ func Run(v *viper.Viper, arg string) error {
 		}
 	}()
 
-	archivePath, err := runCollectors(v, supportBundleSpec.Spec.Collectors, additionalRedactors, progressChan)
+	collectorCB := func(c chan interface{}, msg string) {
+		c <- fmt.Sprintf("%s", msg)
+	}
+
+	createOpts := supportbundle.SupportBundleCreateOpts{
+		CollectorProgressCallback: collectorCB,
+		CollectWithoutPermissions: v.GetBool("collect-without-permissions"),
+		KubernetesRestConfig:      k8sConfig,
+		Namespace:                 v.GetString("namespace"),
+		ProgressChan:              progressChan,
+		SinceTime:                 sinceTime,
+	}
+
+	archivePath, err := runCollectors(supportBundleSpec.Spec.Collectors, additionalRedactors, progressChan, createOpts)
 	if err != nil {
 		return errors.Wrap(err, "run collectors")
 	}
@@ -394,7 +422,7 @@ func canTryInsecure(v *viper.Viper) bool {
 	return err == nil
 }
 
-func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, additionalRedactors *troubleshootv1beta2.Redactor, progressChan chan interface{}) (string, error) {
+func runCollectors(collectors []*troubleshootv1beta2.Collect, additionalRedactors *troubleshootv1beta2.Redactor, progressChan chan interface{}, opts supportbundle.SupportBundleCreateOpts) (string, error) {
 	bundlePath, err := ioutil.TempDir("", "troubleshoot")
 	if err != nil {
 		return "", errors.Wrap(err, "create temp dir")
@@ -410,20 +438,20 @@ func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, ad
 	collectSpecs = ensureCollectorInList(collectSpecs, troubleshootv1beta2.Collect{ClusterInfo: &troubleshootv1beta2.ClusterInfo{}})
 	collectSpecs = ensureCollectorInList(collectSpecs, troubleshootv1beta2.Collect{ClusterResources: &troubleshootv1beta2.ClusterResources{}})
 
-	config, err := k8sutil.GetRESTConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to convert kube flags to rest config")
-	}
-
 	var cleanedCollectors collect.Collectors
 	for _, desiredCollector := range collectSpecs {
 		collector := collect.Collector{
 			Redact:       true,
 			Collect:      desiredCollector,
-			ClientConfig: config,
-			Namespace:    v.GetString("namespace"),
+			ClientConfig: opts.KubernetesRestConfig,
+			Namespace:    opts.Namespace,
 		}
 		cleanedCollectors = append(cleanedCollectors, &collector)
+	}
+
+	k8sClient, err := kubernetes.NewForConfig(opts.KubernetesRestConfig)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to instantiate kuberentes client")
 	}
 
 	if err := cleanedCollectors.CheckRBAC(context.Background()); err != nil {
@@ -438,7 +466,7 @@ func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, ad
 		}
 	}
 
-	if foundForbidden && !v.GetBool("collect-without-permissions") {
+	if foundForbidden && !opts.CollectWithoutPermissions {
 		return "", errors.New("insufficient permissions to run all collectors")
 	}
 
@@ -459,7 +487,7 @@ func runCollectors(v *viper.Viper, collectors []*troubleshootv1beta2.Collect, ad
 
 		progressChan <- collector.GetDisplayName()
 
-		result, err := collector.RunCollectorSync(globalRedactors)
+		result, err := collector.RunCollectorSync(opts.KubernetesRestConfig, k8sClient, globalRedactors)
 		if err != nil {
 			progressChan <- fmt.Errorf("failed to run collector %q: %v", collector.GetDisplayName(), err)
 			continue
@@ -634,6 +662,31 @@ func getExpectedContentType(uploadURL string) string {
 		return ""
 	}
 	return parsedURL.Query().Get("Content-Type")
+}
+
+func parseTimeFlags(v *viper.Viper) (*time.Time, error) {
+	var (
+		sinceTime time.Time
+		err       error
+	)
+	if v.GetString("since-time") != "" {
+		if v.GetString("since") != "" {
+			return nil, errors.Errorf("at most one of `sinceTime` or `since` may be specified")
+		}
+		sinceTime, err = time.Parse(time.RFC3339, v.GetString("since-time"))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse --since-time flag")
+		}
+	} else {
+		parsedDuration, err := time.ParseDuration(v.GetString("since"))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse --since flag")
+		}
+		now := time.Now()
+		sinceTime = now.Add(0 - parsedDuration)
+	}
+
+	return &sinceTime, nil
 }
 
 func callbackSupportBundleAPI(r *troubleshootv1beta2.ResultRequest, archivePath string) error {

@@ -1,0 +1,81 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: StorageOS
+spec:
+  analyzers: 
+    - nodeResources:
+        checkName: At least one node must have 4 GB RAM and 2 CPU Cores
+        filters:
+          allocatableMemory: 4Gi
+          cpuCapacity: "2"
+        outcomes:
+          - fail:
+              when: count() < 1
+              message: Cannot find a node with sufficient memory and cpu
+          - pass:
+              message: Sufficient CPU and memory is available
+    - textAnalyze:
+        checkName: "At least one machine running Linux with a 64-bit architecture"
+        fileName: cluster-info/cluster_version.json
+        regex: linux\/amd64
+        outcomes:
+          - pass:
+              message: Linux with a 64-bit architecture is available.
+          - fail:
+              message: Linux with a 64-bit architecture is required.
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.17.0"
+              message: StorageOS requires at least Kubernetes 1.17.0.
+          - pass:
+              message: Your cluster meets the required versions of Kubernetes.
+    - containerRuntime:
+        outcomes:
+          - pass:
+              when: "== cri-o"
+              message: CRI-O enabled.
+          - pass:
+              when: "== containerd"
+              message: Containerd enabled.
+          - pass:
+              when: "== docker"
+              message: Docker enabled.
+          - fail:
+              message: Required Container Runtime is unavailable.
+    - nodeResources:
+        checkName: At least 3 nodes in the cluster
+        outcomes:
+          - warn: 
+              when: "count() < 3"
+              message: It is recommended to have at least 3 nodes for replication and high availability.
+          - pass:
+              message: There are enough nodes.
+
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: HostPreflight
+metadata:
+  name: modules
+spec:
+  remoteCollectors:
+    - kernelModules: {}
+  analyzers:
+    - kernelModules:
+        outcomes:
+          - fail:
+              when: "target_core_mod != loaded,loadable"
+              message: The 'target_core_mod' kernel module is not loaded or loadable
+          - fail:
+              when: "target_core_file != loaded,loadable"
+              message: The 'target_core_file' kernel module is not loaded or loadable
+          - fail:
+              when: "tcm_loop != loaded,loadable"
+              message: The 'tcm_loop' kernel module is not loaded or loadable
+          - warn:
+              when: "nvme != loaded"
+              message: The system is not using NVME storage, which will provide better performance
+          - pass:
+              when: "target_core_mod,target_core_file,tcm_loop == loaded,loadable"
+              message: The 'target_core_mod', target_core_file', and 'tcm_loop' kernel modules are loaded or loadable

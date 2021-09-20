@@ -71,6 +71,7 @@ func RootCmd() *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
+	cmd.AddCommand(PreflightCmd())
 	cmd.AddCommand(BundleCmd())
 	cmd.AddCommand(InstallCmd())
 	cmd.AddCommand(UninstallCmd())
