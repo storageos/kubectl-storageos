@@ -96,7 +96,7 @@ func validateEndpoints(endpoints, etcdShell string) error {
 		return err
 	}
 
-	err = etcdctlHealthCheck(config, etcdShellPodName, etcdShellPodNS, endpointsSplitter(endpoints), "foo", "bar")
+	err = etcdctlHealthCheck(config, etcdShellPodName, etcdShellPodNS, endpointsSplitter(endpoints))
 	if err != nil {
 		return err
 	}
@@ -106,34 +106,36 @@ func validateEndpoints(endpoints, etcdShell string) error {
 	return nil
 }
 
-// etcdctlHelathCheck performs write, read, delete of key/value to etcd endpoints, returning an error
+// etcdctlHealthCheck performs write, read, delete of key/value to etcd endpoints, returning an error
 // if any step fails.
-func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS, endpoints, key, value string) error {
-	errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoints)
-	_, stderr, err := pluginutils.ExecToPod(config, etcdctlPutCmd(endpoints, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
-	}
-	if stderr != "" {
-		return fmt.Errorf(stderr)
-	}
+func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS string, endpoints []string) error {
+	for _, endpoint := range endpoints {
+		errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoint)
+		key, value := "foo", "bar"
+		_, stderr, err := pluginutils.ExecToPod(config, etcdctlPutCmd(endpoint, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+		}
+		if stderr != "" {
+			return fmt.Errorf(stderr)
+		}
 
-	_, stderr, err = pluginutils.ExecToPod(config, etcdctlGetCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+		_, stderr, err = pluginutils.ExecToPod(config, etcdctlGetCmd(endpoint, key), "", etcdShellPodName, etcdShellPodNS, nil)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 
-	}
-	if stderr != "" {
-		return fmt.Errorf(stderr)
-	}
+		}
+		if stderr != "" {
+			return fmt.Errorf(stderr)
+		}
 
-	_, stderr, err = pluginutils.ExecToPod(config, etcdctlDelCmd(endpoints, key), "", etcdShellPodName, etcdShellPodNS, nil)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+		_, stderr, err = pluginutils.ExecToPod(config, etcdctlDelCmd(endpoint, key), "", etcdShellPodName, etcdShellPodNS, nil)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
+		}
+		if stderr != "" {
+			return fmt.Errorf(stderr)
+		}
 	}
-	if stderr != "" {
-		return fmt.Errorf(stderr)
-	}
-
 	return nil
 }

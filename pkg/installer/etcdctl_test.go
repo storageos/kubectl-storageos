@@ -9,37 +9,37 @@ func TestEndpointsSplitter(t *testing.T) {
 	tcases := []struct {
 		name         string
 		endpoints    string
-		expEndpoints string
+		expEndpoints []string
 	}{
 		{
 			name:         "multiple IPs",
 			endpoints:    "1.2.3.4:2379,5.6.7.8:2379",
-			expEndpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+			expEndpoints: []string{"http://1.2.3.4:2379", "http://5.6.7.8:2379"},
 		},
 		{
 			name:         "single IP",
 			endpoints:    "1.2.3.4:2379",
-			expEndpoints: "\"http://1.2.3.4:2379\"",
+			expEndpoints: []string{"http://1.2.3.4:2379"},
 		},
 		{
 			name:         "domain",
 			endpoints:    "storageos.default:2379",
-			expEndpoints: "\"http://storageos.default:2379\"",
+			expEndpoints: []string{"http://storageos.default:2379"},
 		},
 		{
 			name:         "multiple domains",
 			endpoints:    "storageos.default:2379,storageos.system:2379",
-			expEndpoints: "\"http://storageos.default:2379,http://storageos.system:2379\"",
+			expEndpoints: []string{"http://storageos.default:2379", "http://storageos.system:2379"},
 		},
 		{
 			name:         "multiple domains with prefix",
 			endpoints:    "http://storageos.default:2379,http://storageos.system:2379",
-			expEndpoints: "\"http://storageos.default:2379,http://storageos.system:2379\"",
+			expEndpoints: []string{"http://storageos.default:2379", "http://storageos.system:2379"},
 		},
 	}
 	for _, tc := range tcases {
 		endpoints := endpointsSplitter(tc.endpoints)
-		if endpoints != tc.expEndpoints {
+		if !reflect.DeepEqual(endpoints, tc.expEndpoints) {
 			t.Errorf("expected %s, got %s", tc.expEndpoints, endpoints)
 		}
 	}
@@ -53,22 +53,22 @@ func TestEtcdctlMemberList(t *testing.T) {
 	}{
 		{
 			name:      "test 1",
-			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"http://1.2.3.4:2379",
 				"member",
 				"list",
 			},
 		},
 		{
 			name:      "test 2",
-			endpoints: "\"http://1.2.3.4:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379\"",
+				"http://1.2.3.4:2379",
 				"member",
 				"list",
 			},
@@ -92,13 +92,13 @@ func TestEtcdctlPutCmd(t *testing.T) {
 	}{
 		{
 			name:      "test 1",
-			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "foo",
 			value:     "bar",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"http://1.2.3.4:2379",
 				"put",
 				"foo",
 				"bar",
@@ -106,13 +106,13 @@ func TestEtcdctlPutCmd(t *testing.T) {
 		},
 		{
 			name:      "test 2",
-			endpoints: "\"http://1.2.3.4:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "test-key",
 			value:     "test-val",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379\"",
+				"http://1.2.3.4:2379",
 				"put",
 				"test-key",
 				"test-val",
@@ -136,24 +136,24 @@ func TestEtcdctlGetCmd(t *testing.T) {
 	}{
 		{
 			name:      "test 1",
-			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "foo",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"http://1.2.3.4:2379",
 				"get",
 				"foo",
 			},
 		},
 		{
 			name:      "test 2",
-			endpoints: "\"http://1.2.3.4:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "test-key",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379\"",
+				"http://1.2.3.4:2379",
 				"get",
 				"test-key",
 			},
@@ -176,24 +176,24 @@ func TestEtcdctlDelCmd(t *testing.T) {
 	}{
 		{
 			name:      "test 1",
-			endpoints: "\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "foo",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379,http://5.6.7.8:2379\"",
+				"http://1.2.3.4:2379",
 				"del",
 				"foo",
 			},
 		},
 		{
 			name:      "test 2",
-			endpoints: "\"http://1.2.3.4:2379\"",
+			endpoints: "http://1.2.3.4:2379",
 			key:       "test-key",
 			cmd: []string{
 				"etcdctl",
 				"--endpoints",
-				"\"http://1.2.3.4:2379\"",
+				"http://1.2.3.4:2379",
 				"del",
 				"test-key",
 			},
