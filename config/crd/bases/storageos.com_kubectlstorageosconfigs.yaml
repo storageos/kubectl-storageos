@@ -64,6 +64,8 @@ spec:
                     type: string
                   etcdOperatorYaml:
                     type: string
+                  etcdSecretName:
+                    type: string
                   etcdTLSEnabled:
                     type: boolean
                   skipEtcdEndpointsValidation:

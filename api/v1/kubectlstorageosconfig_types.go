@@ -58,6 +58,7 @@ type Install struct {
 	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`
 	EtcdEndpoints               string `json:"etcdEndpoints,omitempty"`
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
+	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
 	StorageClassName            string `json:"storageClassName,omitempty"`
 }

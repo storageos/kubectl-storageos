@@ -140,14 +140,18 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 			Path:  "/spec/tls/enabled",
 			Value: "true",
 		}
-
 		storageOSClusterNSSpecPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
-			Path:  "/spec/storageOSClusterNamespace",
+			Path:  "/spec/tls/storageOSClusterNamespace",
 			Value: configInstall.StorageOSClusterNamespace,
 		}
+		storageOSEtcdSecretNamePatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/tls/storageOSClusterNamespace",
+			Value: configInstall.EtcdSecretName,
+		}
 
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch})
+		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch, storageOSEtcdSecretNamePatch})
 		if err != nil {
 			return err
 		}
@@ -210,7 +214,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		tlsEtcdSecretRefNamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/spec/tlsEtcdSecretRefName",
-			Value: defaultEtcdSecretName,
+			Value: config.Spec.Install.EtcdSecretName,
 		}
 		tlsEtcdSecretRefNamespacePatch := pluginutils.KustomizePatch{
 			Op:    "replace",

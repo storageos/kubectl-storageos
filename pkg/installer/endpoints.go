@@ -13,17 +13,16 @@ import (
 
 const (
 	nSForSecretNotFoundError = `
-	Namespace %s not found for storageos-etcd-secret while attempting to validate ETCD endpoints.
+	Namespace %s not found for %s while attempting to validate ETCD endpoints.
 
 	To skip ETCD endpoints validation during installation, set the --%s flag.
 `
 	secretNotFoundError = `
-	Unable to find etcd client secret storageos-etcd-secret in namespace %s for ETCD endpoint validation
+	Unable to find etcd client secret %s in namespace %s for ETCD endpoint validation.
 
-	Please create a k8s secret named storageos-etcd-secret in the StorageOS cluster namespace with relevant
-	ETCD certificates like so:
+	Please create a k8s secret in the StorageOS cluster namespace like so:
 
-	kubectl create secret generic storageos-etcd-secret -n <storageos-cluster-namespace> \
+	kubectl create secret generic <etcd-secret-name> -n <storageos-cluster-namespace> \
 		--from-file=etcd-client-ca.crt=path/to/ca.crt \
 		--from-file=etcd-client.crt=path/to/tls.crt \
 		--from-file=etcd-client.key=path/to/tls.key
@@ -35,7 +34,7 @@ const (
 	
 
 
-	To skip ETCD endpoints validation altogether during installation, set the --%s flag
+	To skip ETCD endpoints validation during installation, set the --%s flag.
 `
 )
 
@@ -109,11 +108,11 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, error) {
 	err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace)
 	if err != nil {
-		return "", fmt.Errorf(nSForSecretNotFoundError, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
+		return "", fmt.Errorf(nSForSecretNotFoundError, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag)
 	}
-	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, defaultEtcdSecretName, configInstall.StorageOSClusterNamespace)
+	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace)
 	if err != nil {
-		return "", fmt.Errorf(secretNotFoundError, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
+		return "", fmt.Errorf(secretNotFoundError, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
 	}
 
 	// apply app=storageos label to secret, this way it will be backed up locally during uninstall

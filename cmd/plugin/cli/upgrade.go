@@ -52,6 +52,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be installed")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be installed")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
+	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of ETCD endpoints")
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is TLS enabled")
 	viper.BindPFlags(cmd.Flags())
@@ -136,6 +137,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 			config.Spec.Install.EtcdEndpoints = cmd.Flags().Lookup(installer.EtcdEndpointsFlag).Value.String()
 			config.Spec.Install.SkipEtcdEndpointsValidation, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
 			config.Spec.Install.EtcdTLSEnabled, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
+			config.Spec.Install.EtcdSecretName = cmd.Flags().Lookup(installer.EtcdSecretNameFlag).Value.String()
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
 
@@ -153,6 +155,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
 	config.Spec.Install.SkipEtcdEndpointsValidation = viper.GetBool(installer.SkipEtcdEndpointsValConfig)
 	config.Spec.Install.EtcdTLSEnabled = viper.GetBool(installer.EtcdTLSEnabledConfig)
+	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.InstallStosClusterNSConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""

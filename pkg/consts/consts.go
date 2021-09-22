@@ -11,4 +11,6 @@ const (
 	OldClusterNamespace  = "kube-system"
 
 	EtcdOperatorNamespace = "storageos-etcd"
+
+	EtcdSecretName = "storageos-etcd-secret"
 )

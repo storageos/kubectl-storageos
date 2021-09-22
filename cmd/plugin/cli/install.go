@@ -40,6 +40,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is TLS enabled")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of ETCD endpoints")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
+	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, consts.EtcdOperatorNamespace, "namespace of etcd operator and cluster to be installed")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
@@ -110,6 +111,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			config.Spec.Install.EtcdEndpoints = cmd.Flags().Lookup(installer.EtcdEndpointsFlag).Value.String()
 			config.Spec.Install.SkipEtcdEndpointsValidation, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
 			config.Spec.Install.EtcdTLSEnabled, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
+			config.Spec.Install.EtcdSecretName = cmd.Flags().Lookup(installer.EtcdSecretNameFlag).Value.String()
 			config.Spec.Install.StorageClassName = cmd.Flags().Lookup(installer.StorageClassFlag).Value.String()
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
@@ -133,6 +135,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
 	config.Spec.Install.SkipEtcdEndpointsValidation = viper.GetBool(installer.SkipEtcdEndpointsValConfig)
 	config.Spec.Install.EtcdTLSEnabled = viper.GetBool(installer.EtcdTLSEnabledConfig)
+	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.StorageClassName = viper.GetString(installer.StorageClassConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
