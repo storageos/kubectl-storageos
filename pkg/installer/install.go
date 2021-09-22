@@ -147,7 +147,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 		}
 		storageOSEtcdSecretNamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
-			Path:  "/spec/tls/storageOSClusterNamespace",
+			Path:  "/spec/tls/storageOSEtcdSecretName",
 			Value: configInstall.EtcdSecretName,
 		}
 

@@ -104,7 +104,7 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 // tlsValidationPrep:
 // - searches for the etcd-secret
 // - applies app=storageos label to secret
-// - returns the tls equipped etcd-shell pod with storageos cluster namespace
+// - returns the tls equipped etcd-shell pod with storageos cluster namespace and secret name
 func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, error) {
 	err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace)
 	if err != nil {
@@ -130,6 +130,10 @@ func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, err
 
 	etcdShell := etcdShellPodTLS()
 	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, configInstall.StorageOSClusterNamespace, "namespace", "metadata")
+	if err != nil {
+		return "", err
+	}
+	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, configInstall.EtcdSecretName, "secretName", "spec", "volumes", "[name=etcd-certs]", "secret")
 	if err != nil {
 		return "", err
 	}
