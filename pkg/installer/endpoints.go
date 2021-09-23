@@ -111,7 +111,11 @@ func validateEndpoints(endpoints, etcdShell string) error {
 func etcdctlHealthCheck(config *rest.Config, etcdShellPodName, etcdShellPodNS string, endpoints []string) error {
 	for _, endpoint := range endpoints {
 		errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoint)
+
+		// use dummy key/value pair 'foo'/'bar' to write to, read from & delete from etcd
+		// in order to validate each endpoint
 		key, value := "foo", "bar"
+
 		_, stderr, err := pluginutils.ExecToPod(config, etcdctlPutCmd(endpoint, key, value), "", etcdShellPodName, etcdShellPodNS, nil)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
