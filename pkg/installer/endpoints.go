@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	nSForSecretNotFoundError = `
+	errNSForSecretNotFound = `
 	Namespace %s not found for %s while attempting to validate ETCD endpoints.
 
 	To skip ETCD endpoints validation during installation, set the --%s flag.
 `
-	secretNotFoundError = `
+	errSecretNotFound = `
 	Unable to find etcd client secret %s in namespace %s for ETCD endpoint validation.
 
 	Please create a k8s secret in the StorageOS cluster namespace like so:
@@ -36,14 +36,51 @@ const (
 
 	To skip ETCD endpoints validation during installation, set the --%s flag.
 `
+	etcdShellPod = `apiVersion: v1
+kind: Pod
+metadata:
+  name: storageos-etcd-shell
+  namespace: default
+spec:
+  restartPolicy: OnFailure      
+  containers:
+    - name: storageos-etcd-shell
+      image: gcr.io/etcd-development/etcd:v3.5.0
+      # pod completes and is not restarted after 3m, this is in case
+      # the plugin crashes and is unable to delete this pod after health check
+      command: [ "sleep" ]
+      args: [ "3m" ]
+`
+	etcdShellPodTLS = `apiVersion: v1
+kind: Pod
+metadata:
+  name: storageos-etcd-shell
+  namespace: storageos
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: storageos-etcd-shell
+      image: gcr.io/etcd-development/etcd:v3.5.0
+      # pod completes and is not restarted after 3m, this is in case
+      # the plugin crashes and is unable to delete this pod after health check
+      command: [ "sleep" ]
+      args: [ "infinity" ]
+      volumeMounts:
+      - mountPath: /run/storageos/pki
+        name: etcd-certs
+        readOnly: true
+  volumes:
+  - name: etcd-certs
+    secret:
+      secretName: storageos-etcd-secret
+`
 )
 
 // handleEndpointsInput adds validated (or not validated) endpoints patch to kustomization file
 // for storageos-cluster.yaml
 func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 	if !configInstall.SkipEtcdEndpointsValidation {
-		err := in.validateEtcd(configInstall)
-		if err != nil {
+		if err := in.validateEtcd(configInstall); err != nil {
 			return err
 		}
 	}
@@ -59,11 +96,8 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 	}
 
 	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointPatch})
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // validateEtcd:
@@ -73,7 +107,7 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 // - validates the endpoints using the etcd-shell-pod
 func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 	var err error
-	etcdShell := etcdShellPod()
+	etcdShell := etcdShellPod
 	if configInstall.EtcdTLSEnabled {
 		etcdShell, err = in.tlsValidationPrep(configInstall)
 		if err != nil {
@@ -95,10 +129,8 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 	}()
 
 	err = in.validateEndpoints(configInstall.EtcdEndpoints, string(etcdShell), configInstall.EtcdTLSEnabled)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 // tlsValidationPrep:
@@ -106,13 +138,12 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 // - applies app=storageos label to secret
 // - returns the tls equipped etcd-shell pod with storageos cluster namespace and secret name
 func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, error) {
-	err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace)
-	if err != nil {
-		return "", fmt.Errorf(nSForSecretNotFoundError, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag)
+	if err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace); err != nil {
+		return "", fmt.Errorf(errNSForSecretNotFound, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag)
 	}
 	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace)
 	if err != nil {
-		return "", fmt.Errorf(secretNotFoundError, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
+		return "", fmt.Errorf(errSecretNotFound, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
 	}
 
 	// apply app=storageos label to secret, this way it will be backed up locally during uninstall
@@ -128,7 +159,7 @@ func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, err
 		return "", err
 	}
 
-	etcdShell := etcdShellPodTLS()
+	etcdShell := etcdShellPodTLS
 	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, configInstall.StorageOSClusterNamespace, "namespace", "metadata")
 	if err != nil {
 		return "", err
@@ -206,48 +237,4 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 		}
 	}
 	return nil
-}
-
-func etcdShellPodTLS() string {
-	return `apiVersion: v1
-kind: Pod
-metadata:
-  name: storageos-etcd-shell
-  namespace: storageos
-spec:
-  restartPolicy: OnFailure
-  containers:
-    - name: storageos-etcd-shell
-      image: gcr.io/etcd-development/etcd:v3.5.0
-      # pod completes and is not restarted after 3m, this is in case
-      # the plugin crashes and is unable to delete this pod after health check
-      command: [ "sleep" ]
-      args: [ "infinity" ]
-      volumeMounts:
-      - mountPath: /run/storageos/pki
-        name: etcd-certs
-        readOnly: true
-  volumes:
-  - name: etcd-certs
-    secret:
-      secretName: storageos-etcd-secret
-`
-}
-
-func etcdShellPod() string {
-	return `apiVersion: v1
-kind: Pod
-metadata:
-  name: storageos-etcd-shell
-  namespace: default
-spec:
-  restartPolicy: OnFailure      
-  containers:
-    - name: storageos-etcd-shell
-      image: gcr.io/etcd-development/etcd:v3.5.0
-      # pod completes and is not restarted after 3m, this is in case
-      # the plugin crashes and is unable to delete this pod after health check
-      command: [ "sleep" ]
-      args: [ "3m" ]
-`
 }
