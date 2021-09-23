@@ -43,8 +43,8 @@ func etcdctlDelCmd(endpoints, key string) []string {
 // endpointsSplitter takes endpoints input from user prompt and returns digestable string for etcdctl
 // Example:
 // input: 1.2.3.4:2379,4.5.6.7:2379
-// output: "http://1.2.3.4:2379,http://4.5.6.7:2379"
-func endpointsSplitter(endpoints string) string {
+// output: {"http://1.2.3.4:2379","http://4.5.6.7:2379"}
+func endpointsSplitter(endpoints string) []string {
 	endpointsSlice := strings.Split(endpoints, ",")
 	httpEndpointsSlice := make([]string, 0)
 	for _, endpoint := range endpointsSlice {
@@ -54,5 +54,5 @@ func endpointsSplitter(endpoints string) string {
 		httpEndpointsSlice = append(httpEndpointsSlice, endpoint)
 	}
 
-	return strings.Join([]string{"\"", strings.Join(httpEndpointsSlice, ","), "\""}, "")
+	return httpEndpointsSlice
 }
