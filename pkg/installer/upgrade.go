@@ -18,7 +18,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	if err != nil {
 		return err
 	}
-	storageOSCluster, err := pluginutils.GetStorageOSCluster(installer.clientConfig, "")
+	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(installer.clientConfig)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	time.Sleep(30 * time.Second)
 
 	// install new storageos operator and cluster
-	err = installer.installStorageOS(installConfig)
+	err = installer.Install(installConfig)
 	if err != nil {
 		return err
 	}

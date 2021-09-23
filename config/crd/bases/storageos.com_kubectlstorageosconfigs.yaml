@@ -50,6 +50,8 @@ spec:
           spec:
             description: KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
             properties:
+              includeEtcd:
+                type: boolean
               install:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
@@ -74,9 +76,9 @@ spec:
                     type: string
                   version:
                     type: string
+                  wait:
+                    type: boolean
                 type: object
-              skipEtcd:
-                type: boolean
               skipNmespaceDeletion:
                 type: boolean
               uninstall:
