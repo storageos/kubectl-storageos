@@ -73,7 +73,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		return err
 	}
 
-	storageOSCluster, err := pluginutils.GetStorageOSCluster(in.clientConfig, "")
+	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 
 	// allow storageoscluster object to be deleted before continuing uninstall process
 	err = in.waitForCustomResourceDeletion(func() error {
-		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig, storageOSCluster.GetObjectMeta().GetNamespace())
+		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
 	})
 	if err != nil {
 		return err

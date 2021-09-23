@@ -397,10 +397,10 @@ func SecretExists(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
-// GetStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
+// GetFirstStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
 // Use 'List' to discover as there can only be one object per k8s cluster and 'List' does not
-// require name/namespace - input namespace can optionally be passed to narrow the search.
-func GetStorageOSCluster(config *rest.Config, namespace string) (*operatorapi.StorageOSCluster, error) {
+// require name/namespace.
+func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluster, error) {
 	scheme := runtime.NewScheme()
 	operatorapi.AddToScheme(scheme)
 	stosCluster := &operatorapi.StorageOSCluster{}
@@ -411,8 +411,7 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (*operatorapi.St
 	}
 
 	stosClusterList := &operatorapi.StorageOSClusterList{}
-	listOption := (&client.ListOptions{}).ApplyOptions([]client.ListOption{client.InNamespace(namespace)})
-	err = newClient.List(context.TODO(), stosClusterList, listOption)
+	err = newClient.List(context.TODO(), stosClusterList, &client.ListOptions{})
 	if err != nil {
 		return stosCluster, err
 	}
@@ -426,8 +425,8 @@ func GetStorageOSCluster(config *rest.Config, namespace string) (*operatorapi.St
 }
 
 // StorageOSClusterDoesNotExist return no error only if no storageoscluster object exists in k8s cluster
-func StorageOSClusterDoesNotExist(config *rest.Config, namespace string) error {
-	_, err := GetStorageOSCluster(config, namespace)
+func StorageOSClusterDoesNotExist(config *rest.Config) error {
+	_, err := GetFirstStorageOSCluster(config)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil

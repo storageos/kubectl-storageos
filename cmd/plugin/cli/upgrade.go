@@ -41,6 +41,7 @@ func UpgradeCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
 	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
@@ -124,6 +125,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			config.Spec.IncludeEtcd = false
 			// Config file not found; set fields in new config object directly
+			config.Spec.Install.Wait, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.WaitFlag).Value.String())
 			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
 			config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 			config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
@@ -140,6 +142,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.IncludeEtcd = false
+	config.Spec.Install.Wait = viper.GetBool(installer.InstallWaitConfig)
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)

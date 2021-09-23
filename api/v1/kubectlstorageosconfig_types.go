@@ -22,7 +22,7 @@ import (
 
 // KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
 type KubectlStorageOSConfigSpec struct {
-	SkipNamespaceDeletion bool `json:"skipNmespaceDeletion,omitempty"`
+	SkipNamespaceDeletion bool `json:"skipNamespaceDeletion,omitempty"`
 	IncludeEtcd           bool `json:"includeEtcd,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -47,6 +47,7 @@ type KubectlStorageOSConfigStatus struct {
 
 // Install defines options for cli install subcommand
 type Install struct {
+	Wait                       bool   `json:"wait,omitempty"`
 	Version                    string `json:"version,omitempty"`
 	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`

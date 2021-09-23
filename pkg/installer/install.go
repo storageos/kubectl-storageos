@@ -14,7 +14,7 @@ import (
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 	wg := sync.WaitGroup{}
-	errChan := make(chan error, 2)
+	errChan := make(chan error, 3)
 	if config.Spec.IncludeEtcd {
 		wg.Add(1)
 		go func() {
@@ -40,6 +40,27 @@ func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 	}()
 
 	wg.Wait()
+
+	if config.Spec.Install.Wait {
+		once := sync.Once{}
+		errChan <- pluginutils.WaitFor(func() error {
+			cluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+			if err != nil {
+				return err
+			}
+
+			once.Do(func() {
+				fmt.Printf("waiting for %s to be ready\n", cluster.Name)
+			})
+
+			if cluster.Status.Phase != "Running" {
+				return fmt.Errorf("cluster %s not ready", cluster.Name)
+			}
+
+			return nil
+		}, 300, 5)
+	}
+
 	go close(errChan)
 
 	return collectErrors(errChan)
