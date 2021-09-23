@@ -17,8 +17,8 @@ func InstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "install",
 		Args:         cobra.MinimumNArgs(0),
-		Short:        "Install StorageOS Cluster Operator",
-		Long:         `Install StorageOS Cluster Operator`,
+		Short:        "Install StorageOS and (optionally) ETCD",
+		Long:         `Install StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
 		RunE: func(cmd *cobra.Command, args []string) error {

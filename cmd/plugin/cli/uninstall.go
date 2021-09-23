@@ -19,8 +19,8 @@ func UninstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "uninstall",
 		Args:         cobra.MinimumNArgs(0),
-		Short:        "Uninstall StorageOS",
-		Long:         `Uninstall StorageOS and/or ETCD`,
+		Short:        "Uninstall StorageOS and (optionally) ETCD",
+		Long:         `Uninstall StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
 		RunE: func(cmd *cobra.Command, args []string) error {

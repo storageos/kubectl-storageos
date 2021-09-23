@@ -3,19 +3,34 @@ kind: KubectlStorageOSConfig
 metadata:
   name: kubectlstorageosconfig-sample
 spec:
+  # The fields in the spec are consistent with the CLI flags.
+  # To use the config file instead of setting multiple flags,
+  # set '--config-path=/path/to/config' to the directory
+  # of 'kubectl-storageos-config.yaml'.
+  #
+  # The upgrade command reads values from both install and uninstall
+  # sections..
+  # For example, flag '--uninstall-etcd-namespace' is the equivalent
+  # of setting field 'uninstall.etcdNamespace'.
+  #
+  skipNamespaceDeletion: false # common for both uninstall and install
+  includeEtcd: false #common for both uninstall and install     
   install:
-    storageOSOperatorNamespace: storageos-operator
-    storageOSClusterNamespace: storageos-cluster
-    etcdNamespace: storageos-etcd-system  
-    storageOSOperatorYaml: /path/to/storageos-operator.yaml     
-    storageOSClusterYaml: /path/to/storageos-cluster.yaml 
-    etcdOperatorYaml: /path/to/etcd-operator.yaml 
-    etcdClusterYaml: /path/to/etcd-cluster.yaml
-    skipEtcd: false
+    wait: false
+    version: "<storageos-version>"
+    storageOSOperatorNamespace: "<storageos-operator-namespace>"
+    storageOSClusterNamespace: "<storageos-cluster-namespace>"
+    etcdNamespace: "<etcd-namespace>"  
+    storageOSOperatorYaml: "/path/to/storageos-operator.yaml"
+    storageOSClusterYaml: "/path/to/storageos-cluster.yaml"
+    etcdOperatorYaml: "/path/to/etcd-operator.yaml"
+    etcdClusterYaml: "/path/to/etcd-cluster.yaml"
     etcdEndpoints: "<etcd-endpoints>"
-    storageClassName: standard
+    etcdTLSEnabled: false
+    skipEtcdEndpointsValidation: false
+    etcdSecretName: false
+    storageClassName: "<storage-class>"
   uninstall:
-    storageOSOperatorNamespace: storageos-operator
-    storageOSClusterNamespace: storageos-cluster
-    etcdNamespace: storageos-etcd-system  
-    skipEtcd: false 
+    storageOSOperatorNamespace: "<storageos-operator-namespace>"
+    storageOSClusterNamespace: "<storageos-cluster-namespace>"
+    etcdNamespace: "<etcd-namespace>"

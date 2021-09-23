@@ -23,11 +23,10 @@ const (
 
 func PreflightCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "preflight [url]",
-		Args:  cobra.MinimumNArgs(0),
-		Short: "Test a k8s cluster for StorageOS pre-requisites",
-		Long: `A preflight check is a set of validations that can and should be run to ensure
-		that a cluster meets the requirements to run StorageOS.`,
+		Use:          "preflight [url]",
+		Args:         cobra.MinimumNArgs(0),
+		Short:        "Test a k8s cluster for StorageOS pre-requisites",
+		Long:         `A preflight check is a set of validations that can and should be run to ensure that a cluster meets the requirements to run StorageOS.`,
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
