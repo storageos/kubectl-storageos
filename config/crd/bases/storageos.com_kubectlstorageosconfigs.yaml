@@ -79,7 +79,7 @@ spec:
                   wait:
                     type: boolean
                 type: object
-              skipNmespaceDeletion:
+              skipNamespaceDeletion:
                 type: boolean
               uninstall:
                 description: Uninstall defines options for cli uninstall subcommand

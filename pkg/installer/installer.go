@@ -40,7 +40,7 @@ const (
 	SecretPassFlag            = "secret-password"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
-	SkipNamespaceDeletionConfig   = "spec.skipNmespaceDeletion"
+	SkipNamespaceDeletionConfig   = "spec.skipNamespaceDeletion"
 	IncludeEtcdConfig             = "spec.includeEtcd"
 	InstallWaitConfig             = "spec.install.wait"
 	InstallVersionConfig          = "spec.install.version"

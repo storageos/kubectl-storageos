@@ -41,7 +41,7 @@ func UpgradeCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().Bool(installer.WaitFlag, false, "wait for operation finish")
+	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
 	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")

@@ -30,7 +30,7 @@ func InstallCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().Bool(installer.WaitFlag, false, "wait for operation finish")
+	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
 	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
