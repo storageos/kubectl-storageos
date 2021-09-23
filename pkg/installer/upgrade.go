@@ -28,7 +28,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
 	}
 
-	err = installer.handleEndpointsInput(installConfig.Spec.Install.EtcdEndpoints)
+	err = installer.handleEndpointsInput(installConfig.Spec.Install)
 	if err != nil {
 		return err
 	}
