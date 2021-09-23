@@ -132,6 +132,11 @@ Flags:
 
 #### Uninstall StorageOS and ETCD From Your Kubernetes Cluster
 
+> The following process **will not** remove data stored in disk by StorageOS.
+> If Etcd is removed, StorageOS Volumes won't be recoverable, but if the Etcd
+> cluster is kept intact, the volumes and their data will be available after a
+> reinstall.
+
 `kubectl storageos uninstall --include-etcd`
 
 The ETCD uninstallation refers only to an ETCD cluster installed by the StorageOS ETCD Cluster Operator.
