@@ -183,11 +183,8 @@ func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string
 	}
 
 	err = in.fileSys.WriteFile(path, []byte(kustFileWithPatches))
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // setFieldInFsManifest reads the file at path of the in-memory filesystem, uses
@@ -202,10 +199,8 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 		return err
 	}
 	err = in.fileSys.WriteFile(path, []byte(dataStr))
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 // getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
@@ -275,8 +270,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 	if err != nil {
 		return err
 	}
-	err = in.onDiskFileSys.MkdirAll(backupPath)
-	if err != nil {
+	if err = in.onDiskFileSys.MkdirAll(backupPath); err != nil {
 		return err
 	}
 
@@ -284,8 +278,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 	if err != nil {
 		return err
 	}
-	err = in.onDiskFileSys.WriteFile(filepath.Join(backupPath, stosClusterFile), storageOSClusterManifest)
-	if err != nil {
+	if err = in.onDiskFileSys.WriteFile(filepath.Join(backupPath, stosClusterFile), storageOSClusterManifest); err != nil {
 		return err
 	}
 
@@ -294,12 +287,10 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return err
 	}
 	stosSecretList, csiSecretList := separateSecrets(secretList)
-	err = in.writeSecretsToDisk(stosSecretList, filepath.Join(backupPath, stosSecretsFile))
-	if err != nil {
+	if err = in.writeSecretsToDisk(stosSecretList, filepath.Join(backupPath, stosSecretsFile)); err != nil {
 		return err
 	}
-	err = in.writeSecretsToDisk(csiSecretList, filepath.Join(backupPath, csiSecretsFile))
-	if err != nil {
+	if err = in.writeSecretsToDisk(csiSecretList, filepath.Join(backupPath, csiSecretsFile)); err != nil {
 		return err
 	}
 
@@ -308,11 +299,8 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return err
 	}
 	err = in.writeStorageClassesToDisk(storageClassList, filepath.Join(backupPath, stosStorageClassFile))
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList, error) {
@@ -342,11 +330,8 @@ func (in *Installer) writeSecretsToDisk(secretList *corev1.SecretList, path stri
 		return err
 	}
 	err = in.onDiskFileSys.WriteFile(path, secretsMultiDoc)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // writeStorageClassesToDisk writes multidoc manifest of StorageClassList.Items to path of on-disk filesystem
@@ -359,11 +344,8 @@ func (in *Installer) writeStorageClassesToDisk(storageClassList *kstoragev1.Stor
 		return err
 	}
 	err = in.onDiskFileSys.WriteFile(path, storageClassMultiDoc)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // getBackupPath returns the path to the on-disk directory where uninstalled manifests are stored.

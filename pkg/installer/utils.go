@@ -149,23 +149,19 @@ func createFileData(yamlPath, yamlUrl, fileName string, config *rest.Config, nam
 // file system for installer from the fsData provided.
 func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem, error) {
 	for dir, subDirs := range fsData {
-		err := fs.Mkdir(dir)
-		if err != nil {
+		if err := fs.Mkdir(dir); err != nil {
 			return fs, err
 		}
 
 		for subDir, files := range subDirs {
-			err := fs.Mkdir(filepath.Join(dir, subDir))
-			if err != nil {
+			if err := fs.Mkdir(filepath.Join(dir, subDir)); err != nil {
 				return fs, err
 			}
 			for name, data := range files {
-				_, err := fs.Create(filepath.Join(dir, subDir, name))
-				if err != nil {
+				if _, err := fs.Create(filepath.Join(dir, subDir, name)); err != nil {
 					return fs, err
 				}
-				err = fs.WriteFile(filepath.Join(dir, subDir, name), data)
-				if err != nil {
+				if err := fs.WriteFile(filepath.Join(dir, subDir, name), data); err != nil {
 					return fs, err
 				}
 			}

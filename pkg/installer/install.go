@@ -77,12 +77,10 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 	}
 
 	if configInstall.EtcdNamespace != fsEtcdClusterNamespace {
-		err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), configInstall.EtcdNamespace, "namespace", "")
-		if err != nil {
+		if err = in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), configInstall.EtcdNamespace, "namespace", ""); err != nil {
 			return err
 		}
-		err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), configInstall.EtcdNamespace, "namespace", "")
-		if err != nil {
+		if err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), configInstall.EtcdNamespace, "namespace", ""); err != nil {
 			return err
 		}
 		proxyUrlPatch := pluginutils.KustomizePatch{
@@ -90,8 +88,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 			Path:  "/spec/template/spec/containers/0/args/1",
 			Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", configInstall.EtcdNamespace, ".svc"),
 		}
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{proxyUrlPatch})
-		if err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{proxyUrlPatch}); err != nil {
 			return err
 		}
 
@@ -110,8 +107,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 			Value: fmt.Sprintf("%s%s%s%s", fsEtcdClusterName, ".", configInstall.EtcdNamespace, ":2379"),
 		}
 
-		err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointsPatch})
-		if err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointsPatch}); err != nil {
 			return err
 		}
 	}
@@ -129,8 +125,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 		Path:  "/spec/storage/volumeClaimTemplate/storageClassName",
 		Value: configInstall.StorageClassName,
 	}
-	err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{storageClassPatch})
-	if err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{storageClassPatch}); err != nil {
 		return err
 	}
 
@@ -151,26 +146,20 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 			Value: configInstall.EtcdSecretName,
 		}
 
-		err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch, storageOSEtcdSecretNamePatch})
-		if err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch, storageOSEtcdSecretNamePatch}); err != nil {
 			return err
 		}
 	}
 
-	err = in.kustomizeAndApply(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
-	if err != nil {
+	if err = in.kustomizeAndApply(filepath.Join(etcdDir, operatorDir), etcdOperatorFile); err != nil {
 		return err
 	}
-	err = in.operatorDeploymentsAreReady(filepath.Join(etcdDir, operatorDir, etcdOperatorFile))
-	if err != nil {
+	if err = in.operatorDeploymentsAreReady(filepath.Join(etcdDir, operatorDir, etcdOperatorFile)); err != nil {
 		return err
 	}
 	err = in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) error {
@@ -183,8 +172,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		return err
 	}
 	if config.Spec.Install.StorageOSOperatorNamespace != fsStosOperatorNamespace {
-		err = in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), config.Spec.Install.StorageOSOperatorNamespace, "namespace", "")
-		if err != nil {
+		if err = in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), config.Spec.Install.StorageOSOperatorNamespace, "namespace", ""); err != nil {
 			return err
 		}
 	}
@@ -195,12 +183,10 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 
 	if config.Spec.Install.StorageOSClusterNamespace != fsStosClusterNamespace {
 		// apply the provided storageos cluster ns
-		err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(config.Spec.Install.StorageOSClusterNamespace), true)
-		if err != nil {
+		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(config.Spec.Install.StorageOSClusterNamespace), true); err != nil {
 			return err
 		}
-		err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), config.Spec.Install.StorageOSClusterNamespace, "namespace", "")
-		if err != nil {
+		if err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), config.Spec.Install.StorageOSClusterNamespace, "namespace", ""); err != nil {
 			return err
 		}
 	}
@@ -222,8 +208,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 			Value: config.Spec.Install.StorageOSClusterNamespace,
 		}
 
-		err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{tlsEtcdSecretRefNamePatch, tlsEtcdSecretRefNamespacePatch})
-		if err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{tlsEtcdSecretRefNamePatch, tlsEtcdSecretRefNamespacePatch}); err != nil {
 			return err
 		}
 	}
@@ -240,8 +225,7 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 			Value: config.InstallerMeta.SecretUsername,
 		}
 
-		err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch})
-		if err != nil {
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch}); err != nil {
 			return err
 		}
 
@@ -254,27 +238,21 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 			Value: config.InstallerMeta.SecretPassword,
 		}
 
-		err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch})
-		if err != nil {
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch}); err != nil {
 			return err
 		}
 	}
 
-	err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile)
-	if err != nil {
+	if err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile); err != nil {
 		return err
 	}
-	err = in.operatorDeploymentsAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile))
-	if err != nil {
+	if err = in.operatorDeploymentsAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
 		return err
 	}
 
 	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // operatorDeploymentsAreReady takes the path of an operator manifest and returns no error if all
@@ -294,10 +272,9 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 		if err != nil {
 			return err
 		}
-		err = pluginutils.WaitFor(func() error {
+		if err = pluginutils.WaitFor(func() error {
 			return pluginutils.IsDeploymentReady(in.clientConfig, deploymentName, deploymentNamespace)
-		}, 90, 5)
-		if err != nil {
+		}, 90, 5); err != nil {
 			return err
 		}
 	}
@@ -321,8 +298,7 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 	if err != nil {
 		return err
 	}
-	err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml)
-	if err != nil {
+	if err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml); err != nil {
 		return err
 	}
 
@@ -331,8 +307,7 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 		return err
 	}
 	for _, removedNamespace := range removedNamespaces {
-		err = in.gracefullyApplyNS(removedNamespace)
-		if err != nil {
+		if err = in.gracefullyApplyNS(removedNamespace); err != nil {
 			return err
 		}
 	}
@@ -343,18 +318,14 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 	}
 
 	err = in.kubectlClient.Apply(context.TODO(), "", string(manifest), true)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // gracefullyApplyNS applies a namespace and then waits until it has been applied succesfully before
 // returning no error
 func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
-	err := in.kubectlClient.Apply(context.TODO(), "", namespaceManifest, true)
-	if err != nil {
+	if err := in.kubectlClient.Apply(context.TODO(), "", namespaceManifest, true); err != nil {
 		return err
 	}
 
@@ -365,9 +336,6 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 	err = pluginutils.WaitFor(func() error {
 		return pluginutils.NamespaceExists(in.clientConfig, namespace)
 	}, 120, 5)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }

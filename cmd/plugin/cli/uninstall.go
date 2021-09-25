@@ -24,8 +24,7 @@ func UninstallCmd() *cobra.Command {
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := uninstallCmd(cmd)
-			if err != nil {
+			if err := uninstallCmd(cmd); err != nil {
 				return err
 			}
 
@@ -46,13 +45,12 @@ func UninstallCmd() *cobra.Command {
 
 func uninstallCmd(cmd *cobra.Command) error {
 	v := viper.GetViper()
-
+	var err error
 	logger.SetQuiet(v.GetBool("quiet"))
 
 	ksConfig := &apiv1.KubectlStorageOSConfig{}
 
-	err := setUninstallValues(cmd, ksConfig)
-	if err != nil {
+	if err := setUninstallValues(cmd, ksConfig); err != nil {
 		return err
 	}
 
@@ -70,8 +68,7 @@ func uninstallCmd(cmd *cobra.Command) error {
 	}
 	fmt.Printf("Discovered StorageOS cluster and operator version %s...\n", version)
 
-	err = setVersionSpecificValues(ksConfig, version)
-	if err != nil {
+	if err = setVersionSpecificValues(ksConfig, version); err != nil {
 		return err
 	}
 
@@ -81,11 +78,8 @@ func uninstallCmd(cmd *cobra.Command) error {
 	}
 
 	err = cliInstaller.Uninstall(ksConfig, false)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

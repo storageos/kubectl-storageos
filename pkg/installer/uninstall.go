@@ -84,8 +84,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		Value: storageOSCluster.GetObjectMeta().GetName(),
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch})
-	if err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch}); err != nil {
 		return err
 	}
 
@@ -95,8 +94,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		Value: storageOSCluster.GetObjectMeta().GetNamespace(),
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamespacePatch})
-	if err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
 		return err
 	}
 
@@ -111,8 +109,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		Value: storageOSCluster.Spec.SecretRefName,
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamePatch})
-	if err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamePatch}); err != nil {
 		return err
 	}
 
@@ -122,46 +119,38 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		Value: storageOSCluster.Spec.SecretRefNamespace,
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamespacePatch})
-	if err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamespacePatch}); err != nil {
 		return err
 	}
 
 	// if this is not an upgrade, write manifests to disk before deletion
 	if !upgrade {
-		err = in.writeBackupFileSystem(storageOSCluster)
-		if err != nil {
+		if err = in.writeBackupFileSystem(storageOSCluster); err != nil {
 			return err
 		}
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
-	if err != nil {
+	if err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
 		return err
 	}
 
 	// StorageOS cluster resources should be in a different namespace, on that case need to delete
 	if in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-		err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace)
-		if err != nil {
+		if err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace); err != nil {
 			return err
 		}
 	}
 
 	// allow storageoscluster object to be deleted before continuing uninstall process
-	err = in.waitForCustomResourceDeletion(func() error {
+	if err = in.waitForCustomResourceDeletion(func() error {
 		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
 	err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (in *Installer) uninstallEtcd(etcdNamespace string) error {
@@ -169,19 +158,16 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 	// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
 	// based on flags (or cli config file)
 	if etcdNamespace != "" {
-		err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", "")
-		if err != nil {
+		if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
 			return err
 		}
-		err = in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", "")
-		if err != nil {
+		if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
 			return err
 		}
 
 	}
 
-	err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
-	if err != nil {
+	if err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile); err != nil {
 		return err
 	}
 
@@ -196,19 +182,15 @@ func (in *Installer) uninstallEtcd(etcdNamespace string) error {
 	}
 
 	// allow etcdcluster object to be deleted before continuing uninstall process
-	err = in.waitForCustomResourceDeletion(func() error {
+	if err = in.waitForCustomResourceDeletion(func() error {
 		return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, fsEtcdNamespace)
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
 	err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // kustomizeAndDelete performs the following in the order described:
@@ -228,8 +210,7 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 		return err
 	}
 
-	err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml)
-	if err != nil {
+	if err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml); err != nil {
 		return err
 	}
 
@@ -243,8 +224,7 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 		return err
 	}
 
-	err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true)
-	if err != nil {
+	if err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true); err != nil {
 		return err
 	}
 
@@ -259,8 +239,7 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 			return err
 		}
 
-		err = in.gracefullyDeleteNS(namespace)
-		if err != nil {
+		if err = in.gracefullyDeleteNS(namespace); err != nil {
 			return err
 		}
 	}
@@ -279,10 +258,9 @@ func (in *Installer) gracefullyDeleteNS(namespace string) error {
 		return err
 	}
 
-	err := pluginutils.WaitFor(func() error {
+	if err := pluginutils.WaitFor(func() error {
 		return pluginutils.NamespaceDoesNotExist(in.clientConfig, namespace)
-	}, 120, 5)
-	if err != nil {
+	}, 120, 5); err != nil {
 		parentErr := errors.Unwrap(err)
 		if _, ok := parentErr.(pluginutils.ResourcesStillExists); !ok {
 			return err
@@ -295,10 +273,9 @@ func (in *Installer) gracefullyDeleteNS(namespace string) error {
 }
 
 func (in *Installer) waitForCustomResourceDeletion(fn func() error) error {
-	err := pluginutils.WaitFor(func() error {
+	if err := pluginutils.WaitFor(func() error {
 		return fn()
-	}, 120, 5)
-	if err != nil && !kerrors.IsNotFound(err) {
+	}, 120, 5); err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
 	return nil

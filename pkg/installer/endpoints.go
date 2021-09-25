@@ -115,14 +115,12 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 		}
 	}
 
-	err = in.kubectlClient.Apply(context.TODO(), "", string(etcdShell), true)
-	if err != nil {
+	if err = in.kubectlClient.Apply(context.TODO(), "", string(etcdShell), true); err != nil {
 		return err
 	}
 
 	defer func() error {
-		err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true)
-		if err != nil {
+		if err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true); err != nil {
 			return err
 		}
 		return nil
@@ -154,8 +152,7 @@ func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, err
 	if err != nil {
 		return "", err
 	}
-	err = in.kubectlClient.Apply(context.TODO(), configInstall.StorageOSClusterNamespace, string(etcdSecretManifest), true)
-	if err != nil {
+	if err = in.kubectlClient.Apply(context.TODO(), configInstall.StorageOSClusterNamespace, string(etcdSecretManifest), true); err != nil {
 		return "", err
 	}
 
@@ -187,27 +184,21 @@ func (in *Installer) validateEndpoints(endpoints, etcdShell string, tlsEnabled b
 		return err
 	}
 
-	err = pluginutils.WaitFor(func() error {
+	if err = pluginutils.WaitFor(func() error {
 		return pluginutils.IsPodRunning(in.clientConfig, etcdShellPodName, etcdShellPodNS)
-	}, 60, 5)
-	if err != nil {
+	}, 60, 5); err != nil {
 		return err
 	}
 	err = in.etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS, endpointsSplitter(endpoints, tlsEnabled), tlsEnabled)
-	if err != nil {
-		return err
-	}
 
-	logger.Printf("\nETCD endpoints successfully validated\n\n")
-
-	return nil
+	return err
 }
 
 // etcdctlHealthCheck performs write, read, delete of key/value to etcd endpoints, returning an error
 // if any step fails.
 func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string, endpoints []string, tls bool) error {
 	for _, endpoint := range endpoints {
-		errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoints: ", endpoints)
+		errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoint: ", endpoint)
 
 		// use dummy key/value pair 'foo'/'bar' to write to, read from & delete from etcd
 		// in order to validate each endpoint
@@ -235,6 +226,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 		if stderr != "" {
 			return fmt.Errorf(stderr)
 		}
+		logger.Printf("\nETCD endpoint %s successfully validated\n\n", endpoint)
 	}
 	return nil
 }

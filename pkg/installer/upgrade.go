@@ -28,8 +28,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
 	}
 
-	err = installer.handleEndpointsInput(installConfig.Spec.Install)
-	if err != nil {
+	if err = installer.handleEndpointsInput(installConfig.Spec.Install); err != nil {
 		return err
 	}
 
@@ -39,14 +38,12 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall)
-	if err != nil {
+	if err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall); err != nil {
 		return err
 	}
 
 	// uninstall existing storageos operator and cluster
-	err = uninstaller.Uninstall(uninstallConfig, true)
-	if err != nil {
+	if err = uninstaller.Uninstall(uninstallConfig, true); err != nil {
 		return err
 	}
 
@@ -56,24 +53,19 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 
 	// install new storageos operator and cluster
 	err = installer.Install(installConfig)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
 func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string) error {
 	// write storageoscluster, secret and storageclass manifests to disk
-	err := in.writeBackupFileSystem(storageOSCluster)
-	if err != nil {
+	if err := in.writeBackupFileSystem(storageOSCluster); err != nil {
 		return err
 	}
 
 	// apply the storageclass manifest written to disk (now with finalizer to prevent deletion by operator)
-	err = in.applyBackupManifestWithFinalizer(stosStorageClassFile)
-	if err != nil {
+	if err := in.applyBackupManifestWithFinalizer(stosStorageClassFile); err != nil {
 		return err
 	}
 
@@ -84,8 +76,7 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 		return err
 	}
 	if storageosV1 {
-		err = in.applyBackupManifestWithFinalizer(csiSecretsFile)
-		if err != nil {
+		if err = in.applyBackupManifestWithFinalizer(csiSecretsFile); err != nil {
 			return err
 		}
 	}
@@ -94,11 +85,8 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 	// as it contains the on-disk FS of the uninstalled secrets and (2) the installConfig so we can
 	// set secret username and password in the secret manifest to be installed later
 	err = in.copyStorageOSSecretData(installConfig)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // copyStorageOSSecretData uses the (un)installer's on-disk filesystem to read the username and password
@@ -161,8 +149,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 		if err != nil {
 			return err
 		}
-		err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true)
-		if err != nil {
+		if err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true); err != nil {
 			return err
 		}
 	}
