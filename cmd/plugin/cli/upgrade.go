@@ -12,6 +12,7 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
@@ -24,6 +25,7 @@ const (
 )
 
 func UpgradeCmd() *cobra.Command {
+	var err error
 	cmd := &cobra.Command{
 		Use:          "upgrade",
 		Args:         cobra.MinimumNArgs(0),
@@ -33,11 +35,15 @@ func UpgradeCmd() *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := upgradeCmd(cmd); err != nil {
-				return err
-			}
-			return nil
+		Run: func(cmd *cobra.Command, args []string) {
+			defer pluginutils.ConvertPanicToError(func(e error) {
+				err = e
+			})
+
+			err = upgradeCmd(cmd)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return pluginutils.HandleError("upgrade", err)
 		},
 	}
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")

@@ -12,10 +12,12 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func UninstallCmd() *cobra.Command {
+	var err error
 	cmd := &cobra.Command{
 		Use:          "uninstall",
 		Args:         cobra.MinimumNArgs(0),
@@ -23,12 +25,15 @@ func UninstallCmd() *cobra.Command {
 		Long:         `Uninstall StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := uninstallCmd(cmd); err != nil {
-				return err
-			}
+		Run: func(cmd *cobra.Command, args []string) {
+			defer pluginutils.ConvertPanicToError(func(e error) {
+				err = e
+			})
 
-			return nil
+			err = uninstallCmd(cmd)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return pluginutils.HandleError("uninstall", err)
 		},
 	}
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")

@@ -3,11 +3,12 @@ package utils
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
@@ -190,7 +191,7 @@ func WaitFor(fn func() error, limit, interval time.Duration) error {
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("timeout with error: %w", err)
+			return errors.Wrap(err, "timeout with error")
 		case <-ticker.C:
 			err = fn()
 			if err == nil {
@@ -275,7 +276,7 @@ func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
 		}
 		return err
 	}
-	return fmt.Errorf("namespace %v exists in cluster", namespace)
+	return fmt.Errorf("namespace %s exists in cluster", namespace)
 }
 
 // NamespaceExists returns no error only if the specified namespace exists in the k8s cluster

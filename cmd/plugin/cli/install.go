@@ -10,10 +10,12 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func InstallCmd() *cobra.Command {
+	var err error
 	cmd := &cobra.Command{
 		Use:          "install",
 		Args:         cobra.MinimumNArgs(0),
@@ -21,12 +23,15 @@ func InstallCmd() *cobra.Command {
 		Long:         `Install StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := installCmd(cmd); err != nil {
-				return err
-			}
+		Run: func(cmd *cobra.Command, args []string) {
+			defer pluginutils.ConvertPanicToError(func(e error) {
+				err = e
+			})
 
-			return nil
+			err = installCmd(cmd)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return pluginutils.HandleError("install", err)
 		},
 	}
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
