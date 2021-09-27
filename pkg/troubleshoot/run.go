@@ -94,15 +94,12 @@ func Run(v *viper.Viper, arg string) error {
 		return errors.Wrap(err, "failed to load collector spec")
 	}
 
-	fmt.Println(string(collectorContent))
 	if v.GetString(installer.StosOperatorNSFlag) != "" || v.GetString(installer.StosClusterNSFlag) != "" {
 		collectorContent, err = kustomizeSupportBundle(v, collectorContent)
 		if err != nil {
 			return err
 		}
 	}
-	fmt.Println(string(collectorContent))
-
 	multidocs := strings.Split(string(collectorContent), "\n---\n")
 
 	// we suppory both raw collector kinds and supportbundle kinds here

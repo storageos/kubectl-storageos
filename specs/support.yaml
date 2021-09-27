@@ -1,130 +1,256 @@
 apiVersion: troubleshoot.sh/v1beta2
 kind: SupportBundle
 metadata:
-  name: supportbundle
+  name: StorageOS
 spec:
   collectors: 
-    # - clusterResources: {}
-    # - run:
-    #     name: "network-checks"
-    #     collectorName: "netcat"
-    #     image: arau/tools:0.9
-    #     namespace: kube-system
-    #     hostNetwork: true
-    #     hostPID: true
-    #     nodeSelector:
-    #       node-role.kubernetes.io/worker: "true"
-    #     command:
-    #     - "/bin/sh"
-    #     - "-c"
-    #     - "
-    #       #!/bin/bash
-    #       #
-    #       # IOPort = 5703 # DataPlane
-    #       # SupervisorPort = 5704 # For sync
-    #       # ExternalAPIPort = 5705 # REST API
-    #       # InternalAPIPort = 5710 # Grpc API
-    #       # GossipPort = 5711 # Gossip+Healthcheck
-    #       echo \"Source node for the test:\";
-    #       hostname -f -I; echo;
-    #       parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
-    #                           ::: 5703 5704 5705 5710 5711
-    #       "
-    #     timeout: 90s
-    #     imagePullPolicy: IfNotPresent
-    # - run:
-    #     collectorName: "hostname-one"
-    #     name: "runonenode"
-    #     image: arau/tools:0.9
-    #     namespace: kube-system
-    #     hostNetwork: true
-    #     command:
-    #     - "/bin/sh"
-    #     - "-c"
-    #     - "
-    #       #!/bin/bash
-    #       hostname
-    #       "
-    #     timeout: 20s
+    - clusterResources: {}
+    - logs:
+        name: storageos-operator-logs
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=operator
+        namespace: storageos
+        limits:
+          maxLines: 10000    
+    - logs:
+        name: storageos-etcd-logs
+        namespace:  storageos-etcd
+        limits:
+          maxLines: 1000000
+    - logs:
+        name: storageos-logs
+        selector: 
+          - app=storageos
+          - app.kubernetes.io/component!=operator
+        namespace:  storageos
+        limits:
+          maxLines: 1000000
     - run:
-        collectorName: "run-storageos-cli"
-        name: storageos
-        image: storageos/cli:v2.2.0
-        namespace: kube-system
-        command: 
+        name: "timestamp"
+        collectorName: "bundle-timestamp"
+        image: storageos/support-bundle:0.1
+        namespace: storageos
+        command:
+        - "date"
+        - "+%Y-%m-%dT%H:%M:%SZ"
+        timeout: 90s
+    - run:
+        name: network-checks
+        collectorName: netcat
+        image: arau/tools:0.9
+        namespace: storageos
+        hostNetwork: true
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command:
         - "/bin/sh"
         - "-c"
         - "
-          for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
-            state_file=/sys/module/$mod/initstate;
-            if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
-                echo \"Module $mod is running\";
-            else 
-                echo \"Module $mod is not running\";
-            fi;
-          done;
-        "
-        imagePullPolicy: IfNotPresent
+          #!/bin/bash
+          #
+          # IOPort = 5703 # DataPlane
+          # SupervisorPort = 5704 # For sync
+          # ExternalAPIPort = 5705 # REST API
+          # InternalAPIPort = 5710 # Grpc API
+          # GossipPort = 5711 # Gossip+Healthcheck
+          echo \"Source node for the test:\";
+          hostname -f -I; echo;
+          parallel -j2 nc -vnz ::: $(echo $NODES_PRIVATE_IPS| sed \"s/,/ /g\" ) \
+                              ::: 5703 5704 5705 5710 5711
+          "
+        timeout: 90s
+    - exec:
+        name: "backend-disks"
+        collectorName: "lsblk"
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        namespace: storageos
+        command: ["lsblk"]
+        args:
+          - "--bytes"
+          - "--output-all"
+        timeout: 90s
+    - exec:
+        name: "free-disk-space"
+        collectorName: "df"
+        namespace: storageos
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        command: ["df"]
+        args:
+          - "--print-type"
+        timeout: 90s
     - run:
-        collectorName: "run-storageos-cli2"
-        image: ubuntu
-        namespace: kube-system
-        command: 
-        - "/bin/sh"
-        - "-c"
-        - "
-          for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
-            state_file=/sys/module/$mod/initstate;
-            if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
-                echo \"Module $mod is running\";
-            else 
-                echo \"Module $mod is not running\";
-                echo \"--> executing \"modprobe -b $mod\"\";
-                if ! /usr/sbin/modprobe -b $mod; then
-                    if [ \"$mod\" != \"target_core_user\" ] && [ \"$mod\" != \"uio\" ]; then
-                        exit 1;
-                    else 
-                        echo \"Couldn't enable $mod\";
-                    fi;
-                fi;
-                mkdir -p /etc/modules-load.d;
-                [ ! -f /etc/modules-load.d/lio.conf ] && echo $mod >> /etc/modules-load.d/lio.conf;
-            fi;
-            echo \"$state_file\";
-          done;
-        "
-        # - "
-        #   for mod in target_core_mod tcm_loop target_core_file uio target_core_user; do
-        #     state_file=/sys/module/$mod/initstate
-        #     if [ -f \"$state_file\" ] && grep -q live \"$state_file\"; then
-        #         echo \"Module $mod is running\"
-        #     else 
-        #         echo \"Module $mod is not running\"
-        #         echo \"--> executing \"modprobe -b $mod\"\"
-        #         if ! modprobe -b $mod; then
-        #             # core_user and uio are not mandatory
-        #             if [ \"$mod\" != \"target_core_user\" ] && [ \"$mod\" != \"uio\" ]; then
-        #                 exit 1
-        #             else 
-        #                 echo \"Couldn't enable $mod\"
-        #             fi
-        #         fi
-        #         # Enable module at boot
-        #         mkdir -p /etc/modules-load.d
-        #         [ ! -f /etc/modules-load.d/lio.conf ] && echo $mod >> /etc/modules-load.d/lio.conf # create file if doesn't exist
-        #     fi
-        # done
-        # "
-        # args:
-        
-        imagePullPolicy: IfNotPresent
-  # analyzers:
-  #   - textAnalyze:
-  #       checkName: Required kernel modules
-  #       fileName: storageos/run-storageos-cli.log
-  #       regex: 'health: online'
-  #       outcomes:
-  #         - pass:
-  #             message: Required kernel modules are present.
-  #         - fail:
-  #             message: Required kernel modules are not present.
+        name: "ps-general"
+        collectorName: "ps-general"
+        image: storageos/support-bundle:0.1
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args:
+          - "-ewwo"
+          - "pid,uname,ppid,pgid,sid,sz,rssize,vsize,psr,c,bsdtime,nlwp,lstart,etimes,state,tname,args"
+        timeout: 90s
+    - run:
+        name: "ps-threads"
+        collectorName: "ps-threads"
+        image: storageos/support-bundle:0.1
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["ps"]
+        args:
+        - "-ejFwwL"
+        timeout: 90s
+    - run:
+        name: "loadAvg-all-nodes"
+        collectorName: "top"
+        image: storageos/support-bundle:0.1
+        namespace: storageos
+        hostPID: true
+        nodeSelector:
+          node-role.kubernetes.io/worker: "true"
+        command: ["top"]
+        args:
+          - "-b"
+          - "-c"
+          - "-n4"
+          - "-d2"
+          - "-w500"
+        timeout: 90s
+    - exec:
+        name: "proc-mounts"
+        collectorName: "proc-mounts"
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        namespace: storageos
+        command: ["cat"]
+        args:
+          - "/proc/mounts"
+        timeout: 90s
+    - exec:
+        name: "max-aio"
+        collectorName: "max-aio"
+        namespace: storageos
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        command: ["cat"]
+        args:
+          - "/proc/sys/fs/aio-nr"
+          - "/proc/sys/fs/aio-max-nr"
+        timeout: 90s
+    - exec:
+        name: "blobutil-list"
+        collectorName: "blobutil-list"
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        namespace: storageos
+        command: ["/bin/blobutil"]
+        args:
+          - "nli"
+          - "list"
+        timeout: 90s
+    - exec:
+        name: "storageos-data-du"
+        collectorName: "storageos-data-du"
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
+        namespace: storageos
+        command: ["du"]
+        args: ["-b", "-a", "/var/lib/storageos/data"]
+        timeout: 90s
+  analyzers: 
+    - customResourceDefinition:
+        customResourceDefinitionName: storageosclusters.storageos.com
+        outcomes:
+          - fail:
+              message:  StorageOSCluster CRD is not found in the cluster.
+          - pass:
+              message:  StorageOSCluster CRD is installed and available.
+    - deploymentStatus:
+        name: storageos-api-manager
+        namespace:  storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The StorageOS API Manager deployment does not have any ready replicas.
+          - warn:
+              when: "= 1"
+              message: The StorageOS API Manager deployment has only a single ready replica.
+          - pass:
+              message: There are multiple replicas of the StorageOS API Manager deployments ready.
+    - deploymentStatus:
+        name: storageos-operator
+        namespace:  storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message:  The StorageOS Operator deployment does not have any ready replicas.
+          - pass:
+              message:  The StorageOS Operator deployment is ready.
+    - deploymentStatus:
+        name: storageos-csi-helper
+        namespace:  storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message:  The StorageOS CSI Helper deployment does not have any ready replicas.
+          - pass:
+              message:  The StorageOS CSI Helper deployment is ready.
+    - deploymentStatus:
+        name: storageos-scheduler
+        namespace:  storageos
+        outcomes:
+          - fail:
+              when: "< 1"
+              message:  The StorageOS Scheduler deployment does not have any ready replicas.
+          - pass:
+              message:  The StorageOS Scheduler deployment is ready.
+    - nodeResources:
+        checkName:  Must have at least 1 allocatable CPU
+        outcomes:
+          - warn: 
+              when: "min(cpuAllocatable) < 1"
+              message: It is recommended to have at least 1 allocatable CPU.
+          - pass:
+              message: This cluster have at least 1 allocatable CPU.
+    - nodeResources:
+        checkName:  Every node in the cluster must have at least 512MB of allocatable memory
+        outcomes:
+          - fail: 
+              when: "min(memoryAllocatable) < 512Mi"
+              message: All nodes are required to have at least 512MB of allocatable memory.
+          - warn:
+              when: "min(memoryAllocatable) < 1Gi"
+              message: All nodes are recommended to have at least 1GB of allocatable memory.
+          - pass:
+              message: All nodes fulfil the minimum amount of allocatable memory.
+    # - deploymentStatus:
+    #     name: storageos-etcd-controller-manager
+    #     namespace:  storageos-etcd
+    #     outcomes:
+    #       - fail:
+    #           when: "< 1"
+    #           message:  The StorageOS etcd Controller Manager deployment does not have any ready replicas.
+    #       - pass:
+    #           message: The StorageOS etcd Controller Manager deployment is ready.
+    # - deploymentStatus:
+    #     name: storageos-etcd-proxy
+    #     namespace:  storageos-etcd
+    #     outcomes:
+    #       - fail:
+    #           when: "< 1"
+    #           message:  The StorageOS etcd Proxy deployment does not have any ready replicas.
+    #       - pass:
+    #           message: The StorageOS etcd Proxy deployment is ready.

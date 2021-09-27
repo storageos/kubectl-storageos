@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	bundleSpec = "https://raw.githubusercontent.com/storageos/storageos.github.io/master/yaml/bundle-configuration.yaml"
+	defaultBundleSpec = "https://raw.githubusercontent.com/storageos/kubectl-storageos/main/specs/support.yaml"
 )
 
 func BundleCmd() *cobra.Command {
@@ -33,7 +33,7 @@ from a server that can be used to assist when troubleshooting a StorageOS cluste
 
 			logger.SetQuiet(v.GetBool("quiet"))
 
-			spec := bundleSpec
+			spec := defaultBundleSpec
 			if len(args) > 0 {
 				spec = args[0]
 			}
