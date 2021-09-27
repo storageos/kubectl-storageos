@@ -1,0 +1,26 @@
+name: golangci-lint
+on: [ push, pull_request ]
+
+jobs:
+  golangci:
+    name: golangci-lint
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Deps
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y libdevmapper-dev
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+         go-version: 1.16
+
+      - uses: actions/checkout@v2
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.1
+          args: -c=".github/linters/.golangci.yml"
