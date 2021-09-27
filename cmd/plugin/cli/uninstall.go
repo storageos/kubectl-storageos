@@ -12,10 +12,13 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func UninstallCmd() *cobra.Command {
+	var err error
+	var traceError bool
 	cmd := &cobra.Command{
 		Use:          "uninstall",
 		Args:         cobra.MinimumNArgs(0),
@@ -23,14 +26,30 @@ func UninstallCmd() *cobra.Command {
 		Long:         `Uninstall StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := uninstallCmd(cmd); err != nil {
-				return err
+		Run: func(cmd *cobra.Command, args []string) {
+			defer pluginutils.ConvertPanicToError(func(e error) {
+				err = e
+			})
+
+			v := viper.GetViper()
+			logger.SetQuiet(v.GetBool("quiet"))
+
+			config := &apiv1.KubectlStorageOSConfig{}
+			err = setUninstallValues(cmd, config)
+			if err != nil {
+				return
 			}
 
-			return nil
+			traceError = config.Spec.StackTrace
+
+			err = uninstallCmd(config)
+
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return pluginutils.HandleError("uninstall", err, traceError)
 		},
 	}
+	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().Bool(installer.IncludeEtcdFlag, false, "uninstall etcd (only applicable to github.com/storageos/etcd-cluster-operator etcd cluster)")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, consts.EtcdOperatorNamespace, "namespace of etcd operator and cluster to be uninstalled")
@@ -43,41 +62,32 @@ func UninstallCmd() *cobra.Command {
 	return cmd
 }
 
-func uninstallCmd(cmd *cobra.Command) error {
-	v := viper.GetViper()
-	var err error
-	logger.SetQuiet(v.GetBool("quiet"))
-
-	ksConfig := &apiv1.KubectlStorageOSConfig{}
-
-	if err := setUninstallValues(cmd, ksConfig); err != nil {
-		return err
-	}
-
+func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
-	if !ksConfig.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
-		ksConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
+	if !config.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
+		var err error
+		config.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
 		if err != nil {
 			return err
 		}
 	}
 
-	version, err := pluginversion.GetExistingOperatorVersion(ksConfig.Spec.Uninstall.StorageOSOperatorNamespace)
+	version, err := pluginversion.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Discovered StorageOS cluster and operator version %s...\n", version)
 
-	if err = setVersionSpecificValues(ksConfig, version); err != nil {
+	if err = setVersionSpecificValues(config, version); err != nil {
 		return err
 	}
 
-	cliInstaller, err := installer.NewInstaller(ksConfig, false)
+	cliInstaller, err := installer.NewInstaller(config, false)
 	if err != nil {
 		return err
 	}
 
-	err = cliInstaller.Uninstall(ksConfig, false)
+	err = cliInstaller.Uninstall(config, false)
 
 	return err
 }
@@ -92,6 +102,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
+			config.Spec.StackTrace, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
 			config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
 			if err != nil {
 				return err
@@ -109,6 +120,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		}
 	}
 	// config file read without error, set fields in new config object
+	config.Spec.StackTrace = viper.GetBool(installer.SStackTraceConfig)
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)

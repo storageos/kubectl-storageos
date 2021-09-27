@@ -2,7 +2,6 @@ package installer
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	gyaml "github.com/ghodss/yaml"
 	"github.com/replicatedhq/troubleshoot/cmd/util"

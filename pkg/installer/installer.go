@@ -21,6 +21,7 @@ import (
 
 const (
 	// CLI flags
+	StackTraceFlag            = "stack-trace"
 	SkipNamespaceDeletionFlag = "skip-namespace-deletion"
 	VersionFlag               = "version"
 	WaitFlag                  = "wait"
@@ -43,6 +44,7 @@ const (
 	SecretPassFlag            = "secret-password"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
+	SStackTraceConfig             = "spec.stackTrace"
 	SkipNamespaceDeletionConfig   = "spec.skipNamespaceDeletion"
 	IncludeEtcdConfig             = "spec.includeEtcd"
 	InstallWaitConfig             = "spec.install.wait"

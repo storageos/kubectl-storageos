@@ -87,6 +87,8 @@ spec:
                 type: object
               skipNamespaceDeletion:
                 type: boolean
+              stackTrace:
+                type: boolean
               uninstall:
                 description: Uninstall defines options for cli uninstall subcommand
                 properties:

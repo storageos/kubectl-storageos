@@ -22,6 +22,7 @@ import (
 
 // KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
 type KubectlStorageOSConfigSpec struct {
+	StackTrace            bool `json:"stackTrace,omitempty"`
 	SkipNamespaceDeletion bool `json:"skipNamespaceDeletion,omitempty"`
 	IncludeEtcd           bool `json:"includeEtcd,omitempty"`
 

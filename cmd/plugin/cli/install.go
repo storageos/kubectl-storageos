@@ -10,10 +10,13 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func InstallCmd() *cobra.Command {
+	var err error
+	var traceError bool
 	cmd := &cobra.Command{
 		Use:          "install",
 		Args:         cobra.MinimumNArgs(0),
@@ -21,14 +24,29 @@ func InstallCmd() *cobra.Command {
 		Long:         `Install StorageOS and (optionally) ETCD`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := installCmd(cmd); err != nil {
-				return err
+		Run: func(cmd *cobra.Command, args []string) {
+			defer pluginutils.ConvertPanicToError(func(e error) {
+				err = e
+			})
+
+			v := viper.GetViper()
+			logger.SetQuiet(v.GetBool("quiet"))
+
+			config := &apiv1.KubectlStorageOSConfig{}
+			err = setInstallValues(cmd, config)
+			if err != nil {
+				return
 			}
 
-			return nil
+			traceError = config.Spec.StackTrace
+
+			err = installCmd(config)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return pluginutils.HandleError("install", err, traceError)
 		},
 	}
+	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
 	cmd.Flags().String(installer.VersionFlag, "", "version of storageos operator")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
@@ -51,34 +69,27 @@ func InstallCmd() *cobra.Command {
 	return cmd
 }
 
-func installCmd(cmd *cobra.Command) error {
-	v := viper.GetViper()
-	var err error
-	logger.SetQuiet(v.GetBool("quiet"))
-	ksConfig := &apiv1.KubectlStorageOSConfig{}
-	if err := setInstallValues(cmd, ksConfig); err != nil {
-		return err
-	}
-
+func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	// user specified the version
-	if ksConfig.Spec.Install.Version != "" {
-		version.SetOperatorLatestSupportedVersion(ksConfig.Spec.Install.Version)
+	if config.Spec.Install.Version != "" {
+		version.SetOperatorLatestSupportedVersion(config.Spec.Install.Version)
 	}
 
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
-	if !ksConfig.Spec.IncludeEtcd && ksConfig.Spec.Install.EtcdEndpoints == "" {
-		ksConfig.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
+	if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
+		var err error
+		config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
 		if err != nil {
 			return err
 		}
 	}
 
-	cliInstaller, err := installer.NewInstaller(ksConfig, true)
+	cliInstaller, err := installer.NewInstaller(config, true)
 	if err != nil {
 		return err
 	}
 
-	err = cliInstaller.Install(ksConfig)
+	err = cliInstaller.Install(config)
 
 	return err
 }
@@ -93,6 +104,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; set fields in new config object directly
+			config.Spec.StackTrace, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
 			config.Spec.IncludeEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
 			config.Spec.Install.Wait, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.WaitFlag).Value.String())
 			config.Spec.Install.Version = cmd.Flags().Lookup(installer.VersionFlag).Value.String()
@@ -117,6 +129,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		}
 	}
 	// config file read without error, set fields in new config object
+	config.Spec.StackTrace = viper.GetBool(installer.SStackTraceConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.InstallWaitConfig)
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
