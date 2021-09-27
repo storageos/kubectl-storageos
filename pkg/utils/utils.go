@@ -58,17 +58,27 @@ func ConvertPanicToError(setError func(err error)) {
 	}
 }
 
-// HandleError tries to convert program error to something useful for user.
-func HandleError(command string, err error) error {
-	errToTest := err
+type stackTracer interface {
+	StackTrace() errors.StackTrace
+}
 
+// HandleError tries to convert program error to something useful for user.
+func HandleError(command string, err error, printStackTrace bool) error {
+	if stacked, ok := err.(stackTracer); ok && printStackTrace {
+		println("Stack trace:")
+		for _, f := range stacked.StackTrace() {
+			println(fmt.Sprintf("%+s:%d", f, f))
+		}
+	}
+
+	errToTest := err
 	for {
 		if errToTest == nil {
 			return err
 		}
 
 		if kerrors.IsNotFound(errToTest) {
-			return errors.Wrap(err, fmt.Sprintf(`Maybe you have specified a wrong namespace.
+			return errors.Wrap(err, fmt.Sprintf(`Please ensure you have specified the correct namespace.
 	Please check CLI flags of %s command.
 	# kubectl storageos %s -h
 	`, command, command))
