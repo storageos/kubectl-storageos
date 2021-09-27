@@ -100,13 +100,12 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	}
 
 	var stdout, stderr bytes.Buffer
-	err = exec.Stream(remotecommand.StreamOptions{
+	if err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  stdin,
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    false,
-	})
-	if err != nil {
+	}); err != nil {
 		return "", "", fmt.Errorf("error in Stream: %v", err)
 	}
 
@@ -282,10 +281,8 @@ func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
 // NamespaceExists returns no error only if the specified namespace exists in the k8s cluster
 func NamespaceExists(config *rest.Config, namespace string) error {
 	_, err := GetNamespace(config, namespace)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 // GetStorageClass returns storage class of name.
@@ -325,11 +322,8 @@ func CreateStorageClass(config *rest.Config, storageClass *kstoragev1.StorageCla
 	}
 	scClient := clientset.StorageV1().StorageClasses()
 	_, err = scClient.Create(context.TODO(), storageClass, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // GetSecret returns data of secret name/namespace
@@ -369,11 +363,8 @@ func CreateSecret(config *rest.Config, secret *corev1.Secret, namespace string) 
 	}
 	secretClient := clientset.CoreV1().Secrets(namespace)
 	_, err = secretClient.Create(context.TODO(), secret, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // SecretDoesNotExist returns no error only if the specified secret does not exist in the k8s cluster
@@ -391,10 +382,8 @@ func SecretDoesNotExist(config *rest.Config, name, namespace string) error {
 // SecretExists returns no error only if the specified secret exists in the k8s cluster
 func SecretExists(config *rest.Config, name, namespace string) error {
 	_, err := GetSecret(config, name, namespace)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 // GetFirstStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
@@ -426,8 +415,7 @@ func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluste
 
 // StorageOSClusterDoesNotExist return no error only if no storageoscluster object exists in k8s cluster
 func StorageOSClusterDoesNotExist(config *rest.Config) error {
-	_, err := GetFirstStorageOSCluster(config)
-	if err != nil {
+	if _, err := GetFirstStorageOSCluster(config); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -446,8 +434,7 @@ func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatora
 	if err != nil {
 		return etcdCluster, err
 	}
-	err = newClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, etcdCluster)
-	if err != nil {
+	if err = newClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, etcdCluster); err != nil {
 		return etcdCluster, err
 	}
 	return etcdCluster, nil
@@ -455,8 +442,7 @@ func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatora
 
 // EtcdClusterDoesNotExist return no error only if no etcdcluster object exists in k8s cluster
 func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error {
-	_, err := GetEtcdCluster(config, name, namespace)
-	if err != nil {
+	if _, err := GetEtcdCluster(config, name, namespace); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -467,8 +453,7 @@ func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error 
 
 // EnsureNamespace Creates namespace if it does not exists.
 func EnsureNamespace(config *rest.Config, name string) error {
-	err := NamespaceExists(config, name)
-	if err == nil {
+	if err := NamespaceExists(config, name); err == nil {
 		return nil
 	}
 
@@ -477,23 +462,19 @@ func EnsureNamespace(config *rest.Config, name string) error {
 		return err
 	}
 
-	_, err = clientset.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
+	if _, err = clientset.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-	}, metav1.CreateOptions{})
-	if err != nil {
+	}, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
 	err = WaitFor(func() error {
 		return NamespaceExists(config, name)
 	}, 120, 5)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // CreateJobAndFetchResult Creates a job, fetches the output of the job and deletes the created resources.

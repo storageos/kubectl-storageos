@@ -22,8 +22,7 @@ func InstallCmd() *cobra.Command {
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := installCmd(cmd)
-			if err != nil {
+			if err := installCmd(cmd); err != nil {
 				return err
 			}
 
@@ -54,11 +53,10 @@ func InstallCmd() *cobra.Command {
 
 func installCmd(cmd *cobra.Command) error {
 	v := viper.GetViper()
-
+	var err error
 	logger.SetQuiet(v.GetBool("quiet"))
 	ksConfig := &apiv1.KubectlStorageOSConfig{}
-	err := setInstallValues(cmd, ksConfig)
-	if err != nil {
+	if err := setInstallValues(cmd, ksConfig); err != nil {
 		return err
 	}
 
@@ -81,11 +79,8 @@ func installCmd(cmd *cobra.Command) error {
 	}
 
 	err = cliInstaller.Install(ksConfig)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

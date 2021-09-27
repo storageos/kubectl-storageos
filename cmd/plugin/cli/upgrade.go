@@ -34,8 +34,7 @@ func UpgradeCmd() *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := upgradeCmd(cmd)
-			if err != nil {
+			if err := upgradeCmd(cmd); err != nil {
 				return err
 			}
 			return nil
@@ -62,12 +61,11 @@ func UpgradeCmd() *cobra.Command {
 
 func upgradeCmd(cmd *cobra.Command) error {
 	v := viper.GetViper()
-
+	var err error
 	logger.SetQuiet(v.GetBool("quiet"))
 
 	ksUninstallConfig := &apiv1.KubectlStorageOSConfig{}
-	err := setUpgradeUninstallValues(cmd, ksUninstallConfig)
-	if err != nil {
+	if err := setUpgradeUninstallValues(cmd, ksUninstallConfig); err != nil {
 		return err
 	}
 
@@ -111,10 +109,8 @@ func upgradeCmd(cmd *cobra.Command) error {
 	}
 
 	err = installer.Upgrade(ksUninstallConfig, ksInstallConfig, existingVersion)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

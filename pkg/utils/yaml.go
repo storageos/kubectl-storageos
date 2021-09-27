@@ -133,8 +133,7 @@ func SetFieldInManifest(manifest, value, valueName string, fields ...string) (st
 		return "", err
 	}
 
-	_, err = obj.Pipe(kyaml.LookupCreate(kyaml.MappingNode, fields...), kyaml.SetField(valueName, parsedVal))
-	if err != nil {
+	if _, err = obj.Pipe(kyaml.LookupCreate(kyaml.MappingNode, fields...), kyaml.SetField(valueName, parsedVal)); err != nil {
 		return "", err
 	}
 	return obj.MustString(), nil
@@ -246,17 +245,16 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 		return "", err
 	}
 
-	_, err = obj.Pipe(
+	if _, err = obj.Pipe(
 		kyaml.LookupCreate(kyaml.SequenceNode, "patches"),
-		kyaml.Append(patch.YNode().Content...))
-	if err != nil {
+		kyaml.Append(patch.YNode().Content...)); err != nil {
 		return "", err
 	}
 
 	return obj.MustString(), nil
 }
 
-// GenericPatchesForSupportBundle creates and returns []KustomizePatch for a kustomiziation file to be applied to the
+// GenericPatchesForSupportBundle creates and returns []KustomizePatch for a kustomization file to be applied to the
 // SupportBundle.
 //
 // Inputs:
@@ -323,7 +321,7 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 	return instructionPatches, nil
 }
 
-// skipElemnt is a helper function for GenericPatchesForSupportBundle - it decides whether or not and
+// skipElemnt is a helper function for GenericPatchesForSupportBundle - it decides whether or not an
 // instruction should be skipped based on whether pathsToSkip and/or lookUpValue exists within the instruction.
 func skipElement(element *kyaml.RNode, pathsToSkip [][]string, lookUpValue string) (bool, error) {
 	for _, pathToSkip := range pathsToSkip {
