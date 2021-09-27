@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/manifoldco/promptui"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -52,9 +53,13 @@ func ConvertPanicToError(setError func(err error)) {
 	case string:
 		setError(errors.New(r))
 	case error:
-		setError(r)
+		if _, ok := r.(stackTracer); ok {
+			setError(r)
+		} else {
+			setError(errors.WithStack(r))
+		}
 	default:
-		setError(fmt.Errorf("%v", r))
+		setError(errors.WithStack(fmt.Errorf("%v", r)))
 	}
 }
 
@@ -76,14 +81,18 @@ func HandleError(command string, err error, printStackTrace bool) error {
 		if errToTest == nil {
 			return err
 		}
-
-		if kerrors.IsNotFound(errToTest) {
-			return errors.Wrap(err, fmt.Sprintf(`Please ensure you have specified the correct namespace.
-	Please check CLI flags of %s command.
-	# kubectl storageos %s -h
-	`, command, command))
+		switch {
+		// Some resource has not found.
+		case kerrors.IsNotFound(errToTest):
+			return errors.Wrap(err, fmt.Sprintf(consts.ErrNotFoundTemplate, command, command))
+		// Something is wrong with Kube config.
+		case errToTest.Error() == consts.ErrUnableToConstructClientConfig:
+			return errors.Wrap(err, consts.ErrUnableToConstructClientConfigTemplate)
+		// Clientset contruction has failed.
+		case errToTest.Error() == consts.ErrUnableToContructClientFromConfig:
+			return errors.Wrap(err, consts.ErrUnableToContructClientFromConfigTemplate)
+		default:
+			errToTest = errors.Unwrap(errToTest)
 		}
-
-		errToTest = errors.Unwrap(errToTest)
 	}
 }

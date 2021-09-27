@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
@@ -61,7 +62,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string) error {
 	// write storageoscluster, secret and storageclass manifests to disk
 	if err := in.writeBackupFileSystem(storageOSCluster); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	// apply the storageclass manifest written to disk (now with finalizer to prevent deletion by operator)
@@ -99,7 +100,7 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	}
 	stosSecrets, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosSecretsFile))
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-api")
 	if err != nil {
@@ -129,7 +130,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 
 	multidoc, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, file))
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	manifests := splitMultiDoc(string(multidoc))
@@ -150,7 +151,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 			return err
 		}
 		if err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil

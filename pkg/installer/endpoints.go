@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 
@@ -15,8 +16,8 @@ const (
 	errNSForSecretNotFound = `
 	Namespace %s not found for %s while attempting to validate ETCD endpoints.
 
-	To skip ETCD endpoints validation during installation, set the --%s flag.
-`
+	To skip ETCD endpoints validation during installation, set the --%s flag`
+
 	errSecretNotFound = `
 	Unable to find etcd client secret %s in namespace %s for ETCD endpoint validation.
 
@@ -34,8 +35,8 @@ const (
 	
 
 
-	To skip ETCD endpoints validation during installation, set the --%s flag.
-`
+	To skip ETCD endpoints validation during installation, set the --%s flag`
+
 	etcdShellPod = `apiVersion: v1
 kind: Pod
 metadata:
@@ -116,7 +117,7 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 	}
 
 	if err = in.kubectlClient.Apply(context.TODO(), "", string(etcdShell), true); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	defer func() error {
@@ -137,7 +138,7 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 // - returns the tls equipped etcd-shell pod with storageos cluster namespace and secret name
 func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, error) {
 	if err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace); err != nil {
-		return "", fmt.Errorf(errNSForSecretNotFound, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag)
+		return "", errors.WithStack(fmt.Errorf(errNSForSecretNotFound, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag))
 	}
 	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace)
 	if err != nil {
@@ -153,7 +154,7 @@ func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, err
 		return "", err
 	}
 	if err = in.kubectlClient.Apply(context.TODO(), configInstall.StorageOSClusterNamespace, string(etcdSecretManifest), true); err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	etcdShell := etcdShellPodTLS
@@ -208,7 +209,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}
 		if stderr != "" {
-			return fmt.Errorf(stderr)
+			return errors.WithStack(fmt.Errorf(stderr))
 		}
 
 		_, stderr, err = pluginutils.ExecToPod(in.clientConfig, etcdctlGetCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil)
@@ -216,7 +217,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}
 		if stderr != "" {
-			return fmt.Errorf(stderr)
+			return errors.WithStack(fmt.Errorf(stderr))
 		}
 
 		_, stderr, err = pluginutils.ExecToPod(in.clientConfig, etcdctlDelCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil)
@@ -224,7 +225,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}
 		if stderr != "" {
-			return fmt.Errorf(stderr)
+			return errors.WithStack(fmt.Errorf(stderr))
 		}
 		logger.Printf("\nETCD endpoint %s successfully validated\n\n", endpoint)
 	}

@@ -114,7 +114,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 	// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
 	// with desired storage class name to kustomization for etcd cluster
 	if configInstall.StorageClassName == "" {
-		configInstall.StorageClassName, err = pluginutils.GetDefaultStorageClassName()
+		configInstall.StorageClassName, err = pluginutils.GetDefaultStorageClassName(in.clientConfig)
 		if err != nil {
 			return err
 		}

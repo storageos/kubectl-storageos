@@ -8,8 +8,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -136,7 +134,7 @@ func selectLatestVersionOrPanic(releases []GithubRelease) string {
 	}
 
 	if len(versions) == 0 {
-		panic(errors.WithStack(errors.New("release not found")))
+		panic("release not found")
 	}
 
 	sort.SliceStable(versions, func(i, j int) bool {

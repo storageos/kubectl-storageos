@@ -127,7 +127,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 	// if this is not an upgrade, write manifests to disk before deletion
 	if !upgrade {
 		if err = in.writeBackupFileSystem(storageOSCluster); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -204,15 +204,15 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	resMap, err := kustomizer.Run(in.fileSys, dir)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	resYaml, err := resMap.AsYaml()
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err = in.fileSys.WriteFile(filepath.Join(dir, file), resYaml); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	removedNamespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
@@ -222,11 +222,11 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 
 	manifest, err := in.fileSys.ReadFile(filepath.Join(dir, file))
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if in.stosConfig.Spec.SkipNamespaceDeletion {

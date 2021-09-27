@@ -151,19 +151,19 @@ func createFileData(yamlPath, yamlUrl, fileName string, config *rest.Config, nam
 func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem, error) {
 	for dir, subDirs := range fsData {
 		if err := fs.Mkdir(dir); err != nil {
-			return fs, err
+			return fs, errors.WithStack(err)
 		}
 
 		for subDir, files := range subDirs {
 			if err := fs.Mkdir(filepath.Join(dir, subDir)); err != nil {
-				return fs, err
+				return fs, errors.WithStack(err)
 			}
 			for name, data := range files {
 				if _, err := fs.Create(filepath.Join(dir, subDir, name)); err != nil {
-					return fs, err
+					return fs, errors.WithStack(err)
 				}
 				if err := fs.WriteFile(filepath.Join(dir, subDir, name), data); err != nil {
-					return fs, err
+					return fs, errors.WithStack(err)
 				}
 			}
 		}
@@ -178,7 +178,7 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 		location = url
 	}
 	if location == "" {
-		return "", errors.New("manifest location not set")
+		return "", errors.WithStack(errors.New("manifest location not set"))
 	}
 
 	if util.IsURL(location) {
@@ -192,11 +192,11 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 	if _, err := os.Stat(location); err == nil {
 		contents, err := ioutil.ReadFile(location)
 		if err != nil {
-			return "", err
+			return "", errors.WithStack(err)
 		}
 		return string(contents), nil
 	} else if !os.IsNotExist(err) {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	jobName := "storageos-operator-manifests-fetch-" + strconv.FormatInt(time.Now().Unix(), 10)
@@ -206,18 +206,18 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 // pullManifest returns a string of contents at url
 func pullManifest(url string) (string, error) {
 	if !util.IsURL(url) {
-		return "", fmt.Errorf("%s is not a URL and was not found", url)
+		return "", errors.WithStack(fmt.Errorf("%s is not a URL and was not found", url))
 	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	defer resp.Body.Close()
 
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return string(contents), nil
 }
@@ -242,11 +242,11 @@ func storageClassToManifest(storageClass *kstoragev1.StorageClass) ([]byte, erro
 
 	data, err := json.Marshal(&newStorageClass)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	data, err = gyaml.JSONToYAML(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return data, nil
 }
@@ -265,11 +265,11 @@ func storageOSClusterToManifest(storageOSCluster *operatorapi.StorageOSCluster) 
 
 	data, err := json.Marshal(&newStorageOSCluster)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	data, err = gyaml.JSONToYAML(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return data, nil
 }
@@ -291,11 +291,11 @@ func secretToManifest(secret *corev1.Secret) ([]byte, error) {
 
 	data, err := json.Marshal(&newSecret)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	data, err = gyaml.JSONToYAML(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return data, nil
 }
