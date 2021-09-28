@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative/pkg/manifest"
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
 	"sigs.k8s.io/yaml"
@@ -17,7 +18,7 @@ import (
 func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	for _, obj := range objs.Items {
 		if obj.UnstructuredObject().GetName() != name {
@@ -25,7 +26,7 @@ func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
 		}
 		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 		if err != nil {
-			return "", err
+			return "", errors.WithStack(err)
 		}
 		return string(objYaml), nil
 	}
@@ -37,7 +38,7 @@ func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
 func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	for _, obj := range objs.Items {
 		if obj.UnstructuredObject().GetKind() != kind {
@@ -45,11 +46,11 @@ func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
 		}
 		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 		if err != nil {
-			return "", err
+			return "", errors.WithStack(err)
 		}
 		return string(objYaml), nil
 	}
-	return "", fmt.Errorf("no object of kind: %s found in multi doc manifest", kind)
+	return "", errors.WithStack(fmt.Errorf("no object of kind: %s found in multi doc manifest", kind))
 }
 
 // GetAllManifestsOfKindFromMultiDoc returns a slice of strings from a multi-doc yaml file
@@ -57,7 +58,7 @@ func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
 func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	objsOfKind := make([]string, 0)
 	for _, obj := range objs.Items {
@@ -66,7 +67,7 @@ func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) 
 		}
 		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 		objsOfKind = append(objsOfKind, string(objYaml))
 	}
@@ -98,7 +99,7 @@ func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
 func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.WithStack(err)
 	}
 	objsWithoutKind := make([]string, 0)
 	objsOfKind := make([]string, 0)
@@ -106,14 +107,14 @@ func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, err
 		if obj.UnstructuredObject().GetKind() == kind {
 			objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 			if err != nil {
-				return "", nil, err
+				return "", nil, errors.WithStack(err)
 			}
 			objsOfKind = append(objsOfKind, string(objYaml))
 			continue
 		}
 		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 		if err != nil {
-			return "", nil, err
+			return "", nil, errors.WithStack(err)
 		}
 		objsWithoutKind = append(objsWithoutKind, string(objYaml))
 	}
@@ -125,16 +126,16 @@ func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, err
 func SetFieldInManifest(manifest, value, valueName string, fields ...string) (string, error) {
 	obj, err := kyaml.Parse(manifest)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	parsedVal, err := kyaml.Parse(value)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	if _, err = obj.Pipe(kyaml.LookupCreate(kyaml.MappingNode, fields...), kyaml.SetField(valueName, parsedVal)); err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return obj.MustString(), nil
 }
@@ -144,12 +145,12 @@ func SetFieldInManifest(manifest, value, valueName string, fields ...string) (st
 func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 	obj, err := kyaml.Parse(manifest)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	val, err := obj.Pipe(kyaml.Lookup(fields...))
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return strings.TrimSpace(val.MustString()), nil
 }

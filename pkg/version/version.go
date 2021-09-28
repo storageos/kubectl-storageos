@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	goversion "github.com/hashicorp/go-version"
+	"github.com/pkg/errors"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,14 +71,16 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 
 	clientset, err := pluginutils.GetClientsetFromConfig(config)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
 	}
 
-	stosDeployment, err := clientset.AppsV1().Deployments(oldNS).Get(context.TODO(), consts.OldOperatorName, metav1.GetOptions{})
-	if err != nil {
-		stosDeployment, err = clientset.AppsV1().Deployments(newNS).Get(context.TODO(), consts.NewOperatorName, metav1.GetOptions{})
-		if err != nil {
-			return "", err
+	stosDeployment, errOld := clientset.AppsV1().Deployments(oldNS).Get(context.TODO(), consts.OldOperatorName, metav1.GetOptions{})
+	if errOld != nil {
+		var errNew error
+		stosDeployment, errNew = clientset.AppsV1().Deployments(newNS).Get(context.TODO(), consts.NewOperatorName, metav1.GetOptions{})
+		if errNew != nil {
+			errNew = errors.Wrap(errNew, errOld.Error())
+			return "", errors.Wrap(errNew, "unable to detect StorageOS version")
 		}
 	}
 	imageName := stosDeployment.Spec.Template.Spec.Containers[0].Image
@@ -148,11 +151,11 @@ func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
 
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	mar, err := goversion.NewVersion(marker)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	return ver.LessThanOrEqual(mar), nil
@@ -164,11 +167,11 @@ func VersionIsLessThan(version, marker string) (bool, error) {
 
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	mar, err := goversion.NewVersion(marker)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	return ver.LessThan(mar), nil
@@ -180,11 +183,11 @@ func VersionIsEqualTo(version, marker string) (bool, error) {
 
 	ver, err := goversion.NewVersion(version)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	mar, err := goversion.NewVersion(marker)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	return ver.Equal(mar), nil

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
+	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
@@ -151,7 +152,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*
 
 	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
 	if err != nil {
-		return installer, err
+		return installer, errors.WithStack(err)
 	}
 
 	fileSys, err := buildInstallerFileSys(config, clientConfig)
@@ -176,7 +177,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*
 func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string, patches []pluginutils.KustomizePatch) error {
 	kustFile, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	kustFileWithPatches, err := pluginutils.AddPatchesToKustomize(string(kustFile), targetKind, targetName, patches)
@@ -186,7 +187,7 @@ func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string
 
 	err = in.fileSys.WriteFile(path, []byte(kustFileWithPatches))
 
-	return err
+	return errors.WithStack(err)
 }
 
 // setFieldInFsManifest reads the file at path of the in-memory filesystem, uses
@@ -194,7 +195,7 @@ func (in *Installer) addPatchesToFSKustomize(path, targetKind, targetName string
 func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields ...string) error {
 	data, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	dataStr, err := pluginutils.SetFieldInManifest(string(data), value, valueName, fields...)
 	if err != nil {
@@ -202,7 +203,7 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 	}
 	err = in.fileSys.WriteFile(path, []byte(dataStr))
 
-	return err
+	return errors.WithStack(err)
 }
 
 // getFieldInFsManifest reads the file at path of the in-memory filesystem, uses
@@ -210,7 +211,7 @@ func (in *Installer) setFieldInFsManifest(path, value, valueName string, fields 
 func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string, error) {
 	data, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	field, err := pluginutils.GetFieldInManifest(string(data), fields...)
 	if err != nil {
@@ -224,7 +225,7 @@ func (in *Installer) getFieldInFsManifest(path string, fields ...string) (string
 func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...string) (string, error) {
 	data, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	field, err := pluginutils.GetFieldInMultiDocByKind(string(data), kind, fields...)
 	if err != nil {
@@ -238,7 +239,7 @@ func (in *Installer) getFieldInFsMultiDocByKind(path, kind string, fields ...str
 func (in *Installer) getAllManifestsOfKindFromFsMultiDoc(path, kind string) ([]string, error) {
 	data, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	manifests, err := pluginutils.GetAllManifestsOfKindFromMultiDoc(string(data), kind)
 	if err != nil {
@@ -253,7 +254,7 @@ func (in *Installer) getAllManifestsOfKindFromFsMultiDoc(path, kind string) ([]s
 func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]string, error) {
 	data, err := in.fileSys.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	dataStr, objsOfKind, err := pluginutils.OmitAndReturnKindFromMultiDoc(string(data), kind)
 	if err != nil {
@@ -261,7 +262,7 @@ func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]strin
 	}
 	err = in.fileSys.WriteFile(path, []byte(dataStr))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return objsOfKind, nil
 }
@@ -273,7 +274,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return err
 	}
 	if err = in.onDiskFileSys.MkdirAll(backupPath); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	storageOSClusterManifest, err := storageOSClusterToManifest(storageOSCluster)
@@ -281,7 +282,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return err
 	}
 	if err = in.onDiskFileSys.WriteFile(filepath.Join(backupPath, stosClusterFile), storageOSClusterManifest); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	secretList, err := pluginutils.ListSecrets(in.clientConfig, metav1.ListOptions{LabelSelector: stosAppLabel})
@@ -290,10 +291,10 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 	}
 	stosSecretList, csiSecretList := separateSecrets(secretList)
 	if err = in.writeSecretsToDisk(stosSecretList, filepath.Join(backupPath, stosSecretsFile)); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if err = in.writeSecretsToDisk(csiSecretList, filepath.Join(backupPath, csiSecretsFile)); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	storageClassList, err := in.listStorageOSStorageClasses()
@@ -302,7 +303,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 	}
 	err = in.writeStorageClassesToDisk(storageClassList, filepath.Join(backupPath, stosStorageClassFile))
 
-	return err
+	return errors.WithStack(err)
 }
 
 func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList, error) {
@@ -333,7 +334,7 @@ func (in *Installer) writeSecretsToDisk(secretList *corev1.SecretList, path stri
 	}
 	err = in.onDiskFileSys.WriteFile(path, secretsMultiDoc)
 
-	return err
+	return errors.WithStack(err)
 }
 
 // writeStorageClassesToDisk writes multidoc manifest of StorageClassList.Items to path of on-disk filesystem
@@ -347,14 +348,14 @@ func (in *Installer) writeStorageClassesToDisk(storageClassList *kstoragev1.Stor
 	}
 	err = in.onDiskFileSys.WriteFile(path, storageClassMultiDoc)
 
-	return err
+	return errors.WithStack(err)
 }
 
 // getBackupPath returns the path to the on-disk directory where uninstalled manifests are stored.
 func (in *Installer) getBackupPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return filepath.Join(homeDir, kubeDir, stosDir, fmt.Sprintf("%s%v", uninstallDirPrefix, in.kubeClusterID)), nil
 }
