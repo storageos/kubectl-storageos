@@ -18,7 +18,7 @@ const (
 	defaultCollectorImage = "storageos/troubleshoot:c77d9dc"
 
 	// defaultPreflightSpec will be used if not supplied by the user.
-	defaultPreflightSpec = "https://raw.githubusercontent.com/storageos/kubectl-plugin/main/specs/preflight.yaml"
+	defaultPreflightSpec = "https://raw.githubusercontent.com/storageos/kubectl-storageos/main/specs/preflight.yaml"
 )
 
 func PreflightCmd() *cobra.Command {
