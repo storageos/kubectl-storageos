@@ -4,7 +4,7 @@ const (
 	OperatorOldestSupportedVersion = "v2.2.0"
 
 	OldOperatorName = "storageos-cluster-operator"
-	NewOperatorName = "storageos-controller-manager"
+	NewOperatorName = "storageos-operator"
 
 	NewOperatorNamespace = "storageos"
 	OldOperatorNamespace = "storageos-operator"

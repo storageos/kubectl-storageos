@@ -826,7 +826,7 @@ spec:
     - logs:
         name: storageos-operator-logs
         selector:
-          - name=storageos-controller-manager
+          - name=storageos-operator
         namespace: storageos
         limits:
           maxLines: 10000
@@ -918,7 +918,7 @@ spec:
     - logs:
         name: storageos-operator-logs
         selector:
-          - name=storageos-controller-manager
+          - name=storageos-operator
         namespace: storageos
         limits:
           maxLines: 10000
@@ -1469,7 +1469,7 @@ spec:
     - logs:
         name: storageos-operator-logs
         selector:
-          - name=storageos-controller-manager
+          - name=storageos-operator
         namespace: storageos
         limits:
           maxLines: 10000
@@ -1548,7 +1548,7 @@ spec:
     - logs:
         name: storageos-operator-logs
         selector:
-          - name=storageos-controller-manager
+          - name=storageos-operator
         namespace: storageos
         limits:
           maxLines: 10000
