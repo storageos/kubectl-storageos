@@ -33,10 +33,6 @@ spec:
                 type: string
               secretNamespace:
                 type: string
-              secretPassword:
-                type: string
-              secretUsername:
-                type: string
               storageOSSecretYaml:
                 type: string
             type: object
@@ -56,6 +52,10 @@ spec:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
                 properties:
+                  adminPassword:
+                    type: string
+                  adminUsername:
+                    type: string
                   etcdClusterYaml:
                     type: string
                   etcdEndpoints:

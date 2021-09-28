@@ -33,8 +33,7 @@ func InstallCmd() *cobra.Command {
 			logger.SetQuiet(v.GetBool("quiet"))
 
 			config := &apiv1.KubectlStorageOSConfig{}
-			err = setInstallValues(cmd, config)
-			if err != nil {
+			if err = setInstallValues(cmd, config); err != nil {
 				return
 			}
 
@@ -63,6 +62,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StorageClassFlag, "", "name of storage class to be used by etcd cluster")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos secret username (string version)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos secret password (string version)")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -120,6 +121,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			config.Spec.Install.EtcdTLSEnabled, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
 			config.Spec.Install.EtcdSecretName = cmd.Flags().Lookup(installer.EtcdSecretNameFlag).Value.String()
 			config.Spec.Install.StorageClassName = cmd.Flags().Lookup(installer.StorageClassFlag).Value.String()
+			config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
+			config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
 
@@ -129,7 +132,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.StackTrace = viper.GetBool(installer.SStackTraceConfig)
+	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.InstallWaitConfig)
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
@@ -145,6 +148,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdTLSEnabled = viper.GetBool(installer.EtcdTLSEnabledConfig)
 	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.StorageClassName = viper.GetString(installer.StorageClassConfig)
+	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
+	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

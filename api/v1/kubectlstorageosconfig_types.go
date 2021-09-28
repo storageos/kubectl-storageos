@@ -62,6 +62,8 @@ type Install struct {
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
 	StorageClassName            string `json:"storageClassName,omitempty"`
+	AdminUsername               string `json:"adminUsername,omitempty"`
+	AdminPassword               string `json:"adminPassword,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
@@ -73,8 +75,6 @@ type Uninstall struct {
 
 type InstallerMeta struct {
 	StorageOSSecretYaml string `json:"storageOSSecretYaml,omitempty"`
-	SecretUsername      string `json:"secretUsername,omitempty"`
-	SecretPassword      string `json:"secretPassword,omitempty"`
 	SecretName          string `json:"secretName,omitempty"`
 	SecretNamespace     string `json:"secretNamespace,omitempty"`
 }

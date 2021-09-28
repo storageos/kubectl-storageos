@@ -115,8 +115,8 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 		return err
 	}
 
-	installConfig.InstallerMeta.SecretUsername = secretUsername
-	installConfig.InstallerMeta.SecretPassword = secretPassword
+	installConfig.Spec.Install.AdminUsername = secretUsername
+	installConfig.Spec.Install.AdminPassword = secretPassword
 
 	return nil
 }

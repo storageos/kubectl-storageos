@@ -218,11 +218,11 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		return err
 	}
 
-	if config.InstallerMeta.SecretUsername != "" {
+	if config.Spec.Install.AdminUsername != "" {
 		usernamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/username",
-			Value: config.InstallerMeta.SecretUsername,
+			Value: config.Spec.Install.AdminUsername,
 		}
 
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch}); err != nil {
@@ -231,11 +231,11 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 
 	}
 
-	if config.InstallerMeta.SecretPassword != "" {
+	if config.Spec.Install.AdminPassword != "" {
 		passwordPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/password",
-			Value: config.InstallerMeta.SecretPassword,
+			Value: config.Spec.Install.AdminPassword,
 		}
 
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch}); err != nil {
