@@ -6,10 +6,8 @@ const (
 	# kubectl storageos %s -h
 	`
 
-	ErrUnableToConstructClientConfig         = "unable to connect to Kubernetes with given config"
-	ErrUnableToConstructClientConfigTemplate = `Please check your Kubernetes config.
-	There must be some misconfiguration in it or the cluster is not responds on network.`
-
-	ErrUnableToContructClientFromConfig         = "unable to contruct client of Kubernetes cluster"
+	ErrUnableToConstructClientConfig            = "unable to connect to Kubernetes with given config"
+	ErrUnableToConstructClientConfigTemplate    = `Please ensure your Kubernetes client config has been configured correctly`
+	ErrUnableToContructClientFromConfig         = "unable to construct client for Kubernetes cluster"
 	ErrUnableToContructClientFromConfigTemplate = `Please ensure you have the correct Kubernetes config.`
 )
