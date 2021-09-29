@@ -216,6 +216,37 @@ func IsDeploymentReady(config *rest.Config, name, namespace string) error {
 	return nil
 }
 
+// IsServiceReady attempts to `get` a service by name and namespace, the function returns no error
+// if the service doesn't have a ClusterIP or any ready endpoints.
+func IsServiceReady(config *rest.Config, name, namespace string) error {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return err
+	}
+	svcClient := clientset.CoreV1().Services(namespace)
+
+	svc, err := svcClient.Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if svc.Spec.ClusterIP == "" {
+		return fmt.Errorf("no cluster ip for service %s; %s", name, namespace)
+	}
+
+	epClient := clientset.CoreV1().Endpoints(namespace)
+	ep, err := epClient.Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, subset := range ep.Subsets {
+		if len(subset.Addresses) > 0 {
+			return nil
+		}
+	}
+	return fmt.Errorf("no endpoints are ready for service %s; %s", name, namespace)
+}
+
 // IsPodRunning attempts to `get` a pod by name and namespace, the function returns no error
 // if the pod is in running phase.
 func IsPodRunning(config *rest.Config, name, namespace string) error {
