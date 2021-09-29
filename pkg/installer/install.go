@@ -249,6 +249,9 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 	if err = in.operatorDeploymentsAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
 		return err
 	}
+	if err = in.operatorServicesAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
+		return err
+	}
 
 	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
 
@@ -274,6 +277,33 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 		}
 		if err = pluginutils.WaitFor(func() error {
 			return pluginutils.IsDeploymentReady(in.clientConfig, deploymentName, deploymentNamespace)
+		}, 90, 5); err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
+// operatorServicesAreReady takes the path of an operator manifest and returns no error if all
+// services in the manifest have a ClusterIP and at least one endpoint that is ready.
+func (in *Installer) operatorServicesAreReady(path string) error {
+	operatorServices, err := in.getAllManifestsOfKindFromFsMultiDoc(path, "Service")
+	if err != nil {
+		return err
+	}
+
+	for _, service := range operatorServices {
+		serviceName, err := pluginutils.GetFieldInManifest(service, "metadata", "name")
+		if err != nil {
+			return err
+		}
+		serviceNamespace, err := pluginutils.GetFieldInManifest(service, "metadata", "namespace")
+		if err != nil {
+			return err
+		}
+		if err = pluginutils.WaitFor(func() error {
+			return pluginutils.IsServiceReady(in.clientConfig, serviceName, serviceNamespace)
 		}, 90, 5); err != nil {
 			return err
 		}
