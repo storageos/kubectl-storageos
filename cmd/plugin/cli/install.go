@@ -62,8 +62,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StorageClassFlag, "", "name of storage class to be used by etcd cluster")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos secret username (string version)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos secret password (string version)")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 
 	viper.BindPFlags(cmd.Flags())
 

@@ -74,8 +74,8 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of ETCD endpoints")
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is TLS enabled")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos secret username (string version)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos secret password (string version)")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 
 	viper.BindPFlags(cmd.Flags())
 
