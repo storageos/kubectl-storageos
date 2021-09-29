@@ -42,14 +42,12 @@ func UpgradeCmd() *cobra.Command {
 			logger.SetQuiet(v.GetBool("quiet"))
 
 			uninstallConfig := &apiv1.KubectlStorageOSConfig{}
-			err = setUpgradeUninstallValues(cmd, uninstallConfig)
-			if err != nil {
+			if err = setUpgradeUninstallValues(cmd, uninstallConfig); err != nil {
 				return
 			}
 
 			installConfig := &apiv1.KubectlStorageOSConfig{}
-			err = setUpgradeInstallValues(cmd, installConfig)
-			if err != nil {
+			if err = setUpgradeInstallValues(cmd, installConfig); err != nil {
 				return
 			}
 
@@ -76,6 +74,9 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of ETCD endpoints")
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is TLS enabled")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
+
 	viper.BindPFlags(cmd.Flags())
 
 	return cmd
@@ -145,6 +146,9 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 			config.Spec.Install.SkipEtcdEndpointsValidation, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
 			config.Spec.Install.EtcdTLSEnabled, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
 			config.Spec.Install.EtcdSecretName = cmd.Flags().Lookup(installer.EtcdSecretNameFlag).Value.String()
+			config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
+			config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
+
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
 
@@ -154,7 +158,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		}
 	}
 	// config file read without error, set fields in new config object
-	config.Spec.StackTrace = viper.GetBool(installer.SStackTraceConfig)
+	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = false
 	config.Spec.Install.Wait = viper.GetBool(installer.InstallWaitConfig)
 	config.Spec.Install.Version = viper.GetString(installer.InstallVersionConfig)
@@ -166,6 +170,8 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.InstallStosClusterNSConfig)
+	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
+	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

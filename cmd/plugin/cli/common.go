@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/base64"
 	"regexp"
 	"strings"
 
@@ -76,4 +77,8 @@ func valueOrDefault(value string, def string) string {
 		return value
 	}
 	return def
+}
+
+func stringToBase64(value string) string {
+	return base64.StdEncoding.EncodeToString([]byte(value))
 }
