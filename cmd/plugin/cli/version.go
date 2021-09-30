@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
-
-var Version string
 
 func VersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -16,7 +15,7 @@ func VersionCmd() *cobra.Command {
 		Long:         `Show kubectl storageos version`,
 		SilenceUsage: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("%s\n", Version)
+			fmt.Printf("%s\n", version.Version)
 		},
 	}
 

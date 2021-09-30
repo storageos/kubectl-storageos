@@ -40,6 +40,8 @@ var (
 	enableUnofficialRelease bool
 
 	versionRegexp *regexp.Regexp
+
+	Version string
 )
 
 func init() {
@@ -199,7 +201,7 @@ func OperatorLatestSupportedURL() string {
 }
 
 func ClusterLatestSupportedURL() string {
-	return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, OperatorLatestSupportedVersion(), newClusterYamlUrlSuffix)
+	return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, Version, newClusterYamlUrlSuffix)
 }
 
 func EtcdOperatorLatestSupportedURL() string {

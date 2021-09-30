@@ -9,6 +9,8 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+KUBECTL_STOS_VERSION ?= v1.0.0-beta.1
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -18,7 +20,8 @@ SHELL = /usr/bin/env bash -o pipefail
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
-LDF_FLAGS = -X github.com/storageos/kubectl-storageos/cmd/plugin/cli.Version=
+LDF_FLAGS = -X github.com/storageos/kubectl-storageos/pkg/version.Version=
+
 BUILDFLAGS = -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper"
 
 all: build
@@ -65,10 +68,10 @@ build: test ## test and build manager binary.
 	make _build
 
 _build: ## Build manager binary.
-	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)develop" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION)" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 _build-pre: ## Build manager binary.
-	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)develop-pre -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION) -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 run: fmt vet generate ## Run a controller from your host.
 	go run ./main.go

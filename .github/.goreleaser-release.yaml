@@ -35,7 +35,7 @@ builds:
     tags:
       - exclude_graphdriver_btrfs exclude_graphdriver_devicemapper
 snapshot:
-  name_template: "{{ .Tag }}"
+  name_template: "{{ .Tag }}" 
 source:
   enabled: true
   name_template: '{{ .ProjectName }}_{{ .Version }}'
@@ -45,13 +45,12 @@ release:
     name: kubectl-storageos
   
   # Repo owner has to approve release.
-  draft: true
+  draft: false
 
   # If set to auto, will mark the release as not ready for production
   # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
   # If set to true, will mark the release as not ready for production.
   # Default is false.
-  prerelease: auto
-
+  prerelease: false
   extra_files:
     - glob: ./specs/storageos-cluster.yaml
