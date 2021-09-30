@@ -1,0 +1,58 @@
+project_name: storageos-operator
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - binary: manager
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: arm64
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    main: ./main.go
+    binary: ./binkubectl-storageos
+    ldflags:
+      - -w -X github.com/storageos/kubectl-storageos/cmd/plugin/cli.Version={{.Version}}
+    tags:
+      - exclude_graphdriver_btrfs exclude_graphdriver_devicemapper
+snapshot:
+  name_template: "{{ .Tag }}"
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}_{{ .Version }}'
+release:
+  github:
+    owner: storageos
+    name: kubectl-storageos
+  
+  # Repo owner has to approve release.
+  draft: true
+
+  # If set to auto, will mark the release as not ready for production
+  # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
+  # If set to true, will mark the release as not ready for production.
+  # Default is false.
+  prerelease: auto
+
+  extra_files:
+    - glob: ./specs/cluster.yaml

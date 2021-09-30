@@ -18,6 +18,7 @@ SHELL = /usr/bin/env bash -o pipefail
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
+LDF_FLAGS = -X github.com/storageos/kubectl-storageos/cmd/plugin/cli.Version=
 BUILDFLAGS = -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper"
 
 all: build
@@ -64,10 +65,10 @@ build: test ## test and build manager binary.
 	make _build
 
 _build: ## Build manager binary.
-	go build ${BUILDFLAGS} -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)develop" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 _build-pre: ## Build manager binary.
-	go build ${BUILDFLAGS} -ldflags "-X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)develop-pre -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 run: fmt vet generate ## Run a controller from your host.
 	go run ./main.go
