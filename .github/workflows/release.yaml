@@ -17,7 +17,6 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v1
         with:
-          distribution: goreleaser
           version: latest
           args: release --rm-dist --config .github/.goreleaser-release.yaml
         env:
