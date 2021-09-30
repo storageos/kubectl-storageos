@@ -76,6 +76,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(InstallCmd())
 	cmd.AddCommand(UninstallCmd())
 	cmd.AddCommand(UpgradeCmd())
+	cmd.AddCommand(VersionCmd())
 
 	return cmd
 }
