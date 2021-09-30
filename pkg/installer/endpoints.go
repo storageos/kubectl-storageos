@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
@@ -35,7 +36,30 @@ const (
 	
 
 
-	To skip ETCD endpoints validation during installation, set the --%s flag`
+	To skip ETCD endpoints validation during installation, set install flag --%s`
+
+	errFailedToValidateTLSEndpoint = `
+	Unable to validate ETCD endpoint %s 
+
+	Please ensure this endpoint is TLS-enabled.
+
+	To skip ETCD endpoints validation during installation, set install flag --%s
+
+`
+
+	errFailedToValidateEndpoint = `
+	Unable to validate ETCD endpoint %s 
+
+	If ETCD endpoints are TLS-enabled, please set install flag --%s
+
+	To skip ETCD endpoints validation during installation, set install flag --%s
+	
+`
+
+	endpointsValidatedMessage = `
+	ETCD endpoint(s) %s successfully validated.
+
+`
 
 	etcdShellPod = `apiVersion: v1
 kind: Pod
@@ -199,7 +223,10 @@ func (in *Installer) validateEndpoints(endpoints, etcdShell string, tlsEnabled b
 // if any step fails.
 func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string, endpoints []string, tls bool) error {
 	for _, endpoint := range endpoints {
-		errStr := fmt.Sprintf("%s%s", "failed to validate ETCD endpoint: ", endpoint)
+		errStr := fmt.Sprintf(errFailedToValidateEndpoint, endpoint, EtcdTLSEnabledFlag, SkipEtcdEndpointsValFlag)
+		if tls {
+			errStr = fmt.Sprintf(errFailedToValidateTLSEndpoint, endpoint, SkipEtcdEndpointsValFlag)
+		}
 
 		// use dummy key/value pair 'foo'/'bar' to write to, read from & delete from etcd
 		// in order to validate each endpoint
@@ -227,7 +254,8 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 		if stderr != "" {
 			return errors.WithStack(fmt.Errorf(stderr))
 		}
-		logger.Printf("\nETCD endpoint %s successfully validated\n\n", endpoint)
 	}
+	logger.Printf(endpointsValidatedMessage, strings.Join(endpoints, ","))
+
 	return nil
 }
