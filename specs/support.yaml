@@ -26,24 +26,24 @@ spec:
         namespace:  storageos
         limits:
           maxLines: 1000000
-    - run:
+    - exec:
         name: "timestamp"
         collectorName: "bundle-timestamp"
-        image: storageos/support-bundle:0.1
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane        
         namespace: storageos
-        command:
-        - "date"
+        command: ["date"]
+        args:
         - "+%Y-%m-%dT%H:%M:%SZ"
         timeout: 90s
-    - run:
+    - exec:
         name: network-checks
         collectorName: netcat
-        image: arau/tools:0.9
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane            
         namespace: storageos
-        hostNetwork: true
-        hostPID: true
-        nodeSelector:
-          node-role.kubernetes.io/worker: "true"
         command:
         - "/bin/sh"
         - "-c"
@@ -84,39 +84,36 @@ spec:
         args:
           - "--print-type"
         timeout: 90s
-    - run:
+    - exec:
         name: "ps-general"
         collectorName: "ps-general"
-        image: storageos/support-bundle:0.1
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
         namespace: storageos
-        hostPID: true
-        nodeSelector:
-          node-role.kubernetes.io/worker: "true"
         command: ["ps"]
         args:
           - "-ewwo"
           - "pid,uname,ppid,pgid,sid,sz,rssize,vsize,psr,c,bsdtime,nlwp,lstart,etimes,state,tname,args"
         timeout: 90s
-    - run:
+    - exec:
         name: "ps-threads"
         collectorName: "ps-threads"
-        image: storageos/support-bundle:0.1
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
         namespace: storageos
-        hostPID: true
-        nodeSelector:
-          node-role.kubernetes.io/worker: "true"
         command: ["ps"]
         args:
         - "-ejFwwL"
         timeout: 90s
-    - run:
+    - exec:
         name: "loadAvg-all-nodes"
         collectorName: "top"
-        image: storageos/support-bundle:0.1
         namespace: storageos
-        hostPID: true
-        nodeSelector:
-          node-role.kubernetes.io/worker: "true"
+        selector:
+          - app=storageos
+          - app.kubernetes.io/component=control-plane
         command: ["top"]
         args:
           - "-b"
