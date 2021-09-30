@@ -54,4 +54,4 @@ release:
   prerelease: auto
 
   extra_files:
-    - glob: ./specs/cluster.yaml
+    - glob: ./specs/storageos-cluster.yaml
