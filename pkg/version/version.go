@@ -24,8 +24,9 @@ const (
 
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
-	// TODO: set properly once releases.
-	stosClusterYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/cluster/storageos-cluster.yaml"
+
+	newClusterYamlUrlPrefix = "https://github.com/storageos/kubectl-storageos/releases/download/"
+	newClusterYamlUrlSuffix = "/storageos-cluster.yaml"
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
@@ -126,10 +127,7 @@ func ClusterUrlByVersion(version string) (string, error) {
 		return fmt.Sprintf("%s%s%s", oldClusterYamlUrlPrefix, version, oldClusterYamlUrlSuffix), nil
 	}
 
-	// TODO: return new cluster yaml url once released
-	//return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, version, newClusterYamlUrlSuffix)
-
-	return "", nil
+	return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, version, newClusterYamlUrlSuffix), nil
 }
 
 func SecretUrlByVersion(version string) (string, error) {
@@ -198,19 +196,15 @@ func OperatorLatestSupportedURL() string {
 }
 
 func ClusterLatestSupportedURL() string {
-	// TODO
-	//return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, OperatorLatestSupportedVersion(), newClusterYamlUrlSuffix)
-	return stosClusterYamlUrl
+	return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, OperatorLatestSupportedVersion(), newClusterYamlUrlSuffix)
 }
 
 func EtcdOperatorLatestSupportedURL() string {
-	// TODO
-	//return fmt.Sprintf("%s%s%s", newEtcdOperatorYamlUrlPrefix, OperatorLatestSupportedVersion(), newEtcdOperatorYamlUrlSuffix)
+	// TODO add etcd-operator-version flag to return correct url
 	return etcdOperatorYamlUrl
 }
 
 func EtcdClusterLatestSupportedURL() string {
-	// TODO
-	//return fmt.Sprintf("%s%s%s", newEtcdClusterYamlUrlPrefix, OperatorLatestSupportedVersion(), newEtcdClusterYamlUrlSuffix)
+	// TODO add etcd-operator-version flag to return correct url
 	return etcdClusterYamlUrl
 }
