@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-
+	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -58,23 +58,41 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade boo
 }
 
 func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade bool) error {
-	// add changes to storageos kustomizations here before kustomizeAndDelete calls ie make changes
-	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
-	// based on flags (or cli config file)
-	if uninstallConfig.StorageOSOperatorNamespace != "" {
-		err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), uninstallConfig.StorageOSOperatorNamespace, "namespace", "")
-		if err != nil {
+	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if storageOSCluster.Name != "" {
+		if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
+			return err
+		}
+		// allow storageoscluster object to be deleted before continuing uninstall process
+		if err = in.waitForCustomResourceDeletion(func() error {
+			return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
+		}); err != nil {
 			return err
 		}
 
 	}
-
-	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
-	if err != nil {
-		return err
+	// StorageOS cluster resources should be in a different namespace, on that case need to delete
+	if in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		if err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace); err != nil {
+			return err
+		}
 	}
 
-	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+	err = in.uninstallStorageOSOperator(uninstallConfig)
+
+	return err
+}
+
+func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.StorageOSCluster, upgrade bool) error {
+	// make changes to storageos/cluster/kustomization.yaml based on flags (or cli config file) before
+	// kustomizeAndDelete call
+	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
 	if err != nil {
 		return err
 	}
@@ -85,7 +103,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		Value: storageOSCluster.GetObjectMeta().GetName(),
 	}
 
-	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch}); err != nil {
+	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch}); err != nil {
 		return err
 	}
 
@@ -131,65 +149,71 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		}
 	}
 
-	if err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
+	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+
+	return err
+}
+
+func (in *Installer) uninstallStorageOSOperator(uninstallConfig apiv1.Uninstall) error {
+	// make changes to storageos/operator/kustomization.yaml based on flags (or cli config file) before
+	// kustomizeAndDelete call
+	if err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), uninstallConfig.StorageOSOperatorNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
-	// StorageOS cluster resources should be in a different namespace, on that case need to delete
-	if in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-		if err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace); err != nil {
-			return err
-		}
-	}
-
-	// allow storageoscluster object to be deleted before continuing uninstall process
-	if err = in.waitForCustomResourceDeletion(func() error {
-		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
-	}); err != nil {
-		return err
-	}
-
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
+	err := in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
 
 	return err
 }
 
 func (in *Installer) uninstallEtcd(etcdNamespace string) error {
-	// add changes to etcd kustomizations here before kustomizeAndDelete calls ie make changes
-	// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
-	// based on flags (or cli config file)
-	if etcdNamespace != "" {
-		if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
-			return err
-		}
-		if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
-			return err
-		}
-
-	}
-
-	if err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile); err != nil {
-		return err
-	}
-
 	fsEtcdName, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "name")
 	if err != nil {
 		return err
 	}
-
-	fsEtcdNamespace, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "namespace")
+	etcdCluster, err := pluginutils.GetEtcdCluster(in.clientConfig, fsEtcdName, etcdNamespace)
 	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+	if etcdCluster.Name != "" {
+		if err := in.uninstallEtcdCluster(etcdNamespace); err != nil {
+			return err
+		}
+
+		// allow etcdcluster object to be deleted before continuing uninstall process
+		if err = in.waitForCustomResourceDeletion(func() error {
+			return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, etcdNamespace)
+		}); err != nil {
+			return err
+		}
+	}
+	err = in.uninstallEtcdOperator(etcdNamespace)
+
+	return err
+}
+
+func (in *Installer) uninstallEtcdCluster(etcdNamespace string) error {
+	// make changes etcd/cluster/kustomization.yaml based on flags (or cli config file) before
+	//kustomizeAndDelete call
+	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
-	// allow etcdcluster object to be deleted before continuing uninstall process
-	if err = in.waitForCustomResourceDeletion(func() error {
-		return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, fsEtcdNamespace)
-	}); err != nil {
+	err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
+
+	return err
+}
+
+func (in *Installer) uninstallEtcdOperator(etcdNamespace string) error {
+	// make changes etcd/operator/kustomization.yaml based on flags (or cli config file) before
+	//kustomizeAndDelete call
+	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
+	err := in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 
 	return err
 }
