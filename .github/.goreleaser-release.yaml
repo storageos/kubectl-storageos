@@ -5,8 +5,7 @@ before:
     - go mod download
 
 builds:
-  - binary: manager
-    env:
+  - env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -30,7 +29,7 @@ builds:
     flags:
       - -trimpath
     main: ./main.go
-    binary: ./binkubectl-storageos
+    binary: ./kubectl-storageos
     ldflags:
       - -w -X github.com/storageos/kubectl-storageos/cmd/plugin/cli.Version={{.Version}}
     tags:
