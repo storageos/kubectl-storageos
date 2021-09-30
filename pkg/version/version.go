@@ -25,7 +25,7 @@ const (
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
 
-	newClusterYamlUrlPrefix = "https://github.com/storageos/kubectl-storageos/releases/download/"
+	newClusterYamlUrlPrefix = "https://github.com/storageos/operator/releases/download/"
 	newClusterYamlUrlSuffix = "/storageos-cluster.yaml"
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
