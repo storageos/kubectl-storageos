@@ -1,4 +1,4 @@
-project_name: storageos-operator
+project_name: kubectl-storageos
 
 before:
   hooks:
