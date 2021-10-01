@@ -320,7 +320,6 @@ func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList
 	}
 
 	return stosStorageClassList, nil
-
 }
 
 // writeSecretsToDisk writes multidoc manifest of SecretList.Items to path of on-disk filesystem

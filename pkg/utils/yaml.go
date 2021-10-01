@@ -230,7 +230,6 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
       path: `, patch.Path, `
       value: `, patch.Value)
 		patchStrings = append(patchStrings, patchString)
-
 	}
 
 	allPatchesStr := strings.Join(patchStrings, "")
@@ -298,7 +297,6 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 			continue
 		}
 		for _, instructionType := range instructionTypes {
-
 			instructionNode, err := element.Pipe(kyaml.Lookup(instructionType))
 			if err != nil {
 				return nil, err
@@ -309,7 +307,6 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 
 			fieldNode, err := instructionNode.Pipe(kyaml.Lookup(fields...))
 			if err != nil {
-
 				return nil, err
 			}
 			if fieldNode == nil {
@@ -462,7 +459,6 @@ func getSupportBundleInstructionTypes(instruction string) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("unsupported instruction %v, must be \"collectors\" or \"analyzers\"", instruction)
 	}
-
 }
 
 // NamespaceYaml returns a yaml string for a namespace object based on the namespace name
@@ -471,5 +467,4 @@ func NamespaceYaml(namespace string) string {
 kind: Namespace
 metadata:
   name: `, namespace)
-
 }

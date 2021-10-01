@@ -225,7 +225,6 @@ func Run(v *viper.Viper, arg string) error {
 				}
 			}
 		}
-
 	}
 
 	// perform analysis, if possible
@@ -240,7 +239,6 @@ func Run(v *viper.Viper, arg string) error {
 		if err != nil {
 			c := color.New(color.FgHiRed)
 			c.Printf("%s\r * Failed to open support bundle for analysis: %v\n", cursor.ClearEntireLine(), err)
-
 		}
 		if err := analyzer.ExtractTroubleshootBundle(f, tmpDir); err != nil {
 			c := color.New(color.FgHiRed)
@@ -811,7 +809,6 @@ func kustomizeSupportBundle(v *viper.Viper, supportBundleContent []byte) ([]byte
 			return nil, err
 		}
 		patches = append(colletorPatches, analyzerPatches...)
-
 	}
 	// patch for operator logs instruction
 	operatorNS := v.GetString(installer.StosOperatorNSFlag)

@@ -228,7 +228,6 @@ func (in *Installer) installStorageOS(config *apiv1.KubectlStorageOSConfig) erro
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch}); err != nil {
 			return err
 		}
-
 	}
 
 	if config.Spec.Install.AdminPassword != "" {
@@ -282,7 +281,6 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 		}
 	}
 	return nil
-
 }
 
 // operatorServicesAreReady takes the path of an operator manifest and returns no error if all
@@ -309,7 +307,6 @@ func (in *Installer) operatorServicesAreReady(path string) error {
 		}
 	}
 	return nil
-
 }
 
 // kustomizeAndApply performs the following in the order described:

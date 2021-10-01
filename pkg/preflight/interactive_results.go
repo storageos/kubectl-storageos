@@ -162,7 +162,6 @@ func drawPreflightTable(analyzeResults []*analyzerunner.AnalyzeResult) {
 				table.RowStyles[i] = ui.NewStyle(ui.ColorRed, ui.ColorClear, ui.ModifierReverse)
 			}
 		}
-
 	}
 
 	ui.Render(table)

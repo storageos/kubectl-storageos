@@ -353,7 +353,6 @@ patches:
 		if kyaml.MustParse(kust).MustString() != kyaml.MustParse(tc.expKust).MustString() {
 			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expKust).MustString(), kyaml.MustParse(kust).MustString())
 		}
-
 	}
 }
 
@@ -435,7 +434,6 @@ spec:
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
 			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
 		}
-
 	}
 }
 
@@ -798,7 +796,6 @@ spec:
 		if len(tc.expManifests) != len(mans) {
 			t.Errorf("expected %v manifests, got %v", len(tc.expManifests), len(mans))
 		}
-
 	}
 }
 
@@ -1441,7 +1438,6 @@ spec:
 		if !reflect.DeepEqual(tc.expPatches, patches) {
 			t.Errorf("expected %v, got %v", tc.expPatches, patches)
 		}
-
 	}
 }
 
@@ -1626,7 +1622,6 @@ spec:
 		if !reflect.DeepEqual(tc.expPatch, patch) {
 			t.Errorf("expected %v, got %v", tc.expPatch, patch)
 		}
-
 	}
 }
 
