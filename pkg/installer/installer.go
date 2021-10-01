@@ -94,7 +94,6 @@ resources:`
 	stosClusterKind        = "StorageOSCluster"
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
-	defaultEtcdClusterNS   = "storageos-etcd"
 	stosFinalizer          = "storageos.com/finalizer"
 	stosSCProvisioner      = "csi.storageos.com"
 	stosAppLabel           = "app=storageos"
