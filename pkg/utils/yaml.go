@@ -78,7 +78,7 @@ func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) 
 func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
 	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	objsWithoutKind := make([]string, 0)
 	for _, obj := range objs.Items {
@@ -87,7 +87,7 @@ func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
 		}
 		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
 		if err != nil {
-			return "", err
+			return "", errors.WithStack(err)
 		}
 		objsWithoutKind = append(objsWithoutKind, string(objYaml))
 	}
@@ -160,11 +160,11 @@ func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 func GetFieldInMultiDocByKind(multidoc, kind string, fields ...string) (string, error) {
 	manifest, err := GetManifestFromMultiDocByKind(multidoc, kind)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	field, err := GetFieldInManifest(manifest, fields...)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return field, nil
 }
@@ -220,7 +220,7 @@ type KustomizePatch struct {
 func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, patches []KustomizePatch) (string, error) {
 	obj, err := kyaml.Parse(string(kustomizationFile))
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	patchStrings := make([]string, 0)
@@ -242,13 +242,13 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 
 	patch, err := kyaml.Parse(strings.Join([]string{targetString, allPatchesStr}, ""))
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	if _, err = obj.Pipe(
 		kyaml.LookupCreate(kyaml.SequenceNode, "patches"),
 		kyaml.Append(patch.YNode().Content...)); err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 
 	return obj.MustString(), nil
@@ -272,26 +272,29 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 func GenericPatchesForSupportBundle(spec, instruction, value string, fields []string, skipLookUpValue string, pathsToSkip [][]string) ([]KustomizePatch, error) {
 	instructionTypes, err := getSupportBundleInstructionTypes(instruction)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	obj, err := kyaml.Parse(spec)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	instructionObj, err := obj.Pipe(kyaml.Lookup(
 		"spec",
 		instruction,
 	))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	instructionPatches := make([]KustomizePatch, 0)
-	elements, _ := instructionObj.Elements()
+	elements, err := instructionObj.Elements()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	for count, element := range elements {
 		skipElement, err := skipElement(element, pathsToSkip, skipLookUpValue)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 		if skipElement {
 			continue
@@ -299,7 +302,7 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 		for _, instructionType := range instructionTypes {
 			instructionNode, err := element.Pipe(kyaml.Lookup(instructionType))
 			if err != nil {
-				return nil, err
+				return nil, errors.WithStack(err)
 			}
 			if instructionNode == nil {
 				continue
@@ -307,7 +310,7 @@ func GenericPatchesForSupportBundle(spec, instruction, value string, fields []st
 
 			fieldNode, err := instructionNode.Pipe(kyaml.Lookup(fields...))
 			if err != nil {
-				return nil, err
+				return nil, errors.WithStack(err)
 			}
 			if fieldNode == nil {
 				break
@@ -328,7 +331,7 @@ func skipElement(element *kyaml.RNode, pathsToSkip [][]string, lookUpValue strin
 		}
 		elementNodeToSkip, err := element.Pipe(kyaml.Lookup(pathToSkip...))
 		if err != nil {
-			return false, err
+			return false, errors.WithStack(err)
 		}
 		if lookUpValue == "" {
 			if elementNodeToSkip != nil {
@@ -361,22 +364,26 @@ func SpecificPatchForSupportBundle(spec, instruction, value string, fields []str
 	kPatch := KustomizePatch{}
 	obj, err := kyaml.Parse(spec)
 	if err != nil {
-		return kPatch, err
+		return kPatch, errors.WithStack(err)
 	}
 	instructionObj, err := obj.Pipe(kyaml.Lookup(
 		"spec",
 		instruction,
 	))
 	if err != nil {
-		return kPatch, err
+		return kPatch, errors.WithStack(err)
 	}
 
-	elements, _ := instructionObj.Elements()
+	elements, err := instructionObj.Elements()
+	if err != nil {
+		return kPatch, errors.WithStack(err)
+	}
+
 	for count, element := range elements {
 		if len(findByFields) != 0 {
 			elementNodeToPatch, err := element.Pipe(kyaml.Lookup(findByFields...))
 			if err != nil {
-				return kPatch, err
+				return kPatch, errors.WithStack(err)
 			}
 			if strings.TrimSpace(elementNodeToPatch.MustString()) != strings.TrimSpace(lookUpValue) {
 				continue
@@ -392,7 +399,7 @@ func SpecificPatchForSupportBundle(spec, instruction, value string, fields []str
 func AllInstructionTypesExcept(instruction string, exceptions ...string) ([][]string, error) {
 	allTypes, err := getSupportBundleInstructionTypes(instruction)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	finalInstructionTypes := make([][]string, 0)
 	for _, instructionType := range allTypes {
@@ -457,7 +464,7 @@ func getSupportBundleInstructionTypes(instruction string) ([]string, error) {
 	case "analyzers":
 		return analyzerTypes, nil
 	default:
-		return nil, fmt.Errorf("unsupported instruction %v, must be \"collectors\" or \"analyzers\"", instruction)
+		return nil, errors.WithStack(fmt.Errorf("unsupported instruction %v, must be \"collectors\" or \"analyzers\"", instruction))
 	}
 }
 

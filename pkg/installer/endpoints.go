@@ -60,6 +60,10 @@ const (
 	ETCD endpoint(s) %s successfully validated.
 
 `
+	etcdShellPodDeletionFailMessage = `
+	Failed to cleanup etcd shell pod with error %v, 
+	please delete pod manually after installaion is complete.
+`
 
 	etcdShellPod = `apiVersion: v1
 kind: Pod
@@ -144,11 +148,11 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 		return errors.WithStack(err)
 	}
 
-	defer func() error {
+	defer func() {
 		if err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true); err != nil {
-			return err
+			// do nothing, etcd shell pod runs to completion even in unlikely event that delete fails
+			logger.Printf(etcdShellPodDeletionFailMessage, err)
 		}
-		return nil
 	}()
 
 	err = in.validateEndpoints(configInstall.EtcdEndpoints, string(etcdShell), configInstall.EtcdTLSEnabled)

@@ -108,7 +108,9 @@ func Run(v *viper.Viper, arg string) error {
 		return errors.Wrap(err, "failed to parse collector")
 	}
 
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+	if err := troubleshootclientsetscheme.AddToScheme(scheme.Scheme); err != nil {
+		return errors.Wrap(err, "failed to add troubleshoot client to scheme")
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	additionalRedactors := &troubleshootv1beta2.Redactor{}
@@ -368,7 +370,9 @@ func parseSupportBundleFromDoc(doc []byte) (*troubleshootv1beta2.SupportBundle, 
 		return nil, errors.Wrap(err, "failed to convert to v1beta2")
 	}
 
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+	if err := troubleshootclientsetscheme.AddToScheme(scheme.Scheme); err != nil {
+		return nil, errors.Wrap(err, "failed to add troubleshoot client to scheme")
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	obj, _, err := decode(doc, nil, nil)

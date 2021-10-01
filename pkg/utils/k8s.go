@@ -403,10 +403,11 @@ func SecretExists(config *rest.Config, name, namespace string) error {
 // Use 'List' to discover as there can only be one object per k8s cluster and 'List' does not
 // require name/namespace.
 func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluster, error) {
-	scheme := runtime.NewScheme()
-	operatorapi.AddToScheme(scheme)
 	stosCluster := &operatorapi.StorageOSCluster{}
-
+	scheme := runtime.NewScheme()
+	if err := operatorapi.AddToScheme(scheme); err != nil {
+		return stosCluster, errors.Wrap(err, "failed to add to scheme")
+	}
 	newClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
 		return stosCluster, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
@@ -439,10 +440,11 @@ func StorageOSClusterDoesNotExist(config *rest.Config) error {
 
 // GetEtcdCluster returns the etcdcluster object of name and namespace.
 func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatorapi.EtcdCluster, error) {
-	scheme := runtime.NewScheme()
-	etcdoperatorapi.AddToScheme(scheme)
 	etcdCluster := &etcdoperatorapi.EtcdCluster{}
-
+	scheme := runtime.NewScheme()
+	if err := etcdoperatorapi.AddToScheme(scheme); err != nil {
+		return etcdCluster, errors.Wrap(err, "failed to add to scheme")
+	}
 	newClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
 		return etcdCluster, err
