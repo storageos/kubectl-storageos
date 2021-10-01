@@ -39,9 +39,11 @@ require (
 )
 
 replace (
+	github.com/containerd/containerd => github.com/containerd/containerd v1.4.8
 	github.com/hashicorp/go-version => github.com/hashicorp/go-version v1.3.0
 	github.com/improbable-eng/etcd-cluster-operator => github.com/storageos/etcd-cluster-operator v0.3.0
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc95
 	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20210927120021-b81ef00486cf
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.1
@@ -65,5 +67,4 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.21.1
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.21.1
 	sigs.k8s.io/controller-runtime => github.com/kubernetes-sigs/controller-runtime v0.9.0
-
 )
