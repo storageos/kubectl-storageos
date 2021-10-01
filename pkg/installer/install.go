@@ -352,7 +352,7 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 	return err
 }
 
-// gracefullyApplyNS applies a namespace and then waits until it has been applied succesfully before
+// gracefullyApplyNS applies a namespace and then waits until it has been applied successfully before
 // returning no error
 func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 	if err := in.kubectlClient.Apply(context.TODO(), "", namespaceManifest, true); err != nil {
