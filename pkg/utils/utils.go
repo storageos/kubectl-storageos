@@ -88,7 +88,7 @@ func HandleError(command string, err error, printStackTrace bool) error {
 		// Something is wrong with Kube config.
 		case errToTest.Error() == consts.ErrUnableToConstructClientConfig:
 			return errors.Wrap(err, consts.ErrUnableToConstructClientConfigTemplate)
-		// Clientset contruction has failed.
+		// Clientset construction has failed.
 		case errToTest.Error() == consts.ErrUnableToContructClientFromConfig:
 			return errors.Wrap(err, consts.ErrUnableToContructClientFromConfigTemplate)
 		default:

@@ -108,7 +108,9 @@ func Run(v *viper.Viper, arg string) error {
 		return errors.Wrap(err, "failed to parse collector")
 	}
 
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+	if err := troubleshootclientsetscheme.AddToScheme(scheme.Scheme); err != nil {
+		return errors.Wrap(err, "failed to add troubleshoot client to scheme")
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	additionalRedactors := &troubleshootv1beta2.Redactor{}
@@ -225,7 +227,6 @@ func Run(v *viper.Viper, arg string) error {
 				}
 			}
 		}
-
 	}
 
 	// perform analysis, if possible
@@ -240,7 +241,6 @@ func Run(v *viper.Viper, arg string) error {
 		if err != nil {
 			c := color.New(color.FgHiRed)
 			c.Printf("%s\r * Failed to open support bundle for analysis: %v\n", cursor.ClearEntireLine(), err)
-
 		}
 		if err := analyzer.ExtractTroubleshootBundle(f, tmpDir); err != nil {
 			c := color.New(color.FgHiRed)
@@ -370,7 +370,9 @@ func parseSupportBundleFromDoc(doc []byte) (*troubleshootv1beta2.SupportBundle, 
 		return nil, errors.Wrap(err, "failed to convert to v1beta2")
 	}
 
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+	if err := troubleshootclientsetscheme.AddToScheme(scheme.Scheme); err != nil {
+		return nil, errors.Wrap(err, "failed to add troubleshoot client to scheme")
+	}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	obj, _, err := decode(doc, nil, nil)
@@ -811,7 +813,6 @@ func kustomizeSupportBundle(v *viper.Viper, supportBundleContent []byte) ([]byte
 			return nil, err
 		}
 		patches = append(colletorPatches, analyzerPatches...)
-
 	}
 	// patch for operator logs instruction
 	operatorNS := v.GetString(installer.StosOperatorNSFlag)

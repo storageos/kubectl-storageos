@@ -151,7 +151,6 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
-
 		} else {
 			// Config file was found but another error was produced
 			return fmt.Errorf("error discovered in config file: %v", err)

@@ -207,7 +207,6 @@ func drawDetails(analysisResult *analyzerunner.AnalyzeResult) {
 		height = estimateNumberOfLines(uri.Text, termWidth/2)
 		uri.SetRect(termWidth/2, currentTop, termWidth, currentTop+height)
 		ui.Render(uri)
-		currentTop = currentTop + height + 1
 	}
 }
 

@@ -136,7 +136,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 	manifests := splitMultiDoc(string(multidoc))
 	for _, manifest := range manifests {
 		// if a finalizer already exists for this object, continue.
-		// This may be the case if an upgrade has already occured.
+		// This may be the case if an upgrade has already occurred.
 		existingFinalizers, err := pluginutils.GetFieldInManifest(string(manifest), "metadata", "finalizers")
 		if err != nil {
 			return err

@@ -125,7 +125,6 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
 			config.InstallerMeta.StorageOSSecretYaml = ""
 			return nil
-
 		} else {
 			// Config file was found but another error was produced
 			return fmt.Errorf("error discovered in config file: %v", err)

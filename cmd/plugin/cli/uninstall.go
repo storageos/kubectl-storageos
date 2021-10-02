@@ -43,7 +43,6 @@ func UninstallCmd() *cobra.Command {
 			traceError = config.Spec.StackTrace
 
 			err = uninstallCmd(config)
-
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
 			return pluginutils.HandleError("uninstall", err, traceError)
@@ -111,9 +110,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 			config.Spec.Uninstall.StorageOSClusterNamespace = cmd.Flags().Lookup(installer.StosClusterNSFlag).Value.String()
 			config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
-
 			return nil
-
 		} else {
 			// Config file was found but another error was produced
 			return fmt.Errorf("error discovered in config file: %v", err)

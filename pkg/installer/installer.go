@@ -94,7 +94,6 @@ resources:`
 	stosClusterKind        = "StorageOSCluster"
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
-	defaultEtcdClusterNS   = "storageos-etcd"
 	stosFinalizer          = "storageos.com/finalizer"
 	stosSCProvisioner      = "csi.storageos.com"
 	stosAppLabel           = "app=storageos"
@@ -320,7 +319,6 @@ func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList
 	}
 
 	return stosStorageClassList, nil
-
 }
 
 // writeSecretsToDisk writes multidoc manifest of SecretList.Items to path of on-disk filesystem

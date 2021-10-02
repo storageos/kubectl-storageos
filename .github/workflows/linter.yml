@@ -1,0 +1,76 @@
+---
+#################################
+#################################
+## Super Linter GitHub Actions ##
+#################################
+#################################
+name: Lint Full Codebase
+
+#
+# Documentation:
+# https://help.github.com/en/articles/workflow-syntax-for-github-actions
+#
+
+#############################
+# Start the job on all push #
+#############################
+on: [ push, pull_request ]
+
+###############
+# Set the Job #
+###############
+jobs:
+  golangci:
+    name: Go Linter
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Deps
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y libdevmapper-dev
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+         go-version: 1.16
+
+      - uses: actions/checkout@v2
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.1
+          args: -c=".github/linters/.golangci.yml"
+  build:
+    # Name the Job
+    name: Super Linter (non-Go)
+    # Set the agent to run on
+    runs-on: ubuntu-latest
+
+    ##################
+    # Load all steps #
+    ##################
+    steps:
+      ##########################
+      # Checkout the code base #
+      ##########################
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+
+      ################################
+      # Run Linter against code base #
+      ################################
+      - name: super-linter
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_SHELL_SHFMT: true
+          VALIDATE_YAML: true
+          VALIDATE_BASH: true
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

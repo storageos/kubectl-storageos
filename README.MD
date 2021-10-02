@@ -15,12 +15,12 @@ The main goal of this project is to seemlessly enable StorageOS related administ
 
 ### Pre-Requisites
 
- * Go 1.16+
+* Go 1.16+
 
 Since the project is under active development there isn't a release process or pre-compiled binaries yet.  
-For now, to install the plugin you have to build your own version. 
+For now, to install the plugin you have to build your own version.
 
-```
+```lang-none
 # git clone https://github.com/storageos/kubectl-storageos.git
 # cd kubectl-storageos
 # make build
@@ -29,7 +29,7 @@ For now, to install the plugin you have to build your own version.
 
 ## Usage
 
-```
+```lang-none
 # kubectl storageos -h
 StorageOS kubectl plugin
 
@@ -69,7 +69,7 @@ Use "storageos [command] --help" for more information about a command.
 ## Commands
 ### Install
 
-```
+```lang-none
 # kubectl storageos install -h
 Install StorageOS and (optionally) ETCD
 
@@ -109,7 +109,7 @@ Flags:
 
 ### Uninstall
 
-```
+```lang-none
 # kubectl storageos uninstall -h
 Uninstall StorageOS and (optionally) ETCD
 
@@ -125,7 +125,7 @@ Flags:
       --stos-cluster-namespace string    namespace of storageos cluster to be uninstalled (default "storageos")
       --stos-operator-namespace string   namespace of storageos operator to be uninstalled (default "storageos")
 ```
-   
+
 #### Uninstall StorageOS From Your Kubernetes Cluster
 
 `kubectl storageos uninstall`
@@ -146,7 +146,7 @@ The ETCD uninstallation refers only to an ETCD cluster installed by the StorageO
 
 ### Upgrade
 
-```
+```lang-none
 kubectl storageos upgrade -h
 Upgrade StorageOS operator and cluster version
 
@@ -178,7 +178,7 @@ Flags:
 The **upgrade** commands uninstalls your existing StorageOS cluster and installs the latest StorageOS cluster.
 
 ### Preflight
-```
+```lang-none
 # kubectl storageos preflight -h
 A preflight check is a set of validations that can and should be run to ensure that a cluster meets the requirements to run StorageOS.
 
@@ -219,14 +219,14 @@ Flags can also be passed to the **install**, **uninstall** and **upgrade** comma
 
 `kubectl storageos install --config-path=/path/to/config`
 
-For this command to function correctly, the config file should be located and named like so: 
+For this command to function correctly, the config file should be located and named like so:
 
 `/path/to/config/kubectl-storageos-config.yaml`
 
-The **upgrade** command reads the `uninstall` and `install` settings in the config spec to perform the upgrade. 
+The **upgrade** command reads the `uninstall` and `install` settings in the config spec to perform the upgrade.
 The following is an example of a config file that might be used for an upgrade with custom namespaces:
 
-```
+```yaml
 apiVersion: storageos.com/v1
 kind: KubectlStorageOSConfig
 metadata:
@@ -254,10 +254,10 @@ For an example config file, see:
 
 `kubectl storageos install --etcd-tls-enabled`
 
-In order for StorageOS to connect to ETCD over HTTPS, a k8s secret must exist in the `storageos-cluster-namespace` with valid ETCD credentials. 
+In order for StorageOS to connect to ETCD over HTTPS, a k8s secret must exist in the `storageos-cluster-namespace` with valid ETCD credentials.
 This secret can be created like so:
 
-```
+```lang-none
 kubectl create secret generic <etcd-secret-name> -n <storageos-cluster-namespace> \
                 --from-file=etcd-client-ca.crt=path/to/ca.crt \
                 --from-file=etcd-client.crt=path/to/tls.crt \
