@@ -77,8 +77,8 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		}
 	}
 	// StorageOS cluster resources should be in a different namespace, on that case need to delete
-	if in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-		if err = in.gracefullyDeleteNS(in.stosConfig.Spec.Uninstall.StorageOSClusterNamespace); err != nil {
+	if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
 			return err
 		}
 	}

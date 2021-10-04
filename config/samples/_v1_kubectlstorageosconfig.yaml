@@ -32,5 +32,4 @@ spec:
     storageClassName: "<storage-class>"
   uninstall:
     storageOSOperatorNamespace: "<storageos-operator-namespace>"
-    storageOSClusterNamespace: "<storageos-cluster-namespace>"
     etcdNamespace: "<etcd-namespace>"

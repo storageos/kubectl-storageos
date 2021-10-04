@@ -69,7 +69,6 @@ type Install struct {
 // Uninstall defines options for cli uninstall subcommand
 type Uninstall struct {
 	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
-	StorageOSClusterNamespace  string `json:"storageOSClusterNamespace,omitempty"`
 	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
 }
 
