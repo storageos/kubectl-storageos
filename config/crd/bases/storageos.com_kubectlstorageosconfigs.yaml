@@ -94,8 +94,6 @@ spec:
                 properties:
                   etcdNamespace:
                     type: string
-                  storageOSClusterNamespace:
-                    type: string
                   storageOSOperatorNamespace:
                     type: string
                 type: object

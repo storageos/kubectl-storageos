@@ -11,4 +11,3 @@ spec:
     storageClassName: standard
   uninstall:
     storageOSOperatorNamespace: stos-operator-install-skip-etcd-config
-    storageOSClusterNamespace: stos-cluster-install-skip-etcd-config

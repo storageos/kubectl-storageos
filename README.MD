@@ -122,7 +122,6 @@ Flags:
   -h, --help                             help for uninstall
       --include-etcd                     uninstall etcd (only applicable to github.com/storageos/etcd-cluster-operator etcd cluster)
       --skip-namespace-deletion          leaving namespaces untouched
-      --stos-cluster-namespace string    namespace of storageos cluster to be uninstalled (default "storageos")
       --stos-operator-namespace string   namespace of storageos operator to be uninstalled (default "storageos")
 ```
 
@@ -165,7 +164,6 @@ Flags:
       --skip-namespace-deletion                    leaving namespaces untouched
       --stos-cluster-yaml string                   storageos-cluster.yaml path or url to be installed
       --stos-operator-yaml string                  storageos-operator.yaml path or url to be installed
-      --uninstall-stos-cluster-namespace string    namespace of storageos cluster to be uninstalled (default "storageos")
       --uninstall-stos-operator-namespace string   namespace of storageos operator to be uninstalled (default "storageos")
       --version string                             version of storageos operator
       --wait                                       wait for storagos cluster to enter running phase
@@ -237,7 +235,6 @@ spec:
     storageOSClusterNamespace: storageos-cluster-new
   uninstall:
     storageOSOperatorNamespace: storageos-operator-old
-    storageOSClusterNamespace: storageos-cluster-old
 ```
 
 For an example config file, see:

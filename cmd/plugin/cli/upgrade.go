@@ -20,7 +20,6 @@ import (
 const (
 	uninstallStosOperatorNSFlag = "uninstall-" + installer.StosOperatorNSFlag
 	installStosOperatorNSFlag   = "install-" + installer.StosOperatorNSFlag
-	uninstallStosClusterNSFlag  = "uninstall-" + installer.StosClusterNSFlag
 	installStosClusterNSFlag    = "install-" + installer.StosClusterNSFlag
 )
 
@@ -65,7 +64,6 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
-	cmd.Flags().String(uninstallStosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be uninstalled")
 	cmd.Flags().String(installStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installStosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be installed")
@@ -190,7 +188,6 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 			}
 			config.Spec.IncludeEtcd = false
 			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(uninstallStosOperatorNSFlag).Value.String()
-			config.Spec.Uninstall.StorageOSClusterNamespace = cmd.Flags().Lookup(uninstallStosClusterNSFlag).Value.String()
 			return nil
 		} else {
 			// Config file was found but another error was produced
@@ -201,6 +198,5 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.IncludeEtcd = false
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
-	config.Spec.Uninstall.StorageOSClusterNamespace = viper.GetString(installer.UninstallStosClusterNSConfig)
 	return nil
 }

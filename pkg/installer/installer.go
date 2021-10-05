@@ -66,7 +66,6 @@ const (
 	AdminPasswordConfig           = "spec.install.adminPassword"
 	UninstallEtcdNamespaceConfig  = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig = "spec.uninstall.storageOSOperatorNamespace"
-	UninstallStosClusterNSConfig  = "spec.uninstall.storageOSClusterNamespace"
 
 	// dir and file names for in memory fs
 	etcdDir              = "etcd"
