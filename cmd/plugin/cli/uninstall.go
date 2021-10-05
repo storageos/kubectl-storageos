@@ -53,7 +53,7 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.IncludeEtcdFlag, false, "uninstall etcd (only applicable to github.com/storageos/etcd-cluster-operator etcd cluster)")
 	cmd.Flags().String(installer.EtcdNamespaceFlag, consts.EtcdOperatorNamespace, "namespace of etcd operator and cluster to be uninstalled")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
-	cmd.Flags().String(installer.ConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
+	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -91,35 +91,40 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 }
 
 func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	viper.BindPFlag(installer.ConfigPathFlag, cmd.Flags().Lookup(installer.ConfigPathFlag))
+	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(v.GetString(installer.ConfigPathFlag))
+	viper.AddConfigPath(v.GetString(installer.StosConfigPathFlag))
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Config file not found; set fields in new config object directly
-			config.Spec.StackTrace, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
-			config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
-			if err != nil {
-				return err
-			}
-			config.Spec.IncludeEtcd, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
-			config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
-			config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
-			return nil
-		} else {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			// Config file was found but another error was produced
 			return fmt.Errorf("error discovered in config file: %v", err)
 		}
+		// Config file not found; set fields in new config object directly
+		config.Spec.StackTrace, err = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
+		if err != nil {
+			return err
+		}
+		config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
+		if err != nil {
+			return err
+		}
+		config.Spec.IncludeEtcd, err = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
+		if err != nil {
+			return err
+		}
+		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
+		config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
+		return nil
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
-	config.Spec.Uninstall.EtcdNamespace = valueOrDefault(viper.GetString(installer.UninstallEtcdNamespaceConfig), consts.EtcdOperatorNamespace)
+	config.Spec.Uninstall.EtcdNamespace = valueOrDefault(viper.GetString(installer.UninstallEtcdNSConfig), consts.EtcdOperatorNamespace)
 	return nil
 }
 

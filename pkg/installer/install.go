@@ -113,8 +113,8 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 	}
 	// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
 	// with desired storage class name to kustomization for etcd cluster
-	if configInstall.StorageClassName == "" {
-		configInstall.StorageClassName, err = pluginutils.GetDefaultStorageClassName(in.clientConfig)
+	if configInstall.EtcdStorageClassName == "" {
+		configInstall.EtcdStorageClassName, err = pluginutils.GetDefaultStorageClassName(in.clientConfig)
 		if err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func (in *Installer) installEtcd(configInstall apiv1.Install) error {
 	storageClassPatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/spec/storage/volumeClaimTemplate/storageClassName",
-		Value: configInstall.StorageClassName,
+		Value: configInstall.EtcdStorageClassName,
 	}
 	if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{storageClassPatch}); err != nil {
 		return err

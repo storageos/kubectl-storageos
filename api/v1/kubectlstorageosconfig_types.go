@@ -49,7 +49,7 @@ type KubectlStorageOSConfigStatus struct {
 // Install defines options for cli install subcommand
 type Install struct {
 	Wait                        bool   `json:"wait,omitempty"`
-	Version                     string `json:"version,omitempty"`
+	StorageOSVersion            string `json:"storageOSVersion,omitempty"`
 	StorageOSOperatorNamespace  string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace   string `json:"storageOSClusterNamespace,omitempty"`
 	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
@@ -61,7 +61,7 @@ type Install struct {
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
-	StorageClassName            string `json:"storageClassName,omitempty"`
+	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
 }
