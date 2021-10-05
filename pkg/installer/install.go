@@ -12,7 +12,7 @@ import (
 )
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
-func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
+func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 3)
 	if config.Spec.IncludeEtcd {
@@ -22,7 +22,7 @@ func (in *Installer) Install(config *apiv1.KubectlStorageOSConfig) error {
 
 			errChan <- in.installEtcd(config.Spec.Install)
 		}()
-	} else {
+	} else if !config.Spec.IncludeEtcd && !upgrade {
 		if err := in.handleEndpointsInput(config.Spec.Install); err != nil {
 			return err
 		}

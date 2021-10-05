@@ -53,7 +53,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	time.Sleep(30 * time.Second)
 
 	// install new storageos operator and cluster
-	err = installer.Install(installConfig)
+	err = installer.Install(installConfig, true)
 
 	return err
 }
