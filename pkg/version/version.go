@@ -15,21 +15,15 @@ import (
 )
 
 const (
-	oldOperatorYamlUrlPrefix = "https://github.com/storageos/cluster-operator/releases/download/"
-	oldOperatorYamlUrlSuffix = "/storageos-operator.yaml"
-	oldClusterYamlUrlPrefix  = "https://raw.githubusercontent.com/storageos/cluster-operator/"
-	oldClusterYamlUrlSuffix  = "/deploy/crds/storageos.com_v1_storageoscluster_cr.yaml"
-	oldSecretYamlUrlPrefix   = "https://raw.githubusercontent.com/storageos/cluster-operator/"
-	oldSecretYamlUrlSuffix   = "/deploy/secret.yaml"
+	oldOperatorYamlUrl = "https://github.com/storageos/cluster-operator/releases/download/%s/storageos-operator.yaml"
+	oldClusterYamlUrl  = "https://raw.githubusercontent.com/storageos/cluster-operator/%s/deploy/crds/storageos.com_v1_storageoscluster_cr.yaml"
+	oldSecretYamlUrl   = "https://raw.githubusercontent.com/storageos/cluster-operator/%s/deploy/secret.yaml"
 
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
-
-	newClusterYamlUrlPrefix = "https://github.com/storageos/kubectl-storageos/releases/download/"
-	newClusterYamlUrlSuffix = "/storageos-cluster.yaml"
-
-	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
-	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
+	newClusterYamlUrl             = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
+	etcdOperatorYamlUrl           = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
+	etcdClusterYamlUrl            = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
 )
 
 var (
@@ -114,7 +108,7 @@ func OperatorUrlByVersion(version string) (string, error) {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf("%s%s%s", oldOperatorYamlUrlPrefix, version, oldOperatorYamlUrlSuffix), nil
+		return fmt.Sprintf(oldOperatorYamlUrl, version), nil
 	}
 
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, version), nil
@@ -126,13 +120,12 @@ func ClusterUrlByVersion(version string) (string, error) {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf("%s%s%s", oldClusterYamlUrlPrefix, version, oldClusterYamlUrlSuffix), nil
+		return fmt.Sprintf(oldClusterYamlUrl, version), nil
 	}
 
-	// TODO: return new cluster yaml url once released
-	//return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, version, newClusterYamlUrlSuffix)
-
-	return "", nil
+	// new storageos-cluster.yaml is located on plugin repo,
+	// so we use 'Version' (plugin) instead of 'version' (operator).
+	return fmt.Sprintf(newClusterYamlUrl, Version), nil
 }
 
 func SecretUrlByVersion(version string) (string, error) {
@@ -141,7 +134,7 @@ func SecretUrlByVersion(version string) (string, error) {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf("%s%s%s", oldSecretYamlUrlPrefix, version, oldSecretYamlUrlSuffix), nil
+		return fmt.Sprintf(oldSecretYamlUrl, version), nil
 	}
 	// new operator does not have separate secret and cluster yamls, therefore return empty string
 
@@ -201,7 +194,7 @@ func OperatorLatestSupportedURL() string {
 }
 
 func ClusterLatestSupportedURL() string {
-	return fmt.Sprintf("%s%s%s", newClusterYamlUrlPrefix, Version, newClusterYamlUrlSuffix)
+	return fmt.Sprintf(newClusterYamlUrl, Version)
 }
 
 func EtcdOperatorLatestSupportedURL() string {
