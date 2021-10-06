@@ -29,9 +29,11 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	if err != nil {
 		return err
 	}
-	err = installer.checkForExistingWorkloads()
-	if err != nil {
-		return errors.Wrap(err, errUpgradeAborted)
+	if !installConfig.Spec.SkipExistingWorkloadCheck {
+		err = installer.checkForExistingWorkloads()
+		if err != nil {
+			return errors.Wrap(err, errUpgradeAborted)
+		}
 	}
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(installer.clientConfig)
 	if err != nil {
