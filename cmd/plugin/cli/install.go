@@ -76,15 +76,16 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 	}
 
-	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
-	if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
-		var err error
-		config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
-		if err != nil {
-			return err
+	if !config.Spec.Install.SkipEtcdEndpointsValidation {
+		// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
+		if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
+			var err error
+			config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
+			if err != nil {
+				return err
+			}
 		}
 	}
-
 	cliInstaller, err := installer.NewInstaller(config, true)
 	if err != nil {
 		return err
