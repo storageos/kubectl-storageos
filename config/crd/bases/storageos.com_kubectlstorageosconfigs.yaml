@@ -66,12 +66,12 @@ spec:
                     type: string
                   etcdSecretName:
                     type: string
+                  etcdStorageClassName:
+                    type: string
                   etcdTLSEnabled:
                     type: boolean
                   skipEtcdEndpointsValidation:
                     type: boolean
-                  storageClassName:
-                    type: string
                   storageOSClusterNamespace:
                     type: string
                   storageOSClusterYaml:
@@ -80,7 +80,7 @@ spec:
                     type: string
                   storageOSOperatorYaml:
                     type: string
-                  version:
+                  storageOSVersion:
                     type: string
                   wait:
                     type: boolean

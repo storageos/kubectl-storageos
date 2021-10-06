@@ -1,4 +1,4 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl-storageos uninstall --config-path .
+  - command: kubectl-storageos uninstall --stos-config-path .
