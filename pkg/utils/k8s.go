@@ -327,6 +327,20 @@ func ListStorageClasses(config *rest.Config, listOptions metav1.ListOptions) (*k
 	return storageClasses, nil
 }
 
+// ListPersistentVolumeClaims returns PersistentVolumeClaimList
+func ListPersistentVolumeClaims(config *rest.Config, listOptions metav1.ListOptions) (*corev1.PersistentVolumeClaimList, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims("").List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return pvcs, nil
+}
+
 // CreateStorageClass creates k8s storage class.
 func CreateStorageClass(config *rest.Config, storageClass *kstoragev1.StorageClass) error {
 	clientset, err := GetClientsetFromConfig(config)
