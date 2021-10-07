@@ -148,8 +148,16 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 		}
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+	if !in.stosConfig.Spec.SkipNamespaceDeletion {
+		if storageOSCluster.Namespace == in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+			// postpone namespace deletion as storageos cluster and operator are in the same namespace
+			// the namespace will be deleted later by storageos operator uninstallation
+			err := in.postponeNamespaceKustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+			return err
+		}
+	}
 
+	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
 	return err
 }
 
@@ -200,6 +208,12 @@ func (in *Installer) uninstallEtcdCluster() error {
 		return err
 	}
 
+	if !in.stosConfig.Spec.SkipNamespaceDeletion {
+		// postpone namespace deletion as etcd cluster and operator are in the same namespace
+		// the namespace will be deleted later by etcd operator uninstallation
+		err := in.postponeNamespaceKustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
+		return err
+	}
 	err := in.kustomizeAndDelete(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
 
 	return err
@@ -269,6 +283,23 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 	}
 
 	return nil
+}
+
+// postponeNamespaceKustomizeAndDelete sets SkipNamespaceDeletion to true, performs kustomizeAndDelete
+// before resetting SkipNamespaceDeletion to original value.
+func (in *Installer) postponeNamespaceKustomizeAndDelete(dir, file string) error {
+	skipNamespaceDeletion := in.stosConfig.Spec.SkipNamespaceDeletion
+	in.stosConfig.Spec.SkipNamespaceDeletion = true
+	defer func() {
+		in.restoreSkipNamespaceDeletion(skipNamespaceDeletion)
+	}()
+	err := in.kustomizeAndDelete(dir, file)
+	return err
+}
+
+// restoreSkipNamespaceDeletion is a helper function deferred by postponeNSKustomizeAndDelete
+func (in *Installer) restoreSkipNamespaceDeletion(skipNamespaceDeletion bool) {
+	in.stosConfig.Spec.SkipNamespaceDeletion = skipNamespaceDeletion
 }
 
 // gracefullyDeleteNS deletes a k8s namespace only once there are no resources running in said namespace,
