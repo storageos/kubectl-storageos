@@ -156,25 +156,36 @@ func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.
 	return &pods.Items[0], nil
 }
 
+// GetDefaultStorageClass returns the name of the default storage class in the cluster, if more
+// than one storage class is set to default, the first one discovered is returned. An error is returned
+// if no default storage class is found.
+func GetDefaultStorageClass(config *rest.Config) (*kstoragev1.StorageClass, error) {
+	storageV1Client, err := storagev1.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	storageClasses, err := storageV1Client.StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, storageClass := range storageClasses.Items {
+		if defaultSC, ok := storageClass.GetObjectMeta().GetAnnotations()["storageclass.kubernetes.io/is-default-class"]; ok && defaultSC == "true" {
+			return &storageClass, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no default storage class discovered in cluster")
+}
+
 // GetDefaultStorageClassName returns the name of the default storage class in the cluster, if more
 // than one storage class is set to default, the first one discovered is returned. An error is returned
 // if no default storage class is found.
 func GetDefaultStorageClassName(config *rest.Config) (string, error) {
-	storageV1Client, err := storagev1.NewForConfig(config)
-	if err != nil {
-		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
-	}
-	storageClasses, err := storageV1Client.StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	defaultSC, err := GetDefaultStorageClass(config)
 	if err != nil {
 		return "", err
 	}
-	for _, storageClass := range storageClasses.Items {
-		if defaultSC, ok := storageClass.GetObjectMeta().GetAnnotations()["storageclass.kubernetes.io/is-default-class"]; ok && defaultSC == "true" {
-			return storageClass.GetObjectMeta().GetName(), nil
-		}
-	}
-
-	return "", fmt.Errorf("no default storage class discovered in cluster")
+	return defaultSC.Name, nil
 }
 
 // WaitFor runs 'fn' every 'interval' for duration of 'limit', returning no error only if 'fn' returns no

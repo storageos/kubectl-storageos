@@ -90,6 +90,9 @@ func (in *Installer) checkForExistingWorkloads() error {
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
+		if provisioner, ok := pvc.GetAnnotations()["volume.beta.kubernetes.io/storage-provisioner"]; ok && provisioner == stosSCProvisioner {
+			return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
+		}
 		for _, stosSC := range stosSCList.Items {
 			if *pvc.Spec.StorageClassName == stosSC.Name {
 				return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
