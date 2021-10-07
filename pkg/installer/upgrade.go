@@ -19,7 +19,9 @@ const (
 	errUpgradeAborted = `
 	Upgrade aborted`
 	errWorkloadsExist = `
-	Discovered bound PVC [%s] using StorageOS storageclass [%s].`
+	Discovered bound PVC [%s] using StorageOS storageclass [%s].
+	All workloads that rely on StorageOS volumes should be stopped before upgrading StorageOS.
+	Re-run with --skip-existing-workload-check to ignore.`
 )
 
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
