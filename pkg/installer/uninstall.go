@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
-	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/kustomize/api/krusty"
@@ -26,8 +25,9 @@ var protectedNamespaces = map[string]bool{
 	"kube-system": true,
 }
 
-// Uninstall performs storageos and etcd uninstallation for kubectl-storageos
-func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade bool) error {
+// Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
+// indicates whether or not this uninstallation is part of an upgrade.
+func (in *Installer) Uninstall(upgrade bool) error {
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 2)
 
@@ -35,19 +35,19 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade boo
 	go func() {
 		defer wg.Done()
 
-		errChan <- in.uninstallStorageOS(config.Spec.Uninstall, upgrade)
+		errChan <- in.uninstallStorageOS(upgrade)
 	}()
 
 	if serialInstall {
 		wg.Wait()
 	}
 
-	if config.Spec.IncludeEtcd {
+	if in.stosConfig.Spec.IncludeEtcd {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			errChan <- in.uninstallEtcd(config.Spec.Uninstall.EtcdNamespace)
+			errChan <- in.uninstallEtcd()
 		}()
 	}
 
@@ -57,7 +57,7 @@ func (in *Installer) Uninstall(config *apiv1.KubectlStorageOSConfig, upgrade boo
 	return collectErrors(errChan)
 }
 
-func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade bool) error {
+func (in *Installer) uninstallStorageOS(upgrade bool) error {
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
@@ -83,7 +83,7 @@ func (in *Installer) uninstallStorageOS(uninstallConfig apiv1.Uninstall, upgrade
 		}
 	}
 
-	err = in.uninstallStorageOSOperator(uninstallConfig)
+	err = in.uninstallStorageOSOperator()
 
 	return err
 }
@@ -99,7 +99,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	clusterNamePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/name",
-		Value: storageOSCluster.GetObjectMeta().GetName(),
+		Value: storageOSCluster.Name,
 	}
 
 	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch}); err != nil {
@@ -109,7 +109,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	clusterNamespacePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/namespace",
-		Value: storageOSCluster.GetObjectMeta().GetNamespace(),
+		Value: storageOSCluster.Namespace,
 	}
 
 	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
@@ -153,10 +153,10 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	return err
 }
 
-func (in *Installer) uninstallStorageOSOperator(uninstallConfig apiv1.Uninstall) error {
+func (in *Installer) uninstallStorageOSOperator() error {
 	// make changes to storageos/operator/kustomization.yaml based on flags (or cli config file) before
 	// kustomizeAndDelete call
-	if err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), uninstallConfig.StorageOSOperatorNamespace, "namespace", ""); err != nil {
+	if err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
@@ -165,38 +165,38 @@ func (in *Installer) uninstallStorageOSOperator(uninstallConfig apiv1.Uninstall)
 	return err
 }
 
-func (in *Installer) uninstallEtcd(etcdNamespace string) error {
+func (in *Installer) uninstallEtcd() error {
 	fsEtcdName, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "name")
 	if err != nil {
 		return err
 	}
-	etcdCluster, err := pluginutils.GetEtcdCluster(in.clientConfig, fsEtcdName, etcdNamespace)
+	etcdCluster, err := pluginutils.GetEtcdCluster(in.clientConfig, fsEtcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
 		}
 	}
 	if etcdCluster.Name != "" {
-		if err := in.uninstallEtcdCluster(etcdNamespace); err != nil {
+		if err := in.uninstallEtcdCluster(); err != nil {
 			return err
 		}
 
 		// allow etcdcluster object to be deleted before continuing uninstall process
 		if err = in.waitForCustomResourceDeletion(func() error {
-			return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, etcdNamespace)
+			return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
 		}); err != nil {
 			return err
 		}
 	}
-	err = in.uninstallEtcdOperator(etcdNamespace)
+	err = in.uninstallEtcdOperator()
 
 	return err
 }
 
-func (in *Installer) uninstallEtcdCluster(etcdNamespace string) error {
+func (in *Installer) uninstallEtcdCluster() error {
 	// make changes etcd/cluster/kustomization.yaml based on flags (or cli config file) before
 	//kustomizeAndDelete call
-	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
+	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), in.stosConfig.Spec.Uninstall.EtcdNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
@@ -205,10 +205,10 @@ func (in *Installer) uninstallEtcdCluster(etcdNamespace string) error {
 	return err
 }
 
-func (in *Installer) uninstallEtcdOperator(etcdNamespace string) error {
+func (in *Installer) uninstallEtcdOperator() error {
 	// make changes etcd/operator/kustomization.yaml based on flags (or cli config file) before
 	//kustomizeAndDelete call
-	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), etcdNamespace, "namespace", ""); err != nil {
+	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Uninstall.EtcdNamespace, "namespace", ""); err != nil {
 		return err
 	}
 
