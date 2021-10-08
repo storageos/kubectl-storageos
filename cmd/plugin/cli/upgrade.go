@@ -60,6 +60,7 @@ func UpgradeCmd() *cobra.Command {
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
+	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during upgrade")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
@@ -144,13 +145,20 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
+		config.Spec.SkipExistingWorkloadCheck, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipExistingWorkloadCheckFlag).Value.String())
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installStosOperatorNSFlag).Value.String()
 		config.Spec.Install.StorageOSClusterNamespace = cmd.Flags().Lookup(installStosClusterNSFlag).Value.String()
 		config.Spec.Install.EtcdEndpoints = cmd.Flags().Lookup(installer.EtcdEndpointsFlag).Value.String()
-		config.Spec.Install.SkipEtcdEndpointsValidation, _ = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
+		config.Spec.Install.SkipEtcdEndpointsValidation, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.EtcdTLSEnabled, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
 		if err != nil {
 			return err
@@ -164,6 +172,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = false
+	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)

@@ -85,6 +85,8 @@ spec:
                   wait:
                     type: boolean
                 type: object
+              skipExistingWorkloadCheck:
+                type: boolean
               skipNamespaceDeletion:
                 type: boolean
               stackTrace:

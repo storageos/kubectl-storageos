@@ -156,25 +156,103 @@ func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.
 	return &pods.Items[0], nil
 }
 
+// GetStorageClass returns storageclass of name.
+func GetStorageClass(config *rest.Config, name string) (*kstoragev1.StorageClass, error) {
+	storageV1Client, err := storagev1.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	storageClass, err := storageV1Client.StorageClasses().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return storageClass, nil
+}
+
+// GetDefaultStorage returns the the default storage class in the cluster, if more than one storage
+// class is set to default, the first one discovered is returned. An error is returned if no default
+// storage class is found.
+func GetDefaultStorageClass(config *rest.Config) (*kstoragev1.StorageClass, error) {
+	storageV1Client, err := storagev1.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	storageClasses, err := storageV1Client.StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, storageClass := range storageClasses.Items {
+		if defaultSC, ok := storageClass.GetObjectMeta().GetAnnotations()["storageclass.kubernetes.io/is-default-class"]; ok && defaultSC == "true" {
+			return &storageClass, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no default storage class discovered in cluster")
+}
+
 // GetDefaultStorageClassName returns the name of the default storage class in the cluster, if more
 // than one storage class is set to default, the first one discovered is returned. An error is returned
 // if no default storage class is found.
 func GetDefaultStorageClassName(config *rest.Config) (string, error) {
-	storageV1Client, err := storagev1.NewForConfig(config)
-	if err != nil {
-		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
-	}
-	storageClasses, err := storageV1Client.StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	defaultSC, err := GetDefaultStorageClass(config)
 	if err != nil {
 		return "", err
 	}
-	for _, storageClass := range storageClasses.Items {
-		if defaultSC, ok := storageClass.GetObjectMeta().GetAnnotations()["storageclass.kubernetes.io/is-default-class"]; ok && defaultSC == "true" {
-			return storageClass.GetObjectMeta().GetName(), nil
+	return defaultSC.Name, nil
+}
+
+// IsProvisionedStorageClass returns true if the StorageClass has one of the given provisioners.
+func IsProvisionedStorageClass(sc *kstoragev1.StorageClass, provisioners ...string) bool {
+	for _, provisioner := range provisioners {
+		if sc.Provisioner == provisioner {
+			return true
 		}
 	}
+	return false
+}
 
-	return "", fmt.Errorf("no default storage class discovered in cluster")
+// PVCStorageClassName returns the PVC provisioner name.
+func PVCStorageClassName(pvc *corev1.PersistentVolumeClaim) string {
+	// The beta annotation should still be supported since even latest versions
+	// of Kubernetes still allow it.
+	if pvc.Spec.StorageClassName != nil && len(*pvc.Spec.StorageClassName) > 0 {
+		return *pvc.Spec.StorageClassName
+	}
+	if val, ok := pvc.Annotations["volume.beta.kubernetes.io/storage-provisioner"]; ok {
+		return val
+	}
+	return ""
+}
+
+// IsProvisionedPVC returns true if the PVC was provided by one of the given provisioners.
+func IsProvisionedPVC(config *rest.Config, pvc *corev1.PersistentVolumeClaim, provisioners ...string) (bool, error) {
+	// Get the StorageClass that provisioned the volume.
+	sc, err := StorageClassForPVC(config, pvc)
+	if err != nil {
+		return false, err
+	}
+
+	return IsProvisionedStorageClass(sc, provisioners...), nil
+}
+
+// StorageClassForPVC returns the StorageClass of the PVC. If no StorageClass
+// was specified, returns the cluster default if set.
+func StorageClassForPVC(config *rest.Config, pvc *corev1.PersistentVolumeClaim) (*kstoragev1.StorageClass, error) {
+	name := PVCStorageClassName(pvc)
+	if name == "" {
+		sc, err := GetDefaultStorageClass(config)
+		if err != nil {
+			return nil, err
+		}
+		return sc, nil
+	}
+	sc, err := GetStorageClass(config, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return sc, nil
 }
 
 // WaitFor runs 'fn' every 'interval' for duration of 'limit', returning no error only if 'fn' returns no
@@ -325,6 +403,20 @@ func ListStorageClasses(config *rest.Config, listOptions metav1.ListOptions) (*k
 	}
 
 	return storageClasses, nil
+}
+
+// ListPersistentVolumeClaims returns PersistentVolumeClaimList
+func ListPersistentVolumeClaims(config *rest.Config, listOptions metav1.ListOptions) (*corev1.PersistentVolumeClaimList, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims("").List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return pvcs, nil
 }
 
 // CreateStorageClass creates k8s storage class.
