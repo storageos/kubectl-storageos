@@ -85,7 +85,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	err = cliInstaller.Uninstall(config, false)
+	err = cliInstaller.Uninstall(false)
 
 	return err
 }
