@@ -9,17 +9,28 @@ import (
 	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
 
-const skipNamespaceDeletionMessage = `Namespace %s still has resources.
+const (
+	skipNamespaceDeletionMessage = `Namespace %s still has resources.
 	Skipped namespace removal.
 	Reason: %s
 	Check for resources remaining in the namespace with:
 	kubectl get all -n %s
 	To remove the namespace and all remaining resources within it, run:
 	kubectl delete namespace %s`
+
+	errUninstallAborted = `
+	Uninstall aborted`
+	errWorkloadsExist = `
+	Discovered bound PVC [%s] using StorageOS storageclass [%s].
+	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
+	Re-run with --skip-existing-workload-check to ignore.`
+)
 
 var protectedNamespaces = map[string]bool{
 	"kube-system": true,
@@ -28,6 +39,12 @@ var protectedNamespaces = map[string]bool{
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
 func (in *Installer) Uninstall(upgrade bool) error {
+	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
+		if err := in.checkForExistingWorkloads(); err != nil {
+			return errors.Wrap(err, errUninstallAborted)
+		}
+	}
+
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 2)
 
@@ -229,6 +246,32 @@ func (in *Installer) uninstallEtcdOperator() error {
 	err := in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 
 	return err
+}
+
+// checkForExistingWorkloads ensures no bound PVCs are using a storageos storageclass.
+func (in *Installer) checkForExistingWorkloads() error {
+	pvcList, err := pluginutils.ListPersistentVolumeClaims(in.clientConfig, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	scList, err := pluginutils.ListStorageClasses(in.clientConfig, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase != corev1.ClaimBound {
+			continue
+		}
+		if provisioner, ok := pvc.GetAnnotations()["volume.beta.kubernetes.io/storage-provisioner"]; ok && provisioner == stosSCProvisioner {
+			return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
+		}
+		for _, sc := range scList.Items {
+			if sc.Name == *pvc.Spec.StorageClassName && sc.Provisioner == stosSCProvisioner {
+				return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
+			}
+		}
+	}
+	return nil
 }
 
 // kustomizeAndDelete performs the following in the order described:

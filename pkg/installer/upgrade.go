@@ -2,7 +2,6 @@ package installer
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -11,17 +10,6 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	errUpgradeAborted = `
-	Upgrade aborted`
-	errWorkloadsExist = `
-	Discovered bound PVC [%s] using StorageOS storageclass [%s].
-	All workloads that rely on StorageOS volumes should be stopped before upgrading StorageOS.
-	Re-run with --skip-existing-workload-check to ignore.`
 )
 
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
@@ -30,12 +18,6 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	installer, err := NewInstaller(installConfig, true)
 	if err != nil {
 		return err
-	}
-	if !installConfig.Spec.SkipExistingWorkloadCheck {
-		err = installer.checkForExistingWorkloads()
-		if err != nil {
-			return errors.Wrap(err, errUpgradeAborted)
-		}
 	}
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(installer.clientConfig)
 	if err != nil {
@@ -74,32 +56,6 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	err = installer.Install(true)
 
 	return err
-}
-
-// checkForExistingWorkloads ensures no bound PVCs are using a storageos storageclass.
-func (in *Installer) checkForExistingWorkloads() error {
-	pvcList, err := pluginutils.ListPersistentVolumeClaims(in.clientConfig, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	stosSCList, err := pluginutils.ListStorageClasses(in.clientConfig, metav1.ListOptions{LabelSelector: stosAppLabel})
-	if err != nil {
-		return err
-	}
-	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != corev1.ClaimBound {
-			continue
-		}
-		if provisioner, ok := pvc.GetAnnotations()["volume.beta.kubernetes.io/storage-provisioner"]; ok && provisioner == stosSCProvisioner {
-			return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
-		}
-		for _, stosSC := range stosSCList.Items {
-			if *pvc.Spec.StorageClassName == stosSC.Name {
-				return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
-			}
-		}
-	}
-	return nil
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
