@@ -156,9 +156,23 @@ func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.
 	return &pods.Items[0], nil
 }
 
-// GetDefaultStorageClass returns the name of the default storage class in the cluster, if more
-// than one storage class is set to default, the first one discovered is returned. An error is returned
-// if no default storage class is found.
+// GetStorageClass returns storageclass of name.
+func GetStorageClass(config *rest.Config, name string) (*kstoragev1.StorageClass, error) {
+	storageV1Client, err := storagev1.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	storageClass, err := storageV1Client.StorageClasses().Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return storageClass, nil
+}
+
+// GetDefaultStorage returns the the default storage class in the cluster, if more than one storage
+// class is set to default, the first one discovered is returned. An error is returned if no default
+// storage class is found.
 func GetDefaultStorageClass(config *rest.Config) (*kstoragev1.StorageClass, error) {
 	storageV1Client, err := storagev1.NewForConfig(config)
 	if err != nil {
@@ -186,6 +200,59 @@ func GetDefaultStorageClassName(config *rest.Config) (string, error) {
 		return "", err
 	}
 	return defaultSC.Name, nil
+}
+
+// IsProvisionedStorageClass returns true if the StorageClass has one of the given provisioners.
+func IsProvisionedStorageClass(sc *kstoragev1.StorageClass, provisioners ...string) bool {
+	for _, provisioner := range provisioners {
+		if sc.Provisioner == provisioner {
+			return true
+		}
+	}
+	return false
+}
+
+// PVCStorageClassName returns the PVC provisioner name.
+func PVCStorageClassName(pvc *corev1.PersistentVolumeClaim) string {
+	// The beta annotation should still be supported since even latest versions
+	// of Kubernetes still allow it.
+	if pvc.Spec.StorageClassName != nil && len(*pvc.Spec.StorageClassName) > 0 {
+		return *pvc.Spec.StorageClassName
+	}
+	if val, ok := pvc.Annotations["volume.beta.kubernetes.io/storage-provisioner"]; ok {
+		return val
+	}
+	return ""
+}
+
+// IsProvisionedPVC returns true if the PVC was provided by one of the given provisioners.
+func IsProvisionedPVC(config *rest.Config, pvc *corev1.PersistentVolumeClaim, provisioners ...string) (bool, error) {
+	// Get the StorageClass that provisioned the volume.
+	sc, err := StorageClassForPVC(config, pvc)
+	if err != nil {
+		return false, err
+	}
+
+	return IsProvisionedStorageClass(sc, provisioners...), nil
+}
+
+// StorageClassForPVC returns the StorageClass of the PVC. If no StorageClass
+// was specified, returns the cluster default if set.
+func StorageClassForPVC(config *rest.Config, pvc *corev1.PersistentVolumeClaim) (*kstoragev1.StorageClass, error) {
+	name := PVCStorageClassName(pvc)
+	if name == "" {
+		sc, err := GetDefaultStorageClass(config)
+		if err != nil {
+			return nil, err
+		}
+		return sc, nil
+	}
+	sc, err := GetStorageClass(config, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return sc, nil
 }
 
 // WaitFor runs 'fn' every 'interval' for duration of 'limit', returning no error only if 'fn' returns no

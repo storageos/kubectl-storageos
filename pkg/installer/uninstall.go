@@ -27,7 +27,7 @@ const (
 	errUninstallAborted = `
 	Uninstall aborted`
 	errWorkloadsExist = `
-	Discovered bound PVC [%s] using StorageOS storageclass [%s].
+	Discovered bound PVC [%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
 	Re-run with --skip-existing-workload-check to ignore.`
 )
@@ -254,23 +254,19 @@ func (in *Installer) checkForExistingWorkloads() error {
 	if err != nil {
 		return err
 	}
-	scList, err := pluginutils.ListStorageClasses(in.clientConfig, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
 	for _, pvc := range pvcList.Items {
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
-		if provisioner, ok := pvc.GetAnnotations()["volume.beta.kubernetes.io/storage-provisioner"]; ok && provisioner == stosSCProvisioner {
-			return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
+		isStosPVC, err := pluginutils.IsProvisionedPVC(in.clientConfig, &pvc, stosSCProvisioner)
+		if err != nil {
+			return err
 		}
-		for _, sc := range scList.Items {
-			if sc.Name == *pvc.Spec.StorageClassName && sc.Provisioner == stosSCProvisioner {
-				return fmt.Errorf(errWorkloadsExist, pvc.Name, *pvc.Spec.StorageClassName)
-			}
+		if isStosPVC {
+			return fmt.Errorf(errWorkloadsExist, pvc.Name)
 		}
 	}
+
 	return nil
 }
 
