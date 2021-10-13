@@ -496,16 +496,11 @@ func SecretExists(config *rest.Config, name, namespace string) error {
 // require name/namespace.
 func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluster, error) {
 	stosCluster := &operatorapi.StorageOSCluster{}
-	scheme := runtime.NewScheme()
-	if err := operatorapi.AddToScheme(scheme); err != nil {
-		return stosCluster, errors.Wrap(err, "failed to add to scheme")
-	}
-	newClient, err := client.New(config, client.Options{Scheme: scheme})
-	if err != nil {
-		return stosCluster, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
-	}
-
 	stosClusterList := &operatorapi.StorageOSClusterList{}
+	newClient, err := storageOSOperatorClient(config)
+	if err != nil {
+		return stosCluster, err
+	}
 	err = newClient.List(context.TODO(), stosClusterList, &client.ListOptions{})
 	if err != nil {
 		return stosCluster, errors.WithStack(err)
@@ -519,25 +514,43 @@ func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluste
 	return stosCluster, nil
 }
 
+func storageOSOperatorClient(config *rest.Config) (client.Client, error) {
+	scheme := runtime.NewScheme()
+	if err := operatorapi.AddToScheme(scheme); err != nil {
+		return nil, errors.Wrap(err, "failed to add to scheme")
+	}
+	return client.New(config, client.Options{Scheme: scheme})
+}
+
 // StorageOSClusterDoesNotExist return no error only if no storageoscluster object exists in k8s cluster
 func StorageOSClusterDoesNotExist(config *rest.Config) error {
-	if _, err := GetFirstStorageOSCluster(config); err != nil {
+	stosCluster, err := GetFirstStorageOSCluster(config)
+	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	return fmt.Errorf("storageoscluster exists")
+	return fmt.Errorf("storageoscluster [" + stosCluster.Name + ";" + stosCluster.Namespace + "] exists in k8s cluster")
+}
+
+// UpdateStorageOSClusterWithoutFinalizers updates the storageos cluster without any finalizers.
+func UpdateStorageOSClusterWithoutFinalizers(config *rest.Config, storageosCluster *operatorapi.StorageOSCluster) error {
+	if len(storageosCluster.Finalizers) == 0 {
+		return nil
+	}
+	newClient, err := storageOSOperatorClient(config)
+	if err != nil {
+		return err
+	}
+	storageosCluster.SetFinalizers(nil)
+	return newClient.Update(context.TODO(), storageosCluster)
 }
 
 // GetEtcdCluster returns the etcdcluster object of name and namespace.
 func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatorapi.EtcdCluster, error) {
 	etcdCluster := &etcdoperatorapi.EtcdCluster{}
-	scheme := runtime.NewScheme()
-	if err := etcdoperatorapi.AddToScheme(scheme); err != nil {
-		return etcdCluster, errors.Wrap(err, "failed to add to scheme")
-	}
-	newClient, err := client.New(config, client.Options{Scheme: scheme})
+	newClient, err := etcdOperatorClient(config)
 	if err != nil {
 		return etcdCluster, err
 	}
@@ -545,6 +558,14 @@ func GetEtcdCluster(config *rest.Config, name, namespace string) (*etcdoperatora
 		return etcdCluster, err
 	}
 	return etcdCluster, nil
+}
+
+func etcdOperatorClient(config *rest.Config) (client.Client, error) {
+	scheme := runtime.NewScheme()
+	if err := etcdoperatorapi.AddToScheme(scheme); err != nil {
+		return nil, errors.Wrap(err, "failed to add to scheme")
+	}
+	return client.New(config, client.Options{Scheme: scheme})
 }
 
 // EtcdClusterDoesNotExist return no error only if no etcdcluster object exists in k8s cluster
@@ -555,7 +576,20 @@ func EtcdClusterDoesNotExist(config *rest.Config, name, namespace string) error 
 		}
 		return err
 	}
-	return fmt.Errorf("etcdcluster exists")
+	return fmt.Errorf("etcdcluster [" + name + ";" + namespace + "] exists in k8s cluster")
+}
+
+// UpdateEtcdClusterWithoutFinalizers returns the etcdcluster object of name and namespace.
+func UpdateEtcdClusterWithoutFinalizers(config *rest.Config, etcdCluster *etcdoperatorapi.EtcdCluster) error {
+	if len(etcdCluster.Finalizers) == 0 {
+		return nil
+	}
+	newClient, err := etcdOperatorClient(config)
+	if err != nil {
+		return err
+	}
+	etcdCluster.SetFinalizers(nil)
+	return newClient.Update(context.TODO(), etcdCluster)
 }
 
 // EnsureNamespace Creates namespace if it does not exists.
