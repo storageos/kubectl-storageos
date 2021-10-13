@@ -369,7 +369,7 @@ func (in *Installer) gracefullyDeleteNS(namespace string) error {
 func (in *Installer) waitForCustomResourceDeletion(fn func() error) error {
 	if err := pluginutils.WaitFor(func() error {
 		return fn()
-	}, 120, 5); err != nil && !kerrors.IsNotFound(err) {
+	}, 120, 5); err != nil {
 		return err
 	}
 	return nil
