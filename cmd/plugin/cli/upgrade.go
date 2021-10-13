@@ -59,7 +59,7 @@ func UpgradeCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
-	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storagos cluster to enter running phase")
+	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storageos cluster to enter running phase")
 	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during upgrade")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
@@ -69,10 +69,10 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installStosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be installed")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be installed")
-	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "etcd endpoints")
+	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
-	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of ETCD endpoints")
-	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is TLS enabled")
+	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of etcd endpoints")
+	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is tls enabled")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 
