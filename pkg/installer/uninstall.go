@@ -30,6 +30,14 @@ const (
 	Discovered bound PVC [%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
 	Re-run with --skip-existing-workload-check to ignore.`
+
+	removingFinalizersMessage = `Attempting to remove any existing finalizers from object [%s] to allow object deletion.`
+
+	errDuringStosUninstall = `
+	An error has occurred during StorageOS uninstallation. Please delete StorageOS components manually.`
+
+	errDuringEtcdUninstall = `
+	An error has occurred during Etcd uninstallation. Please delete Etcd components manually.`
 )
 
 var protectedNamespaces = map[string]bool{
@@ -86,11 +94,8 @@ func (in *Installer) uninstallStorageOS(upgrade bool) error {
 		if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
 			return err
 		}
-		// allow storageoscluster object to be deleted before continuing uninstall process
-		if err = in.waitForCustomResourceDeletion(func() error {
-			return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
-		}); err != nil {
-			return err
+		if err := in.ensureStorageOSClusterRemoved(); err != nil {
+			return errors.WithStack(err)
 		}
 	}
 	// StorageOS cluster resources should be in a different namespace, on that case need to delete
@@ -205,11 +210,7 @@ func (in *Installer) uninstallEtcd() error {
 		if err := in.uninstallEtcdCluster(); err != nil {
 			return err
 		}
-
-		// allow etcdcluster object to be deleted before continuing uninstall process
-		if err = in.waitForCustomResourceDeletion(func() error {
-			return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, fsEtcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
-		}); err != nil {
+		if err := in.ensureEtcdClusterRemoved(fsEtcdName); err != nil {
 			return err
 		}
 	}
@@ -366,11 +367,67 @@ func (in *Installer) gracefullyDeleteNS(namespace string) error {
 	return nil
 }
 
+// ensureStorageOSClusterDeletion returns no error if storageoscluster has been removed from k8s cluster.
+func (in *Installer) ensureStorageOSClusterRemoved() error {
+	// allow storageoscluster object to be deleted before continuing uninstall process
+	if err := in.waitForCustomResourceDeletion(func() error {
+		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
+	}); err == nil {
+		return nil
+	}
+	// storageoscluster still exists at this point, it may be stuck in deleting phase with finalizer. So we
+	// rediscover the object, remove any finlaizers and update (known issue on k8s 1.18)
+	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+	if err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringStosUninstall)
+	}
+	fmt.Println(fmt.Sprintf(removingFinalizersMessage, storageOSCluster.Name))
+	if err := pluginutils.UpdateStorageOSClusterWithoutFinalizers(in.clientConfig, storageOSCluster); err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringStosUninstall)
+	}
+	// once again, wait to see if object is deleted.
+	if err = in.waitForCustomResourceDeletion(func() error {
+		return pluginutils.StorageOSClusterDoesNotExist(in.clientConfig)
+	}); err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
+	}
+
+	return nil
+}
+
+// ensureEtcdClusterRemoved returns no error if etcdcluster has been removed from k8s cluster.
+func (in *Installer) ensureEtcdClusterRemoved(etcdName string) error {
+	// allow etcdcluster object to be deleted before continuing uninstall process
+	if err := in.waitForCustomResourceDeletion(func() error {
+		return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, etcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
+	}); err == nil {
+		return nil
+	}
+	// etcdcluster still exists at this point, it may be stuck in deleting phase with finalizer. So we
+	// rediscover the object, remove any finlaizers and update (known issue on k8s 1.18)
+	etcdCluster, err := pluginutils.GetEtcdCluster(in.clientConfig, etcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
+	if err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
+	}
+	fmt.Println(fmt.Sprintf(removingFinalizersMessage, etcdCluster.Name))
+	if err := pluginutils.UpdateEtcdClusterWithoutFinalizers(in.clientConfig, etcdCluster); err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
+	}
+	// once again, wait to see if object is deleted.
+	if err = in.waitForCustomResourceDeletion(func() error {
+		return pluginutils.EtcdClusterDoesNotExist(in.clientConfig, etcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
+	}); err != nil {
+		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
+	}
+
+	return nil
+}
+
 func (in *Installer) waitForCustomResourceDeletion(fn func() error) error {
 	if err := pluginutils.WaitFor(func() error {
 		return fn()
-	}, 120, 5); err != nil && !kerrors.IsNotFound(err) {
-		return err
+	}, 30, 5); err != nil {
+		return errors.Wrap(err, "timeout waiting for custom resource deletion during uninstall")
 	}
 	return nil
 }
