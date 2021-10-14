@@ -24,11 +24,11 @@ const (
 	To remove the namespace and all remaining resources within it, run:
 	kubectl delete namespace %s`
 
-	errUninstallAborted = `
-	Uninstall aborted`
+	errEtcdUninstallAborted = `
+	ETCD uninstall aborted`
 	errWorkloadsExist = `
 	Discovered bound PVC [%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
-	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
+	No PVCs should be bound to StorageOS volumes before uninstalling ETCD.
 	Re-run with --skip-existing-workload-check to ignore.`
 
 	removingFinalizersMessage = `Attempting to remove any existing finalizers from object [%s] to allow object deletion.`
@@ -47,12 +47,6 @@ var protectedNamespaces = map[string]bool{
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
 func (in *Installer) Uninstall(upgrade bool) error {
-	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
-		if err := in.checkForExistingWorkloads(); err != nil {
-			return errors.Wrap(err, errUninstallAborted)
-		}
-	}
-
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 2)
 
@@ -68,6 +62,12 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	}
 
 	if in.stosConfig.Spec.IncludeEtcd {
+		if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
+			if err := in.checkForExistingPVCs(); err != nil {
+				return errors.Wrap(err, errEtcdUninstallAborted)
+			}
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -249,8 +249,8 @@ func (in *Installer) uninstallEtcdOperator() error {
 	return err
 }
 
-// checkForExistingWorkloads ensures no bound PVCs are using a storageos storageclass.
-func (in *Installer) checkForExistingWorkloads() error {
+// checkForExistingPVCs ensures no bound PVCs are using a storageos storageclass.
+func (in *Installer) checkForExistingPVCs() error {
 	pvcList, err := pluginutils.ListPersistentVolumeClaims(in.clientConfig, metav1.ListOptions{})
 	if err != nil {
 		return err
