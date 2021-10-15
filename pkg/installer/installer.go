@@ -47,6 +47,7 @@ const (
 	EtcdStorageClassFlag          = "etcd-storage-class"
 	AdminUsernameFlag             = "admin-username"
 	AdminPasswordFlag             = "admin-password"
+	PortalKeyPathFlag             = "portal-key-path"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                = "spec.stackTrace"
@@ -69,6 +70,7 @@ const (
 	EtcdStorageClassConfig          = "spec.install.etcdStorageClassName"
 	AdminUsernameConfig             = "spec.install.adminUsername"
 	AdminPasswordConfig             = "spec.install.adminPassword"
+	PortalKeyPathConfig             = "spec.install.portalKeyPath"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig   = "spec.uninstall.storageOSOperatorNamespace"
 
