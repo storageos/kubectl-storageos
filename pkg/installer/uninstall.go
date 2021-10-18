@@ -24,10 +24,19 @@ const (
 	To remove the namespace and all remaining resources within it, run:
 	kubectl delete namespace %s`
 
-	errUninstallAborted = `
-	Uninstall aborted`
-	errWorkloadsExist = `
+	errEtcdUninstallAborted = `
+	ETCD uninstall aborted`
+
+	errStosUninstallAborted = `
+	StorageOS uninstall aborted`
+
+	errPVCsExist = `
 	Discovered bound PVC [%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
+	No PVCs should be bound to StorageOS volumes before uninstalling ETCD.
+	Re-run with --skip-existing-workload-check to ignore.`
+
+	errWorkloadsExist = `
+	Discovered workload [%s] using PVC provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
 	Re-run with --skip-existing-workload-check to ignore.`
 
@@ -47,9 +56,15 @@ var protectedNamespaces = map[string]bool{
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
 func (in *Installer) Uninstall(upgrade bool) error {
+	stosPVCs := &corev1.PersistentVolumeClaimList{}
+	var err error
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
-		if err := in.checkForExistingWorkloads(); err != nil {
-			return errors.Wrap(err, errUninstallAborted)
+		stosPVCs, err = in.storageOSPVCs()
+		if err != nil {
+			return errors.Wrap(err, errStosUninstallAborted)
+		}
+		if err := in.storageOSWorkloadsExist(stosPVCs); err != nil {
+			return errors.Wrap(err, errStosUninstallAborted)
 		}
 	}
 
@@ -68,6 +83,10 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	}
 
 	if in.stosConfig.Spec.IncludeEtcd {
+		if !in.stosConfig.Spec.SkipExistingWorkloadCheck && len(stosPVCs.Items) > 0 {
+			return errors.Wrap(fmt.Errorf(errPVCsExist, stosPVCs.Items[0].Name), errEtcdUninstallAborted)
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -249,11 +268,12 @@ func (in *Installer) uninstallEtcdOperator() error {
 	return err
 }
 
-// checkForExistingWorkloads ensures no bound PVCs are using a storageos storageclass.
-func (in *Installer) checkForExistingWorkloads() error {
+// storageOSPVCs returns a PersistenVolumeClaimList of bound PVCs provisioned by storageos.
+func (in *Installer) storageOSPVCs() (*corev1.PersistentVolumeClaimList, error) {
+	stosPVCs := &corev1.PersistentVolumeClaimList{}
 	pvcList, err := pluginutils.ListPersistentVolumeClaims(in.clientConfig, metav1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, pvc := range pvcList.Items {
 		if pvc.Status.Phase != corev1.ClaimBound {
@@ -261,10 +281,27 @@ func (in *Installer) checkForExistingWorkloads() error {
 		}
 		isStosPVC, err := pluginutils.IsProvisionedPVC(in.clientConfig, &pvc, stosSCProvisioner)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if isStosPVC {
-			return fmt.Errorf(errWorkloadsExist, pvc.Name)
+			stosPVCs.Items = append(stosPVCs.Items, pvc)
+		}
+	}
+
+	return stosPVCs, nil
+}
+
+// storageOSWorkloadsExist return error if a pod is discovered using a storageos pvc.
+func (in *Installer) storageOSWorkloadsExist(stosPVCs *corev1.PersistentVolumeClaimList) error {
+	pods, err := pluginutils.ListPods(in.clientConfig, "", "")
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		for _, stosPVC := range stosPVCs.Items {
+			if pluginutils.PodHasPVC(&pod, stosPVC.Name) {
+				return fmt.Errorf(errWorkloadsExist, pod.Name)
+			}
 		}
 	}
 
