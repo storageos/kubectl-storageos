@@ -140,10 +140,10 @@ func FetchPodLogs(config *rest.Config, name, namespace string) (string, error) {
 func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.Pod, error) {
 	pods, err := ListPods(config, namespace, label)
 	if err != nil {
-		return nil, errors.WithStack(fmt.Errorf("unable to list job pods: %s", err.Error()))
+		return nil, errors.WithStack(fmt.Errorf("unable to list pods: %s", err.Error()))
 	}
 	if len(pods.Items) == 0 {
-		return nil, errors.WithStack(errors.New("unable to find job pod"))
+		return nil, errors.WithStack(errors.New("no pods found"))
 	}
 
 	return &pods.Items[0], nil
@@ -178,13 +178,7 @@ func PodHasPVC(pod *corev1.Pod, pvcName string) bool {
 
 // VolumeHasPVC returns true if the volume has the pvc.
 func VolumeHasPVC(vol *corev1.Volume, pvcName string) bool {
-	if vol.PersistentVolumeClaim == nil {
-		return false
-	}
-	if vol.PersistentVolumeClaim.ClaimName == pvcName {
-		return true
-	}
-	return false
+	return vol.PersistentVolumeClaim != nil && vol.PersistentVolumeClaim.ClaimName == pvcName
 }
 
 // GetStorageClass returns storageclass of name.

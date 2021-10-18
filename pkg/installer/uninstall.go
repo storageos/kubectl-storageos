@@ -83,10 +83,8 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	}
 
 	if in.stosConfig.Spec.IncludeEtcd {
-		if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
-			if len(stosPVCs.Items) > 0 {
-				return errors.Wrap(fmt.Errorf(errPVCsExist, stosPVCs.Items[0].Name), errEtcdUninstallAborted)
-			}
+		if !in.stosConfig.Spec.SkipExistingWorkloadCheck && len(stosPVCs.Items) > 0 {
+			return errors.Wrap(fmt.Errorf(errPVCsExist, stosPVCs.Items[0].Name), errEtcdUninstallAborted)
 		}
 
 		wg.Add(1)
