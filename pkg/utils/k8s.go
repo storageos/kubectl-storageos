@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	storagev1 "k8s.io/client-go/kubernetes/typed/storage/v1"
@@ -65,6 +66,21 @@ func GetClientsetFromConfig(config *rest.Config) (*kubernetes.Clientset, error) 
 		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
 	}
 	return clientset, nil
+}
+
+// GetKubernetesVersion fetches Kubernetes version.
+func GetKubernetesVersion(config *rest.Config) (*kversion.Info, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+
+	info, err := clientset.DiscoveryClient.ServerVersion()
+	if err != nil {
+		err = errors.Wrap(err, "unable to fetch Kubernetes version")
+	}
+
+	return info, err
 }
 
 // ExecToPod execs into a pod and executes command from inside that pod.
@@ -644,7 +660,7 @@ func EnsureNamespace(config *rest.Config, name string) error {
 }
 
 // CreateJobAndFetchResult Creates a job, fetches the output of the job and deletes the created resources.
-func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string) (string, error) {
+func CreateJobAndFetchResult(config *rest.Config, name, namespace, image, cmd string) (string, error) {
 	jobMeta := metav1.ObjectMeta{
 		Name: name,
 	}
@@ -666,6 +682,10 @@ func CreateJobAndFetchResult(config *rest.Config, name, namespace, image string)
 			},
 			BackoffLimit: &bofl,
 		},
+	}
+
+	if cmd != "" {
+		job.Spec.Template.Spec.Containers[0].Command = strings.Split(cmd, " ")
 	}
 
 	clientset, err := GetClientsetFromConfig(config)
