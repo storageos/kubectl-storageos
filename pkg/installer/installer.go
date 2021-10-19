@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
@@ -135,7 +138,7 @@ type Installer struct {
 }
 
 // NewInstaller returns an Installer object with the kubectl client and in-memory filesystem
-func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*Installer, error) {
+func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, validateKubeVersion bool) (*Installer, error) {
 	installer := &Installer{}
 
 	clientConfig, err := pluginutils.NewClientConfig()
@@ -147,6 +150,25 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool) (*
 		err = pluginutils.EnsureNamespace(clientConfig, config.Spec.GetNamespace())
 		if err != nil {
 			return installer, err
+		}
+	}
+
+	if validateKubeVersion {
+		currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
+		if err != nil {
+			return installer, err
+		}
+
+		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
+		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetNamespace(), version.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
+		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
+		if err == nil && minVersion != "" {
+			supported, err := version.IsSupported(currentVersion.String(), minVersion)
+			if err != nil {
+				return installer, err
+			} else if !supported {
+				return installer, fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion)
+			}
 		}
 	}
 

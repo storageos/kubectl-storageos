@@ -200,7 +200,7 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 	}
 
 	jobName := "storageos-operator-manifests-fetch-" + strconv.FormatInt(time.Now().Unix(), 10)
-	return pluginutils.CreateJobAndFetchResult(config, jobName, namespace, location)
+	return pluginutils.CreateJobAndFetchResult(config, jobName, namespace, location, "")
 }
 
 // pullManifest returns a string of contents at url

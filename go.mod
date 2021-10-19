@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/darkowlzz/operator-toolkit v0.0.0-20210603234749-4f4acec01835
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.12.0

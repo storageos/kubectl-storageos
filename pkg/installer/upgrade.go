@@ -15,7 +15,7 @@ import (
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
 	// create new installer with in-mem fs of operator and cluster to be installed
 	// use installer to validate etcd-endpoints before going any further
-	installer, err := NewInstaller(installConfig, true)
+	installer, err := NewInstaller(installConfig, true, true)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	}
 
 	// create (un)installer with in-mem fs of operator and cluster to be uninstalled
-	uninstaller, err := NewInstaller(uninstallConfig, false)
+	uninstaller, err := NewInstaller(uninstallConfig, false, false)
 	if err != nil {
 		return err
 	}

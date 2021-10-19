@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	goversion "github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
@@ -205,4 +206,24 @@ func EtcdOperatorLatestSupportedURL() string {
 func EtcdClusterLatestSupportedURL() string {
 	// TODO add etcd-operator-version flag to return correct url
 	return etcdClusterYamlUrl
+}
+
+// IsSupported takes two versions, current version (haveVersion) and a
+// minimum requirement version (wantVersion) and checks if the current version
+// is supported by comparing it with the minimum requirement.
+func IsSupported(haveVersion, wantVersion string) (bool, error) {
+	haveVersion = strings.Trim(haveVersion, "v")
+	wantVersion = strings.Trim(wantVersion, "v")
+
+	supportedVersion, err := semver.Parse(wantVersion)
+	if err != nil {
+		return false, err
+	}
+
+	currentVersion, err := semver.Parse(haveVersion)
+	if err != nil {
+		return false, err
+	}
+
+	return currentVersion.Compare(supportedVersion) >= 0, nil
 }
