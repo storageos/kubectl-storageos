@@ -31,12 +31,12 @@ const (
 	StorageOS uninstall aborted`
 
 	errPVCsExist = `
-	Discovered bound PVC [%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
+	Discovered bound PVC [%s/%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	No PVCs should be bound to StorageOS volumes before uninstalling ETCD.
 	Re-run with --skip-existing-workload-check to ignore.`
 
 	errWorkloadsExist = `
-	Discovered workload [%s] using PVC provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
+	Discovered workload [%s/%s] using PVC provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	All workloads that rely on StorageOS volumes should be stopped before uninstalling StorageOS.
 	Re-run with --skip-existing-workload-check to ignore.`
 
@@ -84,7 +84,7 @@ func (in *Installer) Uninstall(upgrade bool) error {
 
 	if in.stosConfig.Spec.IncludeEtcd {
 		if !in.stosConfig.Spec.SkipExistingWorkloadCheck && len(stosPVCs.Items) > 0 {
-			return errors.Wrap(fmt.Errorf(errPVCsExist, stosPVCs.Items[0].Name), errEtcdUninstallAborted)
+			return errors.Wrap(fmt.Errorf(errPVCsExist, stosPVCs.Items[0].Namespace, stosPVCs.Items[0].Name), errEtcdUninstallAborted)
 		}
 
 		wg.Add(1)
@@ -300,7 +300,7 @@ func (in *Installer) storageOSWorkloadsExist(stosPVCs *corev1.PersistentVolumeCl
 	for _, pod := range pods.Items {
 		for _, stosPVC := range stosPVCs.Items {
 			if pluginutils.PodHasPVC(&pod, stosPVC.Name) {
-				return fmt.Errorf(errWorkloadsExist, pod.Name)
+				return fmt.Errorf(errWorkloadsExist, pod.Namespace, pod.Name)
 			}
 		}
 	}
