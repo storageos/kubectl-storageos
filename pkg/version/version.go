@@ -97,7 +97,7 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 }
 
 func cleanupVersion(version string) string {
-	if version == "develop" {
+	if version == "develop" || version == "test" {
 		return OperatorLatestSupportedVersion()
 	}
 	return versionRegexp.FindString(version)
