@@ -416,6 +416,9 @@ func (in *Installer) ensureStorageOSClusterRemoved() error {
 	// rediscover the object, remove any finlaizers and update (known issue on k8s 1.18)
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
 		return errors.Wrap(errors.WithStack(err), errDuringStosUninstall)
 	}
 	fmt.Println(fmt.Sprintf(removingFinalizersMessage, storageOSCluster.Name))
@@ -444,6 +447,9 @@ func (in *Installer) ensureEtcdClusterRemoved(etcdName string) error {
 	// rediscover the object, remove any finlaizers and update (known issue on k8s 1.18)
 	etcdCluster, err := pluginutils.GetEtcdCluster(in.clientConfig, etcdName, in.stosConfig.Spec.Uninstall.EtcdNamespace)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
 		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
 	}
 	fmt.Println(fmt.Sprintf(removingFinalizersMessage, etcdCluster.Name))
@@ -463,7 +469,7 @@ func (in *Installer) ensureEtcdClusterRemoved(etcdName string) error {
 func (in *Installer) waitForCustomResourceDeletion(fn func() error) error {
 	if err := pluginutils.WaitFor(func() error {
 		return fn()
-	}, 30, 5); err != nil {
+	}, 45, 5); err != nil {
 		return errors.Wrap(err, "timeout waiting for custom resource deletion during uninstall")
 	}
 	return nil
