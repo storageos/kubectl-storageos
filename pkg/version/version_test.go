@@ -67,7 +67,7 @@ func TestIsSupported(t *testing.T) {
 		tt := test
 
 		t.Run(name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			actual, err := IsSupported(tt.haveVersion, tt.wantVersion)
 
