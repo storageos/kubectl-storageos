@@ -49,7 +49,7 @@ func init() {
 		}
 	}
 
-	versionRegexp, err = regexp.Compile("v([0-9]+.[0-9]+.[0-9]+)")
+	versionRegexp, err = regexp.Compile("v?([0-9]+.[0-9]+.[0-9]+)")
 	if err != nil {
 		panic(err)
 	}
@@ -212,8 +212,8 @@ func EtcdClusterLatestSupportedURL() string {
 // minimum requirement version (wantVersion) and checks if the current version
 // is supported by comparing it with the minimum requirement.
 func IsSupported(haveVersion, wantVersion string) (bool, error) {
-	haveVersion = strings.Trim(haveVersion, "v")
-	wantVersion = strings.Trim(wantVersion, "v")
+	haveVersion = strings.Trim(cleanupVersion(haveVersion), "v")
+	wantVersion = strings.Trim(cleanupVersion(wantVersion), "v")
 
 	supportedVersion, err := semver.Parse(wantVersion)
 	if err != nil {
