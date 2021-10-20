@@ -77,8 +77,10 @@ const (
 	stosDir              = "storageos"
 	operatorDir          = "operator"
 	clusterDir           = "cluster"
+	resourceQuotaDir     = "resource-quota"
 	stosOperatorFile     = "storageos-operator.yaml"
 	stosClusterFile      = "storageos-cluster.yaml"
+	resourceQuotaFile    = "resource-quota.yaml"
 	stosSecretsFile      = "storageos-secrets.yaml"
 	csiSecretsFile       = "storageos-csi-secrets.yaml"
 	stosStorageClassFile = "storageos-storageclass.yaml"
@@ -96,6 +98,7 @@ resources:`
 
 	// other defaults
 	stosClusterKind        = "StorageOSCluster"
+	resourceQuotaKind      = "ResourceQuota"
 	etcdClusterKind        = "EtcdCluster"
 	defaultEtcdClusterName = "storageos-etcd"
 	stosFinalizer          = "storageos.com/finalizer"
@@ -129,6 +132,7 @@ type fsData map[string]map[string]map[string][]byte
 
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
+	distribution  pluginutils.Distribution
 	kubectlClient *otkkubectl.DefaultKubectl
 	clientConfig  *rest.Config
 	kubeClusterID types.UID
@@ -147,20 +151,22 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 	}
 
 	if ensureNamespace {
-		err = pluginutils.EnsureNamespace(clientConfig, config.Spec.GetNamespace())
+		err = pluginutils.EnsureNamespace(clientConfig, config.Spec.GetOperatorNamespace())
 		if err != nil {
 			return installer, err
 		}
 	}
 
-	if validateKubeVersion {
-		currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
-		if err != nil {
-			return installer, err
-		}
+	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
+	if err != nil {
+		return installer, err
+	}
 
+	distribution := pluginutils.DetermineDistribution(currentVersion.String())
+
+	if validateKubeVersion {
 		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
-		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetNamespace(), version.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
+		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), version.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
 		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
 		if err == nil && minVersion != "" {
 			supported, err := version.IsSupported(currentVersion.String(), minVersion)
@@ -183,6 +189,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 	}
 
 	installer = &Installer{
+		distribution:  distribution,
 		kubectlClient: otkkubectl.New(),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),

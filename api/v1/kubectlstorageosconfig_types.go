@@ -33,8 +33,8 @@ type KubectlStorageOSConfigSpec struct {
 	Uninstall Uninstall `json:"uninstall,omitempty"`
 }
 
-// GetNamespace tries to figure out namespace
-func (spec *KubectlStorageOSConfigSpec) GetNamespace() (namespace string) {
+// GetOperatorNamespace tries to figure out operator namespace
+func (spec *KubectlStorageOSConfigSpec) GetOperatorNamespace() (namespace string) {
 	namespace = spec.Install.StorageOSOperatorNamespace
 	if namespace == "" {
 		namespace = spec.Uninstall.StorageOSOperatorNamespace
@@ -56,6 +56,7 @@ type Install struct {
 	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
 	StorageOSOperatorYaml       string `json:"storageOSOperatorYaml,omitempty"`
 	StorageOSClusterYaml        string `json:"storageOSClusterYaml,omitempty"`
+	ResourceQuotaYaml           string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml            string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`
 	EtcdEndpoints               string `json:"etcdEndpoints,omitempty"`

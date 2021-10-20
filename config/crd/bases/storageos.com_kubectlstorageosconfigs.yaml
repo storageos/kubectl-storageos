@@ -70,6 +70,8 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
+                  resourceQuotaYaml:
+                    type: string
                   skipEtcdEndpointsValidation:
                     type: boolean
                   storageOSClusterNamespace:

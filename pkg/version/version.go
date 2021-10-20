@@ -23,8 +23,11 @@ const (
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
 	newClusterYamlUrl             = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
-	etcdOperatorYamlUrl           = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
-	etcdClusterYamlUrl            = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
+
+	resourceQuotaYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/resource-quota.yaml"
+
+	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
+	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
 )
 
 var (
@@ -97,7 +100,8 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 }
 
 func cleanupVersion(version string) string {
-	if version == "develop" || version == "test" {
+	// Use latest version for dev versions
+	if pluginutils.IsDevelop(version) {
 		return OperatorLatestSupportedVersion()
 	}
 	return versionRegexp.FindString(version)
@@ -127,6 +131,12 @@ func ClusterUrlByVersion(version string) (string, error) {
 	// new storageos-cluster.yaml is located on plugin repo,
 	// so we use 'Version' (plugin) instead of 'version' (operator).
 	return fmt.Sprintf(newClusterYamlUrl, Version), nil
+}
+
+func ResourceQuotUrlByVersion(version string) (string, error) {
+	// resource-quota.yaml is located on plugin repo,
+	// so we use 'Version' (plugin) instead of 'version' (operator).
+	return fmt.Sprintf(resourceQuotaYamlUrl, version), nil
 }
 
 func SecretUrlByVersion(version string) (string, error) {
@@ -196,6 +206,10 @@ func OperatorLatestSupportedURL() string {
 
 func ClusterLatestSupportedURL() string {
 	return fmt.Sprintf(newClusterYamlUrl, Version)
+}
+
+func ResourceQuotaLatestSupportedURL() string {
+	return fmt.Sprintf(resourceQuotaYamlUrl, Version)
 }
 
 func EtcdOperatorLatestSupportedURL() string {

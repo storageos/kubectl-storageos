@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 
@@ -37,6 +38,13 @@ const helperDeletionErrorMessage = `Unable to delete helper %s.
 
 const jobTimeout = time.Minute
 
+type Distribution int
+
+const (
+	DistributionGKE Distribution = iota
+	DistributionUnknown
+)
+
 // ResourcesStillExists contains all the existing resource types in namespace
 type ResourcesStillExists struct {
 	namespace string
@@ -46,6 +54,26 @@ type ResourcesStillExists struct {
 // Error generates error message
 func (e ResourcesStillExists) Error() string {
 	return fmt.Sprintf("resource(s) still found in namespace %s: %s", e.namespace, strings.Join(e.resources, ", "))
+}
+
+var gkeVersionRegexp *regexp.Regexp
+
+func init() {
+	var err error
+	gkeVersionRegexp, err = regexp.Compile("v([0-9]+.[0-9]+.[0-9]+-gke.[0-9]+)")
+	if err != nil {
+		panic(err)
+	}
+}
+
+// DetermineDistribution tries to figure out Kubernetes distribution.
+func DetermineDistribution(version string) Distribution {
+	switch {
+	case gkeVersionRegexp.Match([]byte(version)):
+		return DistributionGKE
+	default:
+		return DistributionUnknown
+	}
 }
 
 // NewClientConfig returns a client-go rest config

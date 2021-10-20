@@ -109,6 +109,12 @@ func (in *Installer) uninstallStorageOS(upgrade bool) error {
 		}
 	}
 
+	if !upgrade && in.distribution == pluginutils.DistributionGKE {
+		if err = in.uninstallResourceQuote(storageOSCluster); err != nil {
+			return err
+		}
+	}
+
 	if storageOSCluster.Name != "" {
 		if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
 			return err
@@ -117,6 +123,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool) error {
 			return errors.WithStack(err)
 		}
 	}
+
 	// StorageOS cluster resources should be in a different namespace, on that case need to delete
 	if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 		if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
@@ -198,8 +205,32 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 		}
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+	if err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
+		return err
+	}
+
 	return err
+}
+
+func (in *Installer) uninstallResourceQuote(storageOSCluster *operatorapi.StorageOSCluster) error {
+	// make changes to storageos/resource-quota/kustomization.yaml based on flags (or cli config file) before
+	// kustomizeAndDelete call
+	fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
+	if err != nil {
+		return err
+	}
+
+	clusterNamespacePatch := pluginutils.KustomizePatch{
+		Op:    "replace",
+		Path:  "/metadata/namespace",
+		Value: storageOSCluster.Namespace,
+	}
+
+	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
+		return err
+	}
+
+	return in.kustomizeAndDelete(filepath.Join(stosDir, resourceQuotaDir), resourceQuotaFile)
 }
 
 func (in *Installer) uninstallStorageOSOperator() error {

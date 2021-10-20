@@ -251,7 +251,30 @@ func (in *Installer) installStorageOS() error {
 		return err
 	}
 
-	err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
+	if err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
+		return err
+	}
+
+	if in.distribution == pluginutils.DistributionGKE {
+		fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
+		if err != nil {
+			return err
+		}
+
+		clusterNamespacePatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/metadata/namespace",
+			Value: in.stosConfig.Spec.Install.StorageOSClusterNamespace,
+		}
+
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
+			return err
+		}
+
+		if err = in.kustomizeAndApply(filepath.Join(stosDir, resourceQuotaDir), resourceQuotaFile); err != nil {
+			return err
+		}
+	}
 
 	return err
 }
