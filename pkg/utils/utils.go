@@ -14,6 +14,11 @@ import (
 
 const promptTimeout = time.Minute
 
+// IsDevelop determines dev versions.
+func IsDevelop(version string) bool {
+	return version == "develop" || version == "test"
+}
+
 // AskUser creates an interactive prompt and waits for user input with timeout
 func AskUser(prompt promptui.Prompt) (string, error) {
 	ticker := time.NewTicker(promptTimeout)

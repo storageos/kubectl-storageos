@@ -47,14 +47,14 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	stosSubDirs := make(map[string]map[string][]byte)
 
 	// build storageos/operator
-	stosOpFiles, err := createFileData(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile, clientConfig, config.Spec.GetNamespace())
+	stosOpFiles, err := createFileData(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
 	stosSubDirs[operatorDir] = stosOpFiles
 
 	// build storageos/cluster
-	stosClusterFiles, err := createFileData(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), stosClusterFile, clientConfig, config.Spec.GetNamespace())
+	stosClusterFiles, err := createFileData(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), stosClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
@@ -70,6 +70,14 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 		stosClusterFiles[stosClusterFile] = []byte(stosClusterMulti)
 	}
 	stosSubDirs[clusterDir] = stosClusterFiles
+
+	// build resource quota
+	resourceQuotaFiles, err := createFileData(config.Spec.Install.ResourceQuotaYaml, pluginversion.ResourceQuotaLatestSupportedURL(), resourceQuotaFile, clientConfig, config.Spec.GetOperatorNamespace())
+	if err != nil {
+		return fs, err
+	}
+	stosSubDirs[resourceQuotaDir] = resourceQuotaFiles
+
 	fsData[stosDir] = stosSubDirs
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
@@ -84,14 +92,14 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	etcdSubDirs := make(map[string]map[string][]byte)
 
 	// build etcd/operator
-	etcdOpFiles, err := createFileData(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile, clientConfig, config.Spec.GetNamespace())
+	etcdOpFiles, err := createFileData(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
 	etcdSubDirs[operatorDir] = etcdOpFiles
 
 	// build etcd/cluster
-	etcdClusterFiles, err := createFileData(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), etcdClusterFile, clientConfig, config.Spec.GetNamespace())
+	etcdClusterFiles, err := createFileData(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), etcdClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}

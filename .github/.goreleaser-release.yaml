@@ -54,3 +54,4 @@ release:
   prerelease: false
   extra_files:
     - glob: ./specs/storageos-cluster.yaml
+    - glob: ./specs/resource-quota.yaml

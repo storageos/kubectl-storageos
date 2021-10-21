@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +56,7 @@ var protectedNamespaces = map[string]bool{
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
-func (in *Installer) Uninstall(upgrade bool) error {
+func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	stosPVCs := &corev1.PersistentVolumeClaimList{}
 	var err error
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
@@ -75,7 +76,7 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	go func() {
 		defer wg.Done()
 
-		errChan <- in.uninstallStorageOS(upgrade)
+		errChan <- in.uninstallStorageOS(upgrade, currentVersion)
 	}()
 
 	if serialInstall {
@@ -101,11 +102,23 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	return collectErrors(errChan)
 }
 
-func (in *Installer) uninstallStorageOS(upgrade bool) error {
+func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return err
+		}
+	}
+
+	if !upgrade && in.distribution == pluginutils.DistributionGKE {
+		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
+		if err != nil {
+			return err
+		}
+		if !lessThanOrEqual {
+			if err = in.uninstallResourceQuota(storageOSCluster); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -117,6 +130,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool) error {
 			return errors.WithStack(err)
 		}
 	}
+
 	// StorageOS cluster resources should be in a different namespace, on that case need to delete
 	if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 		if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
@@ -198,8 +212,32 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 		}
 	}
 
-	err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
+	if err = in.kustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
+		return err
+	}
+
 	return err
+}
+
+func (in *Installer) uninstallResourceQuota(storageOSCluster *operatorapi.StorageOSCluster) error {
+	// make changes to storageos/resource-quota/kustomization.yaml based on flags (or cli config file) before
+	// kustomizeAndDelete call
+	fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
+	if err != nil {
+		return err
+	}
+
+	clusterNamespacePatch := pluginutils.KustomizePatch{
+		Op:    "replace",
+		Path:  "/metadata/namespace",
+		Value: storageOSCluster.Namespace,
+	}
+
+	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
+		return err
+	}
+
+	return in.kustomizeAndDelete(filepath.Join(stosDir, resourceQuotaDir), resourceQuotaFile)
 }
 
 func (in *Installer) uninstallStorageOSOperator() error {

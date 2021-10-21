@@ -86,7 +86,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	err = cliInstaller.Uninstall(false)
+	err = cliInstaller.Uninstall(false, version)
 
 	return err
 }
@@ -134,24 +134,32 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	return nil
 }
 
-func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version string) error {
+func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version string) (err error) {
 	// set additional values to be used by Installer for in memory fs build
-	operatorUrl, err := pluginversion.OperatorUrlByVersion(version)
+	config.Spec.Install.StorageOSOperatorYaml, err = pluginversion.OperatorUrlByVersion(version)
 	if err != nil {
-		return err
-	}
-	clusterUrl, err := pluginversion.ClusterUrlByVersion(version)
-	if err != nil {
-		return err
-	}
-	secretUrl, err := pluginversion.SecretUrlByVersion(version)
-	if err != nil {
-		return err
+		return
 	}
 
-	config.Spec.Install.StorageOSOperatorYaml = operatorUrl
-	config.Spec.Install.StorageOSClusterYaml = clusterUrl
-	config.InstallerMeta.StorageOSSecretYaml = secretUrl
+	config.InstallerMeta.StorageOSSecretYaml, err = pluginversion.SecretUrlByVersion(version)
+	if err != nil {
+		return
+	}
 
-	return nil
+	// Don't override on dev versions
+	if pluginutils.IsDevelop(version) {
+		return
+	}
+
+	config.Spec.Install.StorageOSClusterYaml, err = pluginversion.ClusterUrlByVersion(version)
+	if err != nil {
+		return
+	}
+
+	config.Spec.Install.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(version)
+	if err != nil {
+		return
+	}
+
+	return
 }
