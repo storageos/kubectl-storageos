@@ -156,7 +156,7 @@ func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version stri
 		return
 	}
 
-	config.Spec.Install.ResourceQuotaYaml, err = pluginversion.ResourceQuotUrlByVersion(version)
+	config.Spec.Install.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(version)
 	if err != nil {
 		return
 	}

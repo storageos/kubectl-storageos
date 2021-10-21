@@ -116,7 +116,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 			return err
 		}
 		if !lessThanOrEqual {
-			if err = in.uninstallResourceQuote(storageOSCluster); err != nil {
+			if err = in.uninstallResourceQuota(storageOSCluster); err != nil {
 				return err
 			}
 		}
@@ -219,7 +219,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	return err
 }
 
-func (in *Installer) uninstallResourceQuote(storageOSCluster *operatorapi.StorageOSCluster) error {
+func (in *Installer) uninstallResourceQuota(storageOSCluster *operatorapi.StorageOSCluster) error {
 	// make changes to storageos/resource-quota/kustomization.yaml based on flags (or cli config file) before
 	// kustomizeAndDelete call
 	fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
