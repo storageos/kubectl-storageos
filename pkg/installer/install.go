@@ -291,6 +291,10 @@ func (in *Installer) installStorageOS() error {
 		}
 	}
 
+	if in.stosConfig.Spec.Install.SkipStorageOSCluster {
+		return nil
+	}
+
 	return in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
 }
 
