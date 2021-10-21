@@ -240,7 +240,6 @@ func (in *Installer) installStorageOS() error {
 			return err
 		}
 	}
-
 	if err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile); err != nil {
 		return err
 	}
@@ -248,10 +247,6 @@ func (in *Installer) installStorageOS() error {
 		return err
 	}
 	if err = in.operatorServicesAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
-		return err
-	}
-
-	if err = in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile); err != nil {
 		return err
 	}
 
@@ -276,7 +271,27 @@ func (in *Installer) installStorageOS() error {
 		}
 	}
 
-	return err
+	if in.stosConfig.Spec.Install.PortalKeyPath != "" {
+		_, keyFileName := filepath.Split(in.stosConfig.Spec.Install.PortalKeyPath)
+		if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalDir, kustomizationFile), fmt.Sprintf("%s%s%s", "[", keyFileName, "]"), "files", "secretGenerator", "0"); err != nil {
+			return err
+		}
+		if err := in.kustomizeAndApply(filepath.Join(stosDir, portalDir), stosPortalSecretFile); err != nil {
+			return err
+		}
+
+		enablePortalManagerPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/enablePortalManager",
+			Value: "true",
+		}
+
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{enablePortalManagerPatch}); err != nil {
+			return err
+		}
+	}
+
+	return in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
 }
 
 // operatorDeploymentsAreReady takes the path of an operator manifest and returns no error if all

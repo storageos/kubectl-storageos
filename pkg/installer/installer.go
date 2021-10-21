@@ -47,6 +47,7 @@ const (
 	EtcdStorageClassFlag          = "etcd-storage-class"
 	AdminUsernameFlag             = "admin-username"
 	AdminPasswordFlag             = "admin-password"
+	PortalKeyPathFlag             = "portal-key-path"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                = "spec.stackTrace"
@@ -69,6 +70,7 @@ const (
 	EtcdStorageClassConfig          = "spec.install.etcdStorageClassName"
 	AdminUsernameConfig             = "spec.install.adminUsername"
 	AdminPasswordConfig             = "spec.install.adminPassword"
+	PortalKeyPathConfig             = "spec.install.portalKeyPath"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig   = "spec.uninstall.storageOSOperatorNamespace"
 
@@ -78,9 +80,11 @@ const (
 	operatorDir          = "operator"
 	clusterDir           = "cluster"
 	resourceQuotaDir     = "resource-quota"
+	portalDir            = "portal"
 	stosOperatorFile     = "storageos-operator.yaml"
 	stosClusterFile      = "storageos-cluster.yaml"
 	resourceQuotaFile    = "resource-quota.yaml"
+	stosPortalSecretFile = "storageos-portal-secret.yaml"
 	stosSecretsFile      = "storageos-secrets.yaml"
 	csiSecretsFile       = "storageos-csi-secrets.yaml"
 	stosStorageClassFile = "storageos-storageclass.yaml"

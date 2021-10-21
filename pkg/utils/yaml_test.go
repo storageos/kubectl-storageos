@@ -171,6 +171,35 @@ spec:
 `,
 			expError: false,
 		},
+		{
+			name: "set literals list for secret generator",
+			manifest: `
+secretGenerator:
+- name: iot-core-ssl
+  namespace: storageos
+  literals:
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app: storageos
+    app.kubernetes.io/component: portal-manager
+`,
+			value:     "[test-list=test-list-data]",
+			valueName: "literals",
+			fields:    []string{"secretGenerator", "0"},
+			expManifest: `
+secretGenerator:
+- name: iot-core-ssl
+  namespace: storageos
+  literals:
+  - test-list=test-list-data
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app: storageos
+    app.kubernetes.io/component: portal-manager
+`,
+		},
 	}
 	for _, tc := range tcases {
 		manifest, err := SetFieldInManifest(tc.manifest, tc.value, tc.valueName, tc.fields...)

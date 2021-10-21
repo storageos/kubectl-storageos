@@ -26,7 +26,9 @@ import (
 )
 
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
-// etcd manifests. If '--skip-etcd-install' flag is set, etcd dir is not created.
+// etcd manifests.
+// If '--skip-etcd-install' flag is set, etcd dir is not created.
+// If '--portal-key-path' flag is not set, storageos/portal dir is not created.
 // - storageos
 //   - operator
 //     - storageos-operator.yaml
@@ -34,6 +36,9 @@ import (
 //   - cluster
 //     - storageos-cluster.yaml
 //     - kustomization.yaml
+//   - portal
+//     - kustomization.yaml
+//     - secret.key
 // - etcd
 //   - operator
 //     - etcd-operator.yaml
@@ -47,14 +52,14 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	stosSubDirs := make(map[string]map[string][]byte)
 
 	// build storageos/operator
-	stosOpFiles, err := createFileData(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
+	stosOpFiles, err := createFileWithKustPair(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
 	stosSubDirs[operatorDir] = stosOpFiles
 
 	// build storageos/cluster
-	stosClusterFiles, err := createFileData(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), stosClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
+	stosClusterFiles, err := createFileWithKustPair(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), stosClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
@@ -72,12 +77,21 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	stosSubDirs[clusterDir] = stosClusterFiles
 
 	// build resource quota
-	resourceQuotaFiles, err := createFileData(config.Spec.Install.ResourceQuotaYaml, pluginversion.ResourceQuotaLatestSupportedURL(), resourceQuotaFile, clientConfig, config.Spec.GetOperatorNamespace())
+	resourceQuotaFiles, err := createFileWithKustPair(config.Spec.Install.ResourceQuotaYaml, pluginversion.ResourceQuotaLatestSupportedURL(), resourceQuotaFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
 	stosSubDirs[resourceQuotaDir] = resourceQuotaFiles
 
+	if config.Spec.Install.PortalKeyPath != "" {
+		// build storageos/portal this consists of a kustomization file with a secret generator and a
+		// key file that is read from --portal-key-path and added to fs for secret creation.
+		stosPortalFiles, err := createPortalManagerFiles(config.Spec.Install.PortalKeyPath, clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosSubDirs[portalDir] = stosPortalFiles
+	}
 	fsData[stosDir] = stosSubDirs
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
@@ -92,14 +106,14 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	etcdSubDirs := make(map[string]map[string][]byte)
 
 	// build etcd/operator
-	etcdOpFiles, err := createFileData(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
+	etcdOpFiles, err := createFileWithKustPair(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
 	etcdSubDirs[operatorDir] = etcdOpFiles
 
 	// build etcd/cluster
-	etcdClusterFiles, err := createFileData(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), etcdClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
+	etcdClusterFiles, err := createFileWithKustPair(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), etcdClusterFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
@@ -127,7 +141,7 @@ func makeMultiDoc(manifests ...string) string {
 	return strings.Join(manifestsSlice, "\n---\n")
 }
 
-// createFileData creates a map of two files (file name to file data).
+// createFileWithKustPair creates a map of two files (file name to file data).
 //
 // The first file is that passed to the function and its contents are either pulled or read
 // (depending on flag).
@@ -138,13 +152,12 @@ func makeMultiDoc(manifests ...string) string {
 // resources:
 // - <filename>
 //
-func createFileData(yamlPath, yamlUrl, fileName string, config *rest.Config, namespace string) (map[string][]byte, error) {
-	files := make(map[string][]byte)
-	yamlContents, err := readOrPullManifest(yamlPath, yamlUrl, config, namespace)
+func createFileWithKustPair(yamlPath, yamlUrl, fileName string, config *rest.Config, namespace string) (map[string][]byte, error) {
+	files, err := createFileWithData(yamlPath, yamlUrl, fileName, config, namespace)
 	if err != nil {
 		return files, err
 	}
-	files[fileName] = []byte(yamlContents)
+
 	kustYamlContents, err := pluginutils.SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", fileName, "]"), "resources", "")
 	if err != nil {
 		return files, err
@@ -152,6 +165,37 @@ func createFileData(yamlPath, yamlUrl, fileName string, config *rest.Config, nam
 
 	files[kustomizationFile] = []byte(kustYamlContents)
 	return files, nil
+}
+
+// createPortalManagerFiles returns a map with two entries of
+// - keyName[keyContents]
+// - kustomization.yaml[secretGeneratorContents]
+func createPortalManagerFiles(keyPath string, config *rest.Config) (map[string][]byte, error) {
+	stosPortalFiles := make(map[string][]byte)
+	// build storageos/portal this consists only of a kustomization file with a secret generator
+	stosPortalKust, err := pullManifest(pluginversion.PortalSecretLatestSupportedURL())
+	if err != nil {
+		return stosPortalFiles, err
+	}
+	stosPortalFiles[kustomizationFile] = []byte(stosPortalKust)
+	_, keyFileName := filepath.Split(keyPath)
+	keyFile, err := createFileWithData(keyPath, "", keyFileName, config, "")
+	if err != nil {
+		return stosPortalFiles, err
+	}
+	stosPortalFiles[keyFileName] = keyFile[keyFileName]
+	return stosPortalFiles, nil
+}
+
+// createFileWithData returns a map with a single entry of [filename][filecontent]
+func createFileWithData(yamlPath, yamlUrl, fileName string, config *rest.Config, namespace string) (map[string][]byte, error) {
+	file := make(map[string][]byte)
+	yamlContents, err := readOrPullManifest(yamlPath, yamlUrl, config, namespace)
+	if err != nil {
+		return file, err
+	}
+	file[fileName] = []byte(yamlContents)
+	return file, nil
 }
 
 // createDirAndFiles is a helper function for buildInstallerFileSys, creating the in-memory
