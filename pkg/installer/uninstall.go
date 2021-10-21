@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +56,7 @@ var protectedNamespaces = map[string]bool{
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
-func (in *Installer) Uninstall(upgrade bool) error {
+func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	stosPVCs := &corev1.PersistentVolumeClaimList{}
 	var err error
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
@@ -75,7 +76,7 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	go func() {
 		defer wg.Done()
 
-		errChan <- in.uninstallStorageOS(upgrade)
+		errChan <- in.uninstallStorageOS(upgrade, currentVersion)
 	}()
 
 	if serialInstall {
@@ -101,7 +102,7 @@ func (in *Installer) Uninstall(upgrade bool) error {
 	return collectErrors(errChan)
 }
 
-func (in *Installer) uninstallStorageOS(upgrade bool) error {
+func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
@@ -110,8 +111,14 @@ func (in *Installer) uninstallStorageOS(upgrade bool) error {
 	}
 
 	if !upgrade && in.distribution == pluginutils.DistributionGKE {
-		if err = in.uninstallResourceQuote(storageOSCluster); err != nil {
+		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
+		if err != nil {
 			return err
+		}
+		if !lessThanOrEqual {
+			if err = in.uninstallResourceQuote(storageOSCluster); err != nil {
+				return err
+			}
 		}
 	}
 

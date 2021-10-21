@@ -134,6 +134,14 @@ func ClusterUrlByVersion(version string) (string, error) {
 }
 
 func ResourceQuotUrlByVersion(version string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(version, ClusterOperatorLastVersion())
+	if err != nil {
+		return "", err
+	}
+	if lessThanOrEqual {
+		return "", nil
+	}
+
 	// resource-quota.yaml is located on plugin repo,
 	// so we use 'Version' (plugin) instead of 'version' (operator).
 	return fmt.Sprintf(resourceQuotaYamlUrl, version), nil

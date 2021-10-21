@@ -44,7 +44,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	}
 
 	// uninstall existing storageos operator and cluster
-	if err = uninstaller.Uninstall(true); err != nil {
+	if err = uninstaller.Uninstall(true, versionToUninstall); err != nil {
 		return err
 	}
 
