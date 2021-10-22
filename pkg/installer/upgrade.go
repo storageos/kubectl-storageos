@@ -72,11 +72,11 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 
 	// if the version being uninstalled during upgrade is that of the 'old' operator (pre v2.5) existing
 	// CSI secrets are applied with finalizer to prevent deletion by operator
-	storageosV1, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
+	oldVersion, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
 	if err != nil {
 		return err
 	}
-	if storageosV1 {
+	if !pluginversion.IsDevelop(versionToUninstall) && oldVersion {
 		if err = in.applyBackupManifestWithFinalizer(csiSecretsFile); err != nil {
 			return err
 		}

@@ -370,12 +370,12 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 		return err
 	}
 
-	removedNamespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
+	namespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
 	if err != nil {
 		return err
 	}
-	for _, removedNamespace := range removedNamespaces {
-		if err = in.gracefullyApplyNS(removedNamespace); err != nil {
+	for _, namespace := range namespaces {
+		if err = in.gracefullyApplyNS(namespace); err != nil {
 			return err
 		}
 	}

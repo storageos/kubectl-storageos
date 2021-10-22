@@ -16,7 +16,7 @@ import (
 // GetManifestFromMultiDocByName returns an individual object string from a multi-doc yaml file
 // after searching by name..
 func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
-	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -36,7 +36,7 @@ func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
 // GetManifestFromMultiDocByKind returns an individual object string from a multi-doc yaml file
 // after searching by kind. Note: the first object in multiManifest matching kind is returned.
 func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
-	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -56,7 +56,7 @@ func GetManifestFromMultiDocByKind(multiDoc, kind string) (string, error) {
 // GetAllManifestsOfKindFromMultiDoc returns a slice of strings from a multi-doc yaml file
 // after searching by kind. Each string represents a sinlge manifest of 'kind'.
 func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) {
-	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -76,7 +76,7 @@ func GetAllManifestsOfKindFromMultiDoc(multiDoc, kind string) ([]string, error) 
 
 // OmitKindFromMultiDoc returns 'multiDoc' without objects of 'kind'.
 func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
-	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -97,7 +97,7 @@ func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
 // OmitAndReturnKindFromMultiDoc returns 'multiDoc' without objects of 'kind', while also returning
 // []string of 'kind' objects that are omitted
 func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, error) {
-	objs, err := manifest.ParseObjects(context.TODO(), multiDoc)
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}

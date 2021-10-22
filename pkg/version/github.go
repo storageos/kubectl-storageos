@@ -1,13 +1,12 @@
 package version
 
 import (
-	"context"
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
 	"sort"
 	"sync"
 	"time"
+
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
 const (
@@ -89,21 +88,7 @@ func ClusterOperatorLastVersion() string {
 }
 
 func fetchVersionsOrPanic(url string) []GithubRelease {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	rawVersions, err := ioutil.ReadAll(resp.Body)
+	rawVersions, err := pluginutils.FetchHttpContent(url, nil)
 	if err != nil {
 		panic(err)
 	}

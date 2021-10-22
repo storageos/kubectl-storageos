@@ -2,6 +2,46 @@ package version
 
 import "testing"
 
+func TestIsDevelop(t *testing.T) {
+	tests := map[string]struct {
+		version  string
+		expected bool
+	}{
+		"semver": {
+			version: "1.17.3",
+		},
+		"develop": {
+			version:  "develop",
+			expected: true,
+		},
+		"test": {
+			version:  "test",
+			expected: true,
+		},
+		"sha": {
+			version:  "24582d9a8f60c7f6d3ce7eea6833281f548826eacdd75122d842231bdf1fe89e",
+			expected: true,
+		},
+		"notsha": {
+			version: "24582d9a8f60c7f6d3ce7eea6833281f548826eacdd75122d842231bdf1fe89G",
+		},
+	}
+
+	for name, test := range tests {
+		tt := test
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			actual := IsDevelop(tt.version)
+
+			if tt.expected != actual {
+				t.Errorf("is develop value doesn't match: %t != %t", tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestCleanupVersion(t *testing.T) {
 	tests := map[string]struct {
 		input    string

@@ -13,7 +13,7 @@ import (
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"github.com/storageos/kubectl-storageos/pkg/version"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
@@ -172,10 +172,10 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 
 	if validateKubeVersion {
 		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
-		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), version.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
+		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), pluginversion.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
 		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
 		if err == nil && minVersion != "" {
-			supported, err := version.IsSupported(currentVersion.String(), minVersion)
+			supported, err := pluginversion.IsSupported(currentVersion.String(), minVersion)
 			if err != nil {
 				return installer, err
 			} else if !supported {
@@ -281,6 +281,25 @@ func (in *Installer) getAllManifestsOfKindFromFsMultiDoc(path, kind string) ([]s
 		return nil, err
 	}
 	return manifests, nil
+}
+
+// omitKindFromMultiDoc reads the file at path of the in-memory filesystem, uses
+// OmitKindFromMultiDoc internally to perform the update and then writes the returned file to path,
+// also returninng a string of the manifests omitted.
+func (in *Installer) omitKindFromMultiDoc(path, kind string) (string, error) {
+	data, err := in.fileSys.ReadFile(path)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	dataStr, err := pluginutils.OmitKindFromMultiDoc(string(data), kind)
+	if err != nil {
+		return "", err
+	}
+	err = in.fileSys.WriteFile(path, []byte(dataStr))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return dataStr, nil
 }
 
 // omitAndReturnKindFromFSMultiDoc reads the file at path of the in-memory filesystem, uses

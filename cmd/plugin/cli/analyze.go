@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
+
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 
 	"github.com/replicatedhq/troubleshoot/cmd/util"
 	analyzer "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -101,18 +102,7 @@ func downloadAnalyzerSpec(specPath string) (string, error) {
 			return "", fmt.Errorf("%s is not a URL and was not found (err %s)", specPath, err)
 		}
 
-		req, err := http.NewRequest("GET", specPath, nil)
-		if err != nil {
-			return "", err
-		}
-		req.Header.Set("User-Agent", "Replicated_Analyzer/v1beta1")
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return "", err
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := pluginutils.FetchHttpContent(specPath, map[string]string{"User-Agent": "Replicated_Analyzer/v1beta1"})
 		if err != nil {
 			return "", err
 		}
