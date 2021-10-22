@@ -38,6 +38,7 @@ const (
 	IncludeEtcdFlag               = "include-etcd"
 	EtcdEndpointsFlag             = "etcd-endpoints"
 	SkipEtcdEndpointsValFlag      = "skip-etcd-endpoints-validation"
+	SkipStosClusterFlag           = "skip-stos-cluster"
 	EtcdTLSEnabledFlag            = "etcd-tls-enabled"
 	EtcdSecretNameFlag            = "etcd-secret-name"
 	StosConfigPathFlag            = "stos-config-path"
@@ -58,6 +59,7 @@ const (
 	StosVersionConfig               = "spec.install.storageOSVersion"
 	InstallEtcdNamespaceConfig      = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig     = "spec.install.storageOSOperatorNamespace"
+	InstallSkipStosClusterConfig    = "spec.install.skipStorageOSCluster"
 	StosClusterNSConfig             = "spec.install.storageOSClusterNamespace"
 	StosOperatorYamlConfig          = "spec.install.storageOSOperatorYaml"
 	StosClusterYamlConfig           = "spec.install.storageOSClusterYaml"
@@ -73,6 +75,7 @@ const (
 	PortalKeyPathConfig             = "spec.install.portalKeyPath"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig   = "spec.uninstall.storageOSOperatorNamespace"
+	UninstallSkipStosClusterConfig  = "spec.uninstall.skipStorageOSCluster"
 
 	// dir and file names for in memory fs
 	etcdDir              = "etcd"

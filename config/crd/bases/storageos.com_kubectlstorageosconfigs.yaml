@@ -70,11 +70,13 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
-                  resourceQuotaYaml:
-                    type: string
                   portalKeyPath:
                     type: string
+                  resourceQuotaYaml:
+                    type: string
                   skipEtcdEndpointsValidation:
+                    type: boolean
+                  skipStorageOSCluster:
                     type: boolean
                   storageOSClusterNamespace:
                     type: string
@@ -100,6 +102,8 @@ spec:
                 properties:
                   etcdNamespace:
                     type: string
+                  skipStorageOSCluster:
+                    type: boolean
                   storageOSOperatorNamespace:
                     type: string
                 type: object
