@@ -25,6 +25,7 @@ type KubectlStorageOSConfigSpec struct {
 	StackTrace                bool `json:"stackTrace,omitempty"`
 	SkipNamespaceDeletion     bool `json:"skipNamespaceDeletion,omitempty"`
 	SkipExistingWorkloadCheck bool `json:"skipExistingWorkloadCheck,omitempty"`
+	SkipStorageOSCluster      bool `json:"skipStorageOSCluster,omitempty"`
 	IncludeEtcd               bool `json:"includeEtcd,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -63,7 +64,6 @@ type Install struct {
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
-	SkipStorageOSCluster        bool   `json:"skipStorageOSCluster,omitempty"`
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
@@ -74,7 +74,6 @@ type Install struct {
 type Uninstall struct {
 	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
 	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
-	SkipStorageOSCluster       bool   `json:"skipStorageOSCluster,omitempty"`
 }
 
 type InstallerMeta struct {

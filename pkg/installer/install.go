@@ -291,7 +291,7 @@ func (in *Installer) installStorageOS() error {
 		}
 	}
 
-	if in.stosConfig.Spec.Install.SkipStorageOSCluster {
+	if in.stosConfig.Spec.SkipStorageOSCluster {
 		return nil
 	}
 

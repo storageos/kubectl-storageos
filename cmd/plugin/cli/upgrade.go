@@ -18,11 +18,9 @@ import (
 )
 
 const (
-	uninstallStosOperatorNSFlag  = "uninstall-" + installer.StosOperatorNSFlag
-	installStosOperatorNSFlag    = "install-" + installer.StosOperatorNSFlag
-	installStosClusterNSFlag     = "install-" + installer.StosClusterNSFlag
-	installSkipStosClusterFlag   = "install-" + installer.SkipStosClusterFlag
-	uninstallSkipStosClusterFlag = "uninstall-" + installer.SkipStosClusterFlag
+	uninstallStosOperatorNSFlag = "uninstall-" + installer.StosOperatorNSFlag
+	installStosOperatorNSFlag   = "install-" + installer.StosOperatorNSFlag
+	installStosClusterNSFlag    = "install-" + installer.StosClusterNSFlag
 )
 
 func UpgradeCmd() *cobra.Command {
@@ -74,8 +72,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of etcd endpoints")
-	cmd.Flags().Bool(installSkipStosClusterFlag, false, "skip storageos cluster installation during upgrade")
-	cmd.Flags().Bool(uninstallSkipStosClusterFlag, false, "skip storageos cluster uninstallation during upgrade")
+	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster during upgrade")
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is tls enabled")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
@@ -153,7 +150,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installSkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
 		if err != nil {
 			return err
 		}
@@ -181,13 +178,13 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = false
 	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
+	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
 	config.Spec.Install.SkipEtcdEndpointsValidation = viper.GetBool(installer.SkipEtcdEndpointsValConfig)
-	config.Spec.Install.SkipStorageOSCluster = viper.GetBool(installer.InstallSkipStosClusterConfig)
 	config.Spec.Install.EtcdTLSEnabled = viper.GetBool(installer.EtcdTLSEnabledConfig)
 	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
@@ -215,7 +212,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		if err != nil {
 			return err
 		}
-		config.Spec.Uninstall.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(uninstallSkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
 		if err != nil {
 			return err
 		}
@@ -227,7 +224,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	// config file read without error, set fields in new config object
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.IncludeEtcd = false
-	config.Spec.Uninstall.SkipStorageOSCluster = viper.GetBool(installer.UninstallSkipStosClusterConfig)
+	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
 	return nil
 }
