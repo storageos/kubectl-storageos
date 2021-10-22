@@ -26,10 +26,10 @@ const (
 
 	resourceQuotaYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/resource-quota.yaml"
 
+	portalSecretYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-secret-generator.yaml"
+
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
-	//TODO: move out of placeholder repo
-	portalSecretYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/portal/kustomization.yaml"
 )
 
 var (
@@ -223,9 +223,7 @@ func ResourceQuotaLatestSupportedURL() string {
 }
 
 func PortalSecretLatestSupportedURL() string {
-	return portalSecretYamlUrl
-	// TODO: when released
-	//return fmt.Sprintf(portalSecretYamlUrl, PluginVersion)
+	return fmt.Sprintf(portalSecretYamlUrl, PluginVersion)
 }
 
 func EtcdOperatorLatestSupportedURL() string {
