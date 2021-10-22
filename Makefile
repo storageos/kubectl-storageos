@@ -20,7 +20,7 @@ SHELL = /usr/bin/env bash -o pipefail
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
-LDF_FLAGS = -X github.com/storageos/kubectl-storageos/pkg/version.Version=
+LDF_FLAGS = -X github.com/storageos/kubectl-storageos/pkg/version.PluginVersion=
 
 BUILDFLAGS = -tags "exclude_graphdriver_btrfs exclude_graphdriver_devicemapper"
 

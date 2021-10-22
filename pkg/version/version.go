@@ -41,7 +41,7 @@ var (
 
 	versionRegexp *regexp.Regexp
 
-	Version string
+	PluginVersion string
 )
 
 func init() {
@@ -109,34 +109,34 @@ func cleanupVersion(version string) string {
 	return versionRegexp.FindString(version)
 }
 
-func OperatorUrlByVersion(version string) (string, error) {
-	lessThanOrEqual, err := VersionIsLessThanOrEqual(version, ClusterOperatorLastVersion())
+func OperatorUrlByVersion(operatorVersion string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf(oldOperatorYamlUrl, version), nil
+		return fmt.Sprintf(oldOperatorYamlUrl, operatorVersion), nil
 	}
 
-	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, version), nil
+	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, operatorVersion), nil
 }
 
-func ClusterUrlByVersion(version string) (string, error) {
-	lessThanOrEqual, err := VersionIsLessThanOrEqual(version, ClusterOperatorLastVersion())
+func ClusterUrlByVersion(operatorVersion string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf(oldClusterYamlUrl, version), nil
+		return fmt.Sprintf(oldClusterYamlUrl, operatorVersion), nil
 	}
 
 	// new storageos-cluster.yaml is located on plugin repo,
-	// so we use 'Version' (plugin) instead of 'version' (operator).
-	return fmt.Sprintf(newClusterYamlUrl, Version), nil
+	// so we use 'PluginVersion' instead of 'operatorVersion'.
+	return fmt.Sprintf(newClusterYamlUrl, PluginVersion), nil
 }
 
-func ResourceQuotaUrlByVersion(version string) (string, error) {
-	lessThanOrEqual, err := VersionIsLessThanOrEqual(version, ClusterOperatorLastVersion())
+func ResourceQuotaUrlByVersion(operatorVersion string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
@@ -145,17 +145,17 @@ func ResourceQuotaUrlByVersion(version string) (string, error) {
 	}
 
 	// resource-quota.yaml is located on plugin repo,
-	// so we use 'Version' (plugin) instead of 'version' (operator).
-	return fmt.Sprintf(resourceQuotaYamlUrl, Version), nil
+	// so we use 'PluginVersion' instead of 'operatorVersion'.
+	return fmt.Sprintf(resourceQuotaYamlUrl, PluginVersion), nil
 }
 
-func SecretUrlByVersion(version string) (string, error) {
-	lessThanOrEqual, err := VersionIsLessThanOrEqual(version, ClusterOperatorLastVersion())
+func SecretUrlByVersion(operatorVersion string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
 	if lessThanOrEqual {
-		return fmt.Sprintf(oldSecretYamlUrl, version), nil
+		return fmt.Sprintf(oldSecretYamlUrl, operatorVersion), nil
 	}
 	// new operator does not have separate secret and cluster yamls, therefore return empty string
 
@@ -215,17 +215,17 @@ func OperatorLatestSupportedURL() string {
 }
 
 func ClusterLatestSupportedURL() string {
-	return fmt.Sprintf(newClusterYamlUrl, Version)
+	return fmt.Sprintf(newClusterYamlUrl, PluginVersion)
 }
 
 func ResourceQuotaLatestSupportedURL() string {
-	return fmt.Sprintf(resourceQuotaYamlUrl, Version)
+	return fmt.Sprintf(resourceQuotaYamlUrl, PluginVersion)
 }
 
 func PortalSecretLatestSupportedURL() string {
 	return portalSecretYamlUrl
 	// TODO: when released
-	//return fmt.Sprintf(portalSecretYamlUrl, Version)
+	//return fmt.Sprintf(portalSecretYamlUrl, PluginVersion)
 }
 
 func EtcdOperatorLatestSupportedURL() string {
