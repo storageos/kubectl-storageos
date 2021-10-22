@@ -76,8 +76,6 @@ spec:
                     type: string
                   skipEtcdEndpointsValidation:
                     type: boolean
-                  skipStorageOSCluster:
-                    type: boolean
                   storageOSClusterNamespace:
                     type: string
                   storageOSClusterYaml:
@@ -95,6 +93,8 @@ spec:
                 type: boolean
               skipNamespaceDeletion:
                 type: boolean
+              skipStorageOSCluster:
+                type: boolean
               stackTrace:
                 type: boolean
               uninstall:
@@ -102,8 +102,6 @@ spec:
                 properties:
                   etcdNamespace:
                     type: string
-                  skipStorageOSCluster:
-                    type: boolean
                   storageOSOperatorNamespace:
                     type: string
                 type: object
