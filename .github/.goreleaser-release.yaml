@@ -31,7 +31,7 @@ builds:
     main: ./main.go
     binary: ./kubectl-storageos
     ldflags:
-      - -w -X github.com/storageos/kubectl-storageos/pkg/version.Version=v{{.Version}}
+      - -w -X github.com/storageos/kubectl-storageos/pkg/version.PluginVersion=v{{.PluginVersion}}
     tags:
       - exclude_graphdriver_btrfs exclude_graphdriver_devicemapper
 snapshot:
