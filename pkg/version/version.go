@@ -28,8 +28,9 @@ const (
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
-	//TODO: move out of placeholder repo
+	//TODO: swap below links once portal-secret-generator spec is included in release
 	portalSecretYamlUrl = "https://raw.githubusercontent.com/nolancon/placeholder/main/config/storageos/portal/kustomization.yaml"
+	//portalSecretYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-secret-generator.yaml"
 )
 
 var (
