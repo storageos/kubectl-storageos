@@ -33,10 +33,12 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DH_USERNAME }}
           password: ${{ secrets.DH_PASSWORD }}
+      - name: Persist Service account key
+        run: echo "${{ secrets.GOOGLE_SA_KEY }}" > ${{ github.event.inputs.project }}.json
       - name: Fetch Kubeconfig
         run: ./hack/fetch-kube-congif.sh
         env:
-          KEY_FILE: ${{ secrets.GOOGLE_SA_KEY }}
+          KEY_FILE: ${{ github.event.inputs.project }}.json
           ZONE: ${{ github.event.inputs.zone }}
           PROJECT: ${{ github.event.inputs.project }}
       - name: Build plugin
