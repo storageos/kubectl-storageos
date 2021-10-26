@@ -34,7 +34,7 @@ jobs:
           username: ${{ secrets.DH_USERNAME }}
           password: ${{ secrets.DH_PASSWORD }}
       - name: Persist Service account key
-        run: echo "${{ secrets.GOOGLE_SA_KEY }}" > ${{ github.event.inputs.project }}.json
+        run: echo -n "${{ secrets.GOOGLE_SA_KEY }}" > ${{ github.event.inputs.project }}.json
       - name: Fetch Kubeconfig
         run: ./hack/fetch-kube-congif.sh
         env:
