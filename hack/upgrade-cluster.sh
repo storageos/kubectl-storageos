@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# shellcheck disable=SC2086
+# shellcheck disable=SC2223
+
 : ${VERSION:=develop}
 : ${UPGRADE:=}
 : ${EXTRA_FLAGS:=--skip-stos-cluster --wait --stack-trace}
