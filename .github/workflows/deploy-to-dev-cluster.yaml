@@ -42,7 +42,7 @@ jobs:
           ZONE: ${{ github.event.inputs.zone }}
           PROJECT: ${{ github.event.inputs.project }}
       - name: Build plugin
-        run: make build
+        run: make _build
       - name: Update StorageOS deployment
         run: ./hack/upgrade-cluster.sh
         env:
