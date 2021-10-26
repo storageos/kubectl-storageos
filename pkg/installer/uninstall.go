@@ -248,7 +248,9 @@ func (in *Installer) uninstallStorageOSOperator() error {
 	}
 
 	if in.stosConfig.Spec.SkipStorageOSCluster {
-		in.omitKindFromMultiDoc(filepath.Join(stosDir, operatorDir, stosOperatorFile), "CustomResourceDefinition")
+		if _, err := in.omitKindFromMultiDoc(filepath.Join(stosDir, operatorDir, stosOperatorFile), "CustomResourceDefinition"); err != nil {
+			return err
+		}
 	}
 
 	err := in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
