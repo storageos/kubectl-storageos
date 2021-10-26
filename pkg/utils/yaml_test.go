@@ -210,7 +210,7 @@ generatorOptions:
 		}
 
 		if kyaml.MustParse(manifest).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(manifest).MustString())
+			t.Errorf("expected %v, got %v", tc.expManifest, manifest)
 		}
 	}
 }
@@ -380,7 +380,7 @@ patches:
 			}
 		}
 		if kyaml.MustParse(kust).MustString() != kyaml.MustParse(tc.expKust).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expKust).MustString(), kyaml.MustParse(kust).MustString())
+			t.Errorf("expected %v, got %v", tc.expKust, kust)
 		}
 	}
 }
@@ -461,7 +461,7 @@ spec:
 			}
 		}
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+			t.Errorf("expected %v, got %v", tc.expManifest, man)
 		}
 	}
 }
@@ -542,7 +542,7 @@ spec:
 			}
 		}
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+			t.Errorf("expected %v, got %v", tc.expManifest, man)
 		}
 	}
 }
@@ -638,7 +638,7 @@ spec:
 			}
 		}
 		if kyaml.MustParse(man).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
-			t.Errorf("expected %v, got %v", kyaml.MustParse(tc.expManifest).MustString(), kyaml.MustParse(man).MustString())
+			t.Errorf("expected %v, got %v", tc.expManifest, man)
 		}
 		if len(tc.expKinds) != len(kinds) {
 			t.Errorf("expected %v, got %v", len(tc.expKinds), len(kinds))

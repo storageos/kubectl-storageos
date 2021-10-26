@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,11 +16,6 @@ import (
 )
 
 const promptTimeout = time.Minute
-
-// IsDevelop determines dev versions.
-func IsDevelop(version string) bool {
-	return version == "develop" || version == "test"
-}
 
 // AskUser creates an interactive prompt and waits for user input with timeout
 func AskUser(prompt promptui.Prompt) (string, error) {
@@ -100,4 +98,30 @@ func HandleError(command string, err error, printStackTrace bool) error {
 			errToTest = errors.Unwrap(errToTest)
 		}
 	}
+}
+
+// FetchHttpContent downloads something from given URL
+func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > http.StatusMultipleChoices {
+		return nil, errors.WithStack(fmt.Errorf("error fetching content of %s, status code: %d", url, resp.StatusCode))
+	}
+
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
 }

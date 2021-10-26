@@ -141,6 +141,11 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 }
 
 func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version string) (err error) {
+	// Don't fetch version specific manifests for develop edition
+	if pluginversion.IsDevelop(version) {
+		return
+	}
+
 	// set additional values to be used by Installer for in memory fs build
 	config.Spec.Install.StorageOSOperatorYaml, err = pluginversion.OperatorUrlByVersion(version)
 	if err != nil {
@@ -149,11 +154,6 @@ func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version stri
 
 	config.InstallerMeta.StorageOSSecretYaml, err = pluginversion.SecretUrlByVersion(version)
 	if err != nil {
-		return
-	}
-
-	// Don't override on dev versions
-	if pluginutils.IsDevelop(version) {
 		return
 	}
 

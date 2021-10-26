@@ -40,9 +40,17 @@ var (
 	enableUnofficialRelease bool
 
 	versionRegexp *regexp.Regexp
+	shaRegexp     *regexp.Regexp
 
 	PluginVersion string
 )
+
+var shaLengths map[int]bool = map[int]bool{
+	224 / 4: true,
+	256 / 4: true,
+	384 / 4: true,
+	512 / 4: true,
+}
 
 func init() {
 	var err error
@@ -58,6 +66,26 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	shaRegexp, err = regexp.Compile("^[a-fA-F0-9]+$")
+	if err != nil {
+		panic(err)
+	}
+}
+
+// IsDevelop determines dev versions.
+func IsDevelop(version string) bool {
+	if version == "develop" || version == "test" {
+		return true
+	}
+
+	if _, ok := shaLengths[len(version)]; ok {
+		if shaRegexp.Match([]byte(version)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func GetExistingOperatorVersion(namespace string) (string, error) {
@@ -99,14 +127,6 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	}
 
 	return version, nil
-}
-
-func cleanupVersion(version string) string {
-	// Use latest version for dev versions
-	if pluginutils.IsDevelop(version) {
-		return OperatorLatestSupportedVersion()
-	}
-	return versionRegexp.FindString(version)
 }
 
 func OperatorUrlByVersion(operatorVersion string) (string, error) {
@@ -162,7 +182,15 @@ func SecretUrlByVersion(operatorVersion string) (string, error) {
 	return "", nil
 }
 
+func cleanupVersion(version string) string {
+	return versionRegexp.FindString(version)
+}
+
 func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
+	if IsDevelop(version) {
+		return true, nil
+	}
+
 	version = cleanupVersion(version)
 	marker = cleanupVersion(marker)
 
@@ -179,6 +207,10 @@ func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
 }
 
 func VersionIsLessThan(version, marker string) (bool, error) {
+	if IsDevelop(version) {
+		return false, nil
+	}
+
 	version = cleanupVersion(version)
 	marker = cleanupVersion(marker)
 
@@ -195,6 +227,10 @@ func VersionIsLessThan(version, marker string) (bool, error) {
 }
 
 func VersionIsEqualTo(version, marker string) (bool, error) {
+	if IsDevelop(version) {
+		return false, nil
+	}
+
 	version = cleanupVersion(version)
 	marker = cleanupVersion(marker)
 
@@ -240,8 +276,8 @@ func EtcdClusterLatestSupportedURL() string {
 // minimum requirement version (wantVersion) and checks if the current version
 // is supported by comparing it with the minimum requirement.
 func IsSupported(haveVersion, wantVersion string) (bool, error) {
-	haveVersion = strings.Trim(cleanupVersion(haveVersion), "v")
-	wantVersion = strings.Trim(cleanupVersion(wantVersion), "v")
+	haveVersion = strings.Trim(versionRegexp.FindString(haveVersion), "v")
+	wantVersion = strings.Trim(versionRegexp.FindString(wantVersion), "v")
 
 	supportedVersion, err := semver.Parse(wantVersion)
 	if err != nil {

@@ -337,7 +337,10 @@ func loadSpec(v *viper.Viper, arg string) ([]byte, error) {
 
 func loadSpecFromURL(v *viper.Viper, arg string) ([]byte, error) {
 	for {
-		req, err := http.NewRequest("GET", arg, nil)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, "GET", arg, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "make request")
 		}
@@ -607,7 +610,10 @@ func uploadSupportBundle(r *troubleshootv1beta2.ResultRequest, archivePath strin
 		return errors.Wrap(err, "stat file")
 	}
 
-	req, err := http.NewRequest(r.Method, r.URI, f)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, r.Method, r.URI, f)
 	if err != nil {
 		return errors.Wrap(err, "create request")
 	}
@@ -636,7 +642,10 @@ func uploadSupportBundle(r *troubleshootv1beta2.ResultRequest, archivePath strin
 			return errors.Wrap(err, "get redaction report")
 		}
 
-		req, err := http.NewRequest("PUT", r.RedactURI, bytes.NewReader(redactBytes))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, "PUT", r.RedactURI, bytes.NewReader(redactBytes))
 		if err != nil {
 			return errors.Wrap(err, "create redaction report request")
 		}
@@ -689,7 +698,10 @@ func parseTimeFlags(v *viper.Viper) (*time.Time, error) {
 }
 
 func callbackSupportBundleAPI(r *troubleshootv1beta2.ResultRequest, archivePath string) error {
-	req, err := http.NewRequest(r.Method, r.URI, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, r.Method, r.URI, nil)
 	if err != nil {
 		return errors.Wrap(err, "create request")
 	}

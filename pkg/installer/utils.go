@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -261,16 +260,11 @@ func pullManifest(url string) (string, error) {
 		return "", errors.WithStack(fmt.Errorf("%s is not a URL and was not found", url))
 	}
 
-	resp, err := http.Get(url)
+	contents, err := pluginutils.FetchHttpContent(url, nil)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	defer resp.Body.Close()
 
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
 	return string(contents), nil
 }
 

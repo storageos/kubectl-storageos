@@ -129,12 +129,12 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 		if err := in.ensureStorageOSClusterRemoved(); err != nil {
 			return errors.WithStack(err)
 		}
-	}
 
-	// StorageOS cluster resources should be in a different namespace, on that case need to delete
-	if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-		if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
-			return err
+		// StorageOS cluster resources should be in a different namespace, on that case need to delete
+		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+			if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -245,6 +245,12 @@ func (in *Installer) uninstallStorageOSOperator() error {
 	// kustomizeAndDelete call
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace, "namespace", ""); err != nil {
 		return err
+	}
+
+	if in.stosConfig.Spec.SkipStorageOSCluster {
+		if _, err := in.omitKindFromMultiDoc(filepath.Join(stosDir, operatorDir, stosOperatorFile), "CustomResourceDefinition"); err != nil {
+			return err
+		}
 	}
 
 	err := in.kustomizeAndDelete(filepath.Join(stosDir, operatorDir), stosOperatorFile)
