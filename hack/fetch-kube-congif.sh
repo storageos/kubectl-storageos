@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# shellcheck disable=SC2086
+# shellcheck disable=SC2223
+
 : ${KEY_FILE?= required}
 : ${PROJECT?= required}
 : ${ZONE?= required}
