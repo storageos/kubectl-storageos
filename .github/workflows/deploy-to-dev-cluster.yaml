@@ -20,7 +20,7 @@ on:
 jobs:
   publish-feature-image:
     runs-on: ubuntu-latest
-    name: Publish container image
+    name: Update StorageOS on dev cluster
     steps:
       - name: Checkout
         uses: actions/checkout@v2
