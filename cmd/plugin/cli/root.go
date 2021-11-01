@@ -66,9 +66,6 @@ func RootCmd() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
-	KubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
-	KubernetesConfigFlags.AddFlags(cmd.Flags())
-
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	cmd.AddCommand(PreflightCmd())
