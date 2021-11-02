@@ -2,13 +2,16 @@ package cli
 
 import (
 	"encoding/base64"
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 // etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
@@ -81,4 +84,19 @@ func valueOrDefault(value string, def string) string {
 
 func stringToBase64(value string) string {
 	return base64.StdEncoding.EncodeToString([]byte(value))
+}
+
+func versionSupportsPortal(existingOperatorVersion string) error {
+	// TODO: remove develop check after 2.6 release
+	if !version.IsDevelop(existingOperatorVersion) {
+		supported, err := version.IsSupported(existingOperatorVersion, consts.PortalManagerFirstSupportedVersion)
+		if err != nil {
+			return err
+		}
+		if !supported {
+			return fmt.Errorf("Portal Manager is not supported in StorageOS %s", existingOperatorVersion)
+		}
+	}
+
+	return nil
 }

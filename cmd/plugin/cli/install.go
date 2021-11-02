@@ -63,9 +63,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
-	cmd.Flags().String(installer.PortalKeyPathFlag, "", "path to portal manager key")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username, also used as the portal clientID (plaintext)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password, also used as the portal password (plaintext)")
+	cmd.Flags().String(installer.PortalURLFlag, "", "portal url")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -148,7 +148,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.EtcdStorageClassName = cmd.Flags().Lookup(installer.EtcdStorageClassFlag).Value.String()
 		config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
 		config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
-		config.Spec.Install.PortalKeyPath = cmd.Flags().Lookup(installer.PortalKeyPathFlag).Value.String()
+		config.Spec.Install.PortalURL = cmd.Flags().Lookup(installer.PortalURLFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -172,8 +172,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdStorageClassName = viper.GetString(installer.EtcdStorageClassConfig)
 	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
 	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
-	config.Spec.Install.PortalKeyPath = viper.GetString(installer.PortalKeyPathConfig)
-
+	config.Spec.Install.PortalURL = viper.GetString(installer.PortalURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

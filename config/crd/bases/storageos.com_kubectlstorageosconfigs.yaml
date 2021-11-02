@@ -70,7 +70,7 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
-                  portalKeyPath:
+                  portalURL:
                     type: string
                   resourceQuotaYaml:
                     type: string

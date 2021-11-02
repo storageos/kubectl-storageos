@@ -3,6 +3,8 @@ package consts
 const (
 	OperatorOldestSupportedVersion = "v2.2.0"
 
+	PortalManagerFirstSupportedVersion = "v2.6.0"
+
 	OldOperatorName = "storageos-cluster-operator"
 	NewOperatorName = "storageos-operator"
 

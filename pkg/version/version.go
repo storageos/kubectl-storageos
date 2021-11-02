@@ -28,6 +28,8 @@ const (
 
 	portalSecretYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-secret-generator.yaml"
 
+	portalClientYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-client-secret-generator.yaml"
+
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
 )
@@ -260,6 +262,10 @@ func ResourceQuotaLatestSupportedURL() string {
 
 func PortalSecretLatestSupportedURL() string {
 	return fmt.Sprintf(portalSecretYamlUrl, PluginVersion)
+}
+
+func PortalClientLatestSupportedURL() string {
+	return fmt.Sprintf(portalClientYamlUrl, PluginVersion)
 }
 
 func EtcdOperatorLatestSupportedURL() string {

@@ -271,24 +271,12 @@ func (in *Installer) installStorageOS() error {
 		}
 	}
 
-	if in.stosConfig.Spec.Install.PortalKeyPath != "" {
-		_, keyFileName := filepath.Split(in.stosConfig.Spec.Install.PortalKeyPath)
-		if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalDir, kustomizationFile), fmt.Sprintf("%s%s%s", "[", keyFileName, "]"), "files", "secretGenerator", "0"); err != nil {
-			return err
-		}
-		if err := in.kustomizeAndApply(filepath.Join(stosDir, portalDir), stosPortalSecretFile); err != nil {
-			return err
-		}
+	if err := in.enablePortalManager(in.stosConfig.Spec.Install.StorageOSClusterNamespace, true); err != nil {
+		return err
+	}
 
-		enablePortalManagerPatch := pluginutils.KustomizePatch{
-			Op:    "replace",
-			Path:  "/spec/enablePortalManager",
-			Value: "true",
-		}
-
-		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{enablePortalManagerPatch}); err != nil {
-			return err
-		}
+	if err := in.InstallPortalManager(); err != nil {
+		return err
 	}
 
 	if in.stosConfig.Spec.SkipStorageOSCluster {

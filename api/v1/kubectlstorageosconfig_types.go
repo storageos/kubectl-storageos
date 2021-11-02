@@ -67,7 +67,7 @@ type Install struct {
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
-	PortalKeyPath               string `json:"portalKeyPath,omitempty"`
+	PortalURL                   string `json:"portalURL,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand

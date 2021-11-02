@@ -55,4 +55,5 @@ release:
   extra_files:
     - glob: ./specs/storageos-cluster.yaml
     - glob: ./specs/resource-quota.yaml
-    - glob: ./specs/portal-secret-generator.yaml
+    - glob: ./specs/portal-client-secret-generator.yaml
+    - glob: ./specs/configmap-storageos-portal-manager.yaml
