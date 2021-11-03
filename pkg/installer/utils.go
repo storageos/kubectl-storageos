@@ -37,6 +37,9 @@ import (
 //     - kustomization.yaml
 //   - portal-client
 //     - kustomization.yaml
+//   - portal-config
+//     - portal-configmap.yaml
+//     - kustomization.yaml
 // - etcd
 //   - operator
 //     - etcd-operator.yaml

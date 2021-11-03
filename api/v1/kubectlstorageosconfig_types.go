@@ -57,6 +57,7 @@ type Install struct {
 	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
 	StorageOSOperatorYaml       string `json:"storageOSOperatorYaml,omitempty"`
 	StorageOSClusterYaml        string `json:"storageOSClusterYaml,omitempty"`
+	StorageOSPortalConfigYaml   string `json:"storageOSPortalConfigYaml,omitempty"`
 	ResourceQuotaYaml           string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml            string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`

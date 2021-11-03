@@ -84,6 +84,8 @@ spec:
                     type: string
                   storageOSOperatorYaml:
                     type: string
+                  storageOSPortalConfigYaml:
+                    type: string
                   storageOSVersion:
                     type: string
                   wait:
