@@ -271,12 +271,14 @@ func (in *Installer) installStorageOS() error {
 		}
 	}
 
-	if err := in.enablePortalManager(in.stosConfig.Spec.Install.StorageOSClusterNamespace, true); err != nil {
+	if err := in.InstallPortalManager(); err != nil {
 		return err
 	}
 
-	if err := in.InstallPortalManager(); err != nil {
-		return err
+	if in.stosConfig.Spec.Install.EnablePortal {
+		if err := in.enablePortalManager(in.stosConfig.Spec.Install.StorageOSClusterNamespace, true); err != nil {
+			return err
+		}
 	}
 
 	if in.stosConfig.Spec.SkipStorageOSCluster {

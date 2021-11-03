@@ -51,7 +51,7 @@ func (in *Installer) installPortalManagerConfig() error {
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSClusterNamespace, "namespace", ""); err != nil {
 		return err
 	}
-	return in.kustomizeAndApply(filepath.Join(stosDir, portalConfigDir), stosPortalClientFile)
+	return in.kustomizeAndApply(filepath.Join(stosDir, portalConfigDir), stosPortalConfigFile)
 }
 
 func (in *Installer) installPortalManagerClient() error {

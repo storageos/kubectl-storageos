@@ -49,6 +49,7 @@ const (
 	AdminUsernameFlag             = "admin-username"
 	AdminPasswordFlag             = "admin-password"
 	PortalURLFlag                 = "portal-url"
+	EnablePortalFlag              = "enable-portal"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                = "spec.stackTrace"
@@ -74,6 +75,7 @@ const (
 	AdminUsernameConfig             = "spec.install.adminUsername"
 	AdminPasswordConfig             = "spec.install.adminPassword"
 	PortalURLConfig                 = "spec.install.portalURL"
+	EnablePortalConfig              = "spec.install.enablePortal"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig   = "spec.uninstall.storageOSOperatorNamespace"
 

@@ -65,6 +65,7 @@ type Install struct {
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
+	EnablePortal                bool   `json:"enablePortal,omitempty"`
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`

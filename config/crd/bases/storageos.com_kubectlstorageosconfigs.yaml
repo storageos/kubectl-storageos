@@ -56,6 +56,8 @@ spec:
                     type: string
                   adminUsername:
                     type: string
+                  enablePortal:
+                    type: boolean
                   etcdClusterYaml:
                     type: string
                   etcdEndpoints:

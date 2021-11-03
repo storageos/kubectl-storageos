@@ -57,6 +57,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is tls enabled")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of etcd endpoints")
 	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster installation")
+	cmd.Flags().Bool(installer.EnablePortalFlag, false, "enable storageos portal during installation")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
@@ -76,6 +77,11 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	// user specified the version
 	if config.Spec.Install.StorageOSVersion != "" {
+		if config.Spec.Install.EnablePortal {
+			if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
+				return err
+			}
+		}
 		version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 	}
 
@@ -124,6 +130,10 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.EnablePortal, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EnablePortalFlag).Value.String())
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.Wait, err = strconv.ParseBool(cmd.Flags().Lookup(installer.WaitFlag).Value.String())
 		if err != nil {
 			return err
@@ -158,6 +168,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
+	config.Spec.Install.EnablePortal = viper.GetBool(installer.EnablePortalConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
