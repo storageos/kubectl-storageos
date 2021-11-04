@@ -488,6 +488,20 @@ func ListPersistentVolumeClaims(config *rest.Config, listOptions metav1.ListOpti
 	return pvcs, nil
 }
 
+// ListConfigMaps returns ConfigMapList
+func ListConfigMaps(config *rest.Config, listOptions metav1.ListOptions) (*corev1.ConfigMapList, error) {
+	clientset, err := GetClientsetFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	configMaps, err := clientset.CoreV1().ConfigMaps("").List(context.TODO(), listOptions)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return configMaps, nil
+}
+
 // CreateStorageClass creates k8s storage class.
 func CreateStorageClass(config *rest.Config, storageClass *kstoragev1.StorageClass) error {
 	clientset, err := GetClientsetFromConfig(config)
