@@ -138,9 +138,14 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 		}
 	}
 
-	err = in.uninstallStorageOSOperator()
+	if err := in.uninstallPortalManagerConfig(storageOSCluster.Namespace); err != nil {
+		return err
+	}
+	if err := in.uninstallPortalManagerClient(storageOSCluster.Namespace); err != nil {
+		return err
+	}
 
-	return err
+	return in.uninstallStorageOSOperator()
 }
 
 func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.StorageOSCluster, upgrade bool) error {

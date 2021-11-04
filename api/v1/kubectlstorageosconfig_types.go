@@ -57,6 +57,7 @@ type Install struct {
 	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
 	StorageOSOperatorYaml       string `json:"storageOSOperatorYaml,omitempty"`
 	StorageOSClusterYaml        string `json:"storageOSClusterYaml,omitempty"`
+	StorageOSPortalConfigYaml   string `json:"storageOSPortalConfigYaml,omitempty"`
 	ResourceQuotaYaml           string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml            string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`
@@ -64,10 +65,11 @@ type Install struct {
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
+	EnablePortalManager         bool   `json:"enablePortalManager,omitempty"`
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
-	PortalKeyPath               string `json:"portalKeyPath,omitempty"`
+	PortalAPIURL                string `json:"portalAPIURL,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand

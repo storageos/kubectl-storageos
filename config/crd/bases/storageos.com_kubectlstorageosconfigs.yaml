@@ -56,6 +56,8 @@ spec:
                     type: string
                   adminUsername:
                     type: string
+                  enablePortalManager:
+                    type: boolean
                   etcdClusterYaml:
                     type: string
                   etcdEndpoints:
@@ -70,7 +72,7 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
-                  portalKeyPath:
+                  portalAPIURL:
                     type: string
                   resourceQuotaYaml:
                     type: string
@@ -83,6 +85,8 @@ spec:
                   storageOSOperatorNamespace:
                     type: string
                   storageOSOperatorYaml:
+                    type: string
+                  storageOSPortalConfigYaml:
                     type: string
                   storageOSVersion:
                     type: string

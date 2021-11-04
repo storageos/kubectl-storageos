@@ -26,8 +26,8 @@ import (
 
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
 // etcd manifests.
-// If '--skip-etcd-install' flag is set, etcd dir is not created.
-// If '--portal-key-path' flag is not set, storageos/portal dir is not created.
+// If '--skip-etcd-install' flag is set, etcd dir is not created
+// If '--portal-key-path' flag is not set, storageos/portal dir is not created..
 // - storageos
 //   - operator
 //     - storageos-operator.yaml
@@ -35,9 +35,11 @@ import (
 //   - cluster
 //     - storageos-cluster.yaml
 //     - kustomization.yaml
-//   - portal
+//   - portal-client
 //     - kustomization.yaml
-//     - secret.key
+//   - portal-config
+//     - portal-configmap.yaml
+//     - kustomization.yaml
 // - etcd
 //   - operator
 //     - etcd-operator.yaml
@@ -82,15 +84,22 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	}
 	stosSubDirs[resourceQuotaDir] = resourceQuotaFiles
 
-	if config.Spec.Install.PortalKeyPath != "" {
-		// build storageos/portal this consists of a kustomization file with a secret generator and a
-		// key file that is read from --portal-key-path and added to fs for secret creation.
-		stosPortalFiles, err := createPortalManagerFiles(config.Spec.Install.PortalKeyPath, clientConfig)
-		if err != nil {
-			return fs, err
-		}
-		stosSubDirs[portalDir] = stosPortalFiles
+	// build storageos/portal-client this consists only of a kustomization file with a secret generator
+	stosPortalClientFiles := make(map[string][]byte)
+	stosPortalClientKust, err := pullManifest(pluginversion.PortalClientLatestSupportedURL())
+	if err != nil {
+		return fs, err
 	}
+	stosPortalClientFiles[kustomizationFile] = []byte(stosPortalClientKust)
+	stosSubDirs[portalClientDir] = stosPortalClientFiles
+
+	// build storageos/portal-config
+	stosPortalConfigFiles, err := createFileWithKustPair(config.Spec.Install.StorageOSPortalConfigYaml, pluginversion.PortalConfigLatestSupportedURL(), stosPortalConfigFile, clientConfig, config.Spec.GetOperatorNamespace())
+	if err != nil {
+		return fs, err
+	}
+	stosSubDirs[portalConfigDir] = stosPortalConfigFiles
+
 	fsData[stosDir] = stosSubDirs
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
@@ -164,26 +173,6 @@ func createFileWithKustPair(yamlPath, yamlUrl, fileName string, config *rest.Con
 
 	files[kustomizationFile] = []byte(kustYamlContents)
 	return files, nil
-}
-
-// createPortalManagerFiles returns a map with two entries of
-// - keyName[keyContents]
-// - kustomization.yaml[secretGeneratorContents]
-func createPortalManagerFiles(keyPath string, config *rest.Config) (map[string][]byte, error) {
-	stosPortalFiles := make(map[string][]byte)
-	// build storageos/portal this consists only of a kustomization file with a secret generator
-	stosPortalKust, err := pullManifest(pluginversion.PortalSecretLatestSupportedURL())
-	if err != nil {
-		return stosPortalFiles, err
-	}
-	stosPortalFiles[kustomizationFile] = []byte(stosPortalKust)
-	_, keyFileName := filepath.Split(keyPath)
-	keyFile, err := createFileWithData(keyPath, "", keyFileName, config, "")
-	if err != nil {
-		return stosPortalFiles, err
-	}
-	stosPortalFiles[keyFileName] = keyFile[keyFileName]
-	return stosPortalFiles, nil
 }
 
 // createFileWithData returns a map with a single entry of [filename][filecontent]
