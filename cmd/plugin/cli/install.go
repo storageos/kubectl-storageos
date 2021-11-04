@@ -50,14 +50,14 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
-	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-configmap.yaml path or url")
+	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().Bool(installer.IncludeEtcdFlag, false, "install non-production etcd from github.com/storageos/etcd-cluster-operator")
 	cmd.Flags().Bool(installer.EtcdTLSEnabledFlag, false, "etcd cluster is tls enabled")
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of etcd endpoints")
 	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster installation")
-	cmd.Flags().Bool(installer.EnablePortalFlag, false, "enable storageos portal during installation")
+	cmd.Flags().Bool(installer.EnablePortalManagerFlag, false, "enable storageos portal manager during installation")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
@@ -65,9 +65,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username, also used as the portal clientID (plaintext)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password, also used as the portal password (plaintext)")
-	cmd.Flags().String(installer.PortalURLFlag, "", "portal url")
+	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
+	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
+	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -77,7 +77,7 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	// user specified the version
 	if config.Spec.Install.StorageOSVersion != "" {
-		if config.Spec.Install.EnablePortal {
+		if config.Spec.Install.EnablePortalManager {
 			if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
 				return err
 			}
@@ -130,7 +130,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EnablePortal, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EnablePortalFlag).Value.String())
+		config.Spec.Install.EnablePortalManager, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EnablePortalManagerFlag).Value.String())
 		if err != nil {
 			return err
 		}
@@ -160,7 +160,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.EtcdStorageClassName = cmd.Flags().Lookup(installer.EtcdStorageClassFlag).Value.String()
 		config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
 		config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
-		config.Spec.Install.PortalURL = cmd.Flags().Lookup(installer.PortalURLFlag).Value.String()
+		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -168,7 +168,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
-	config.Spec.Install.EnablePortal = viper.GetBool(installer.EnablePortalConfig)
+	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
@@ -186,7 +186,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdStorageClassName = viper.GetString(installer.EtcdStorageClassConfig)
 	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
 	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
-	config.Spec.Install.PortalURL = viper.GetString(installer.PortalURLConfig)
+	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

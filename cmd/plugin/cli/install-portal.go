@@ -52,7 +52,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos portal clientID (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos portal password (plaintext)")
-	cmd.Flags().String(installer.PortalURLFlag, "", "storageos portal url")
+	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -103,7 +103,7 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
 		config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
-		config.Spec.Install.PortalURL = cmd.Flags().Lookup(installer.PortalURLFlag).Value.String()
+		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		return nil
 	}
 	// config file read without error, set fields in new config object
@@ -113,6 +113,6 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
 	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
 	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
-	config.Spec.Install.PortalURL = viper.GetString(installer.PortalURLConfig)
+	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	return nil
 }

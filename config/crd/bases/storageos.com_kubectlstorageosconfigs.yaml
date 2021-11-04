@@ -56,7 +56,7 @@ spec:
                     type: string
                   adminUsername:
                     type: string
-                  enablePortal:
+                  enablePortalManager:
                     type: boolean
                   etcdClusterYaml:
                     type: string
@@ -72,7 +72,7 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
-                  portalURL:
+                  portalAPIURL:
                     type: string
                   resourceQuotaYaml:
                     type: string

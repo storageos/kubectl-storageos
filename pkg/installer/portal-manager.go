@@ -60,7 +60,7 @@ func (in *Installer) installPortalManagerClient() error {
 	}
 
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile),
-		buildStringForKustomize(in.stosConfig.Spec.Install.AdminUsername, in.stosConfig.Spec.Install.AdminPassword, in.stosConfig.Spec.Install.PortalURL),
+		buildStringForKustomize(in.stosConfig.Spec.Install.AdminUsername, in.stosConfig.Spec.Install.AdminPassword, in.stosConfig.Spec.Install.PortalAPIURL),
 		"literals", "secretGenerator", "0"); err != nil {
 		return err
 	}

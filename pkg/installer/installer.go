@@ -48,8 +48,8 @@ const (
 	EtcdStorageClassFlag          = "etcd-storage-class"
 	AdminUsernameFlag             = "admin-username"
 	AdminPasswordFlag             = "admin-password"
-	PortalURLFlag                 = "portal-url"
-	EnablePortalFlag              = "enable-portal"
+	PortalAPIURLFlag              = "portal-api-url"
+	EnablePortalManagerFlag       = "enable-portal-manager"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                = "spec.stackTrace"
@@ -74,8 +74,8 @@ const (
 	EtcdStorageClassConfig          = "spec.install.etcdStorageClassName"
 	AdminUsernameConfig             = "spec.install.adminUsername"
 	AdminPasswordConfig             = "spec.install.adminPassword"
-	PortalURLConfig                 = "spec.install.portalURL"
-	EnablePortalConfig              = "spec.install.enablePortal"
+	PortalAPIURLConfig              = "spec.install.portalAPIURL"
+	EnablePortalManagerConfig       = "spec.install.enablePortalManager"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
 	UninstallStosOperatorNSConfig   = "spec.uninstall.storageOSOperatorNamespace"
 

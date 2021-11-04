@@ -65,11 +65,11 @@ type Install struct {
 	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
 	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
-	EnablePortal                bool   `json:"enablePortal,omitempty"`
+	EnablePortalManager         bool   `json:"enablePortalManager,omitempty"`
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
-	PortalURL                   string `json:"portalURL,omitempty"`
+	PortalAPIURL                string `json:"portalAPIURL,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand

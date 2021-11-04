@@ -275,7 +275,7 @@ func (in *Installer) installStorageOS() error {
 		return err
 	}
 
-	if in.stosConfig.Spec.Install.EnablePortal {
+	if in.stosConfig.Spec.Install.EnablePortalManager {
 		if err := in.enablePortalManager(in.stosConfig.Spec.Install.StorageOSClusterNamespace, true); err != nil {
 			return err
 		}
