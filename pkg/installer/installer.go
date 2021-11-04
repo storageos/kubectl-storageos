@@ -365,7 +365,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return errors.WithStack(err)
 	}
 
-	configMapList, err := in.listStorageOSConfigMaps()
+	configMapList, err := pluginutils.ListConfigMaps(in.clientConfig, metav1.ListOptions{LabelSelector: stosAppLabel})
 	if err != nil {
 		return err
 	}
@@ -388,19 +388,6 @@ func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList
 	}
 
 	return stosStorageClassList, nil
-}
-
-func (in *Installer) listStorageOSConfigMaps() (*corev1.ConfigMapList, error) {
-	configMapList, err := pluginutils.ListConfigMaps(in.clientConfig, metav1.ListOptions{LabelSelector: stosAppLabel})
-	if err != nil {
-		return nil, err
-	}
-	stosConfigMapList := &corev1.ConfigMapList{}
-	for _, configMap := range configMapList.Items {
-		stosConfigMapList.Items = append(stosConfigMapList.Items, configMap)
-	}
-
-	return stosConfigMapList, nil
 }
 
 // writeSecretsToDisk writes multidoc manifest of SecretList.Items to path of on-disk filesystem
