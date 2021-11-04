@@ -95,6 +95,7 @@ const (
 	stosSecretsFile      = "storageos-secrets.yaml"
 	csiSecretsFile       = "storageos-csi-secrets.yaml"
 	stosStorageClassFile = "storageos-storageclass.yaml"
+	stosConfigMapsFile   = "storageos-configmaps.yaml"
 	etcdOperatorFile     = "etcd-operator.yaml"
 	etcdClusterFile      = "etcd-cluster.yaml"
 	kustomizationFile    = "kustomization.yaml"
@@ -326,7 +327,7 @@ func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]strin
 	return objsOfKind, nil
 }
 
-// writeBackupFileSystem writes manifests of uninstalled secrets, storageoscluster and storageclass to disk
+// writeBackupFileSystem writes manifests of uninstalled secrets, configmaps, storageoscluster and storageclass to disk
 func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.StorageOSCluster) error {
 	backupPath, err := in.getBackupPath()
 	if err != nil {
@@ -360,7 +361,15 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 	if err != nil {
 		return err
 	}
-	err = in.writeStorageClassesToDisk(storageClassList, filepath.Join(backupPath, stosStorageClassFile))
+	if err := in.writeStorageClassesToDisk(storageClassList, filepath.Join(backupPath, stosStorageClassFile)); err != nil {
+		return errors.WithStack(err)
+	}
+
+	configMapList, err := in.listStorageOSConfigMaps()
+	if err != nil {
+		return err
+	}
+	err = in.writeConfigMapsToDisk(configMapList, filepath.Join(backupPath, stosConfigMapsFile))
 
 	return errors.WithStack(err)
 }
@@ -381,6 +390,19 @@ func (in *Installer) listStorageOSStorageClasses() (*kstoragev1.StorageClassList
 	return stosStorageClassList, nil
 }
 
+func (in *Installer) listStorageOSConfigMaps() (*corev1.ConfigMapList, error) {
+	configMapList, err := pluginutils.ListConfigMaps(in.clientConfig, metav1.ListOptions{LabelSelector: stosAppLabel})
+	if err != nil {
+		return nil, err
+	}
+	stosConfigMapList := &corev1.ConfigMapList{}
+	for _, configMap := range configMapList.Items {
+		stosConfigMapList.Items = append(stosConfigMapList.Items, configMap)
+	}
+
+	return stosConfigMapList, nil
+}
+
 // writeSecretsToDisk writes multidoc manifest of SecretList.Items to path of on-disk filesystem
 func (in *Installer) writeSecretsToDisk(secretList *corev1.SecretList, path string) error {
 	if len(secretList.Items) == 0 {
@@ -391,6 +413,20 @@ func (in *Installer) writeSecretsToDisk(secretList *corev1.SecretList, path stri
 		return err
 	}
 	err = in.onDiskFileSys.WriteFile(path, secretsMultiDoc)
+
+	return errors.WithStack(err)
+}
+
+// writeConfigMapsToDisk writes multidoc manifest of ConfigMapList.Items to path of on-disk filesystem
+func (in *Installer) writeConfigMapsToDisk(configMapList *corev1.ConfigMapList, path string) error {
+	if len(configMapList.Items) == 0 {
+		return nil
+	}
+	configMapMultiDoc, err := configMapsToMultiDoc(configMapList)
+	if err != nil {
+		return err
+	}
+	err = in.onDiskFileSys.WriteFile(path, configMapMultiDoc)
 
 	return errors.WithStack(err)
 }

@@ -335,6 +335,31 @@ func secretToManifest(secret *corev1.Secret) ([]byte, error) {
 	return data, nil
 }
 
+// configMapToManifest returns a manifest for configmap
+func configMapToManifest(configMap *corev1.ConfigMap) ([]byte, error) {
+	newConfigMap := &corev1.ConfigMap{}
+	newConfigMap.APIVersion = "v1"
+	newConfigMap.Kind = "ConfigMap"
+	newConfigMap.SetName(configMap.GetName())
+	newConfigMap.SetNamespace(configMap.GetNamespace())
+	newConfigMap.SetLabels(configMap.GetLabels())
+	newConfigMap.SetAnnotations(configMap.GetAnnotations())
+	newConfigMap.SetFinalizers(configMap.GetFinalizers())
+	newConfigMap.Immutable = configMap.Immutable
+	newConfigMap.Data = configMap.Data
+	newConfigMap.BinaryData = configMap.BinaryData
+
+	data, err := json.Marshal(&newConfigMap)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	data, err = gyaml.JSONToYAML(data)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return data, nil
+}
+
 // secretsToMultiDoc returns a multidoc manifest of secrets from secretList
 func secretsToMultiDoc(secretList *corev1.SecretList) ([]byte, error) {
 	secretManifests := make([]string, 0)
@@ -346,6 +371,19 @@ func secretsToMultiDoc(secretList *corev1.SecretList) ([]byte, error) {
 		secretManifests = append(secretManifests, string(secretManifest))
 	}
 	return []byte(makeMultiDoc(secretManifests...)), nil
+}
+
+// configMapsToMultiDoc returns a multidoc manifest of configmaps from configMapList
+func configMapsToMultiDoc(configMapList *corev1.ConfigMapList) ([]byte, error) {
+	configMapManifests := make([]string, 0)
+	for _, configMap := range configMapList.Items {
+		configMapManifest, err := configMapToManifest(&configMap)
+		if err != nil {
+			return nil, err
+		}
+		configMapManifests = append(configMapManifests, string(configMapManifest))
+	}
+	return []byte(makeMultiDoc(configMapManifests...)), nil
 }
 
 // storageClassesToMultiDoc returns a multidoc manifest of secrets from secretList
