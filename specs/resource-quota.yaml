@@ -3,6 +3,9 @@ kind: ResourceQuota
 metadata:
   name: storageos-critical-pods
   namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: operator
 spec:
   hard:
     pods: 100
