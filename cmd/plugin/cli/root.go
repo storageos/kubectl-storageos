@@ -78,6 +78,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(UninstallPortalCmd())
 	cmd.AddCommand(EnablePortalCmd())
 	cmd.AddCommand(DisablePortalCmd())
+	cmd.AddCommand(CompletionCmd)
 
 	return cmd
 }
