@@ -20,9 +20,10 @@ var (
 
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "storageos",
-		Short: "StorageOS",
-		Long:  `StorageOS kubectl plugin`,
+		Use:     "kubectl-storageos",
+		Aliases: []string{"kubectl storageos"},
+		Short:   "StorageOS",
+		Long:    `StorageOS kubectl plugin`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -78,6 +79,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(UninstallPortalCmd())
 	cmd.AddCommand(EnablePortalCmd())
 	cmd.AddCommand(DisablePortalCmd())
+	cmd.AddCommand(CompletionCmd)
 
 	return cmd
 }
