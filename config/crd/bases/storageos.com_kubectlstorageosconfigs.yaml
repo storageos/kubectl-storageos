@@ -90,6 +90,8 @@ spec:
                     type: string
                   storageOSVersion:
                     type: string
+                  tenantID:
+                    type: string
                   wait:
                     type: boolean
                 type: object

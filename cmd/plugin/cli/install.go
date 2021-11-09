@@ -67,6 +67,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
+	cmd.Flags().String(installer.TenantIDFlag, "", "storageos tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 
 	viper.BindPFlags(cmd.Flags())
@@ -160,6 +161,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.EtcdStorageClassName = cmd.Flags().Lookup(installer.EtcdStorageClassFlag).Value.String()
 		config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
 		config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
+		config.Spec.Install.TenantID = cmd.Flags().Lookup(installer.TenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
@@ -186,6 +188,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdStorageClassName = viper.GetString(installer.EtcdStorageClassConfig)
 	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
 	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
+	config.Spec.Install.TenantID = viper.GetString(installer.TenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
