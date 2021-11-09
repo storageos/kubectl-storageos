@@ -9,13 +9,6 @@ import (
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
-var (
-	errNoUsername     = errors.New("admin-username not provided")
-	errNoPassword     = errors.New("admin-password not provided")
-	errNoPortalAPIURL = errors.New("portal-api-url not provided")
-	errNoTenantID     = errors.New("tenant-id not provided")
-)
-
 // EnablePortalManager applies the existing storageoscluster with enablePortalManager set to value of 'enable'.
 func (in *Installer) EnablePortalManager(enable bool) error {
 	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
@@ -48,19 +41,6 @@ func (in *Installer) enablePortalManager(storageOSClusterName string, enable boo
 
 // InstallPortalManager installs portal manager necessary components.
 func (in *Installer) InstallPortalManager() error {
-	if in.stosConfig.Spec.Install.AdminUsername == "" {
-		return errNoUsername
-	}
-	if in.stosConfig.Spec.Install.AdminPassword == "" {
-		return errNoPassword
-	}
-	if in.stosConfig.Spec.Install.PortalAPIURL == "" {
-		return errNoPortalAPIURL
-	}
-	if in.stosConfig.Spec.Install.TenantID == "" {
-		return errNoTenantID
-	}
-
 	if err := in.installPortalManagerClient(); err != nil {
 		return err
 	}
