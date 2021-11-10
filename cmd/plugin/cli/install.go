@@ -76,18 +76,19 @@ func InstallCmd() *cobra.Command {
 }
 
 func installCmd(config *apiv1.KubectlStorageOSConfig) error {
-	// user specified the version
-	if config.Spec.Install.StorageOSVersion != "" {
-		if config.Spec.Install.EnablePortalManager {
-			if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
-				return err
-			}
-			if err := installer.PortalFlagsExist(config); err != nil {
-				return err
-			}
-		}
-		version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
+	if config.Spec.Install.StorageOSVersion == "" {
+		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
+
+	if config.Spec.Install.EnablePortalManager {
+		if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
+			return err
+		}
+		if err := installer.PortalFlagsExist(config); err != nil {
+			return err
+		}
+	}
+	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 
 	if !config.Spec.Install.SkipEtcdEndpointsValidation {
 		// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
