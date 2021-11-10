@@ -78,6 +78,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
+	cmd.Flags().String(installer.TenantIDFlag, "", "storageos tenant id")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -120,6 +121,9 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	if installConfig.Spec.Install.StorageOSVersion != "" {
 		if installConfig.Spec.Install.EnablePortalManager {
 			if err := versionSupportsPortal(installConfig.Spec.Install.StorageOSVersion); err != nil {
+				return err
+			}
+			if err := portalFlagsExist(installConfig); err != nil {
 				return err
 			}
 		}
@@ -182,6 +186,8 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		config.Spec.Install.EtcdSecretName = cmd.Flags().Lookup(installer.EtcdSecretNameFlag).Value.String()
 		config.Spec.Install.AdminUsername = stringToBase64(cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String())
 		config.Spec.Install.AdminPassword = stringToBase64(cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String())
+		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
+		config.Spec.Install.TenantID = cmd.Flags().Lookup(installer.TenantIDFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -203,6 +209,8 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.StosClusterNSConfig)
 	config.Spec.Install.AdminUsername = stringToBase64(viper.GetString(installer.AdminUsernameConfig))
 	config.Spec.Install.AdminPassword = stringToBase64(viper.GetString(installer.AdminPasswordConfig))
+	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
+	config.Spec.Install.TenantID = viper.GetString(installer.TenantIDConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

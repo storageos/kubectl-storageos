@@ -69,6 +69,7 @@ type Install struct {
 	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
 	AdminUsername               string `json:"adminUsername,omitempty"`
 	AdminPassword               string `json:"adminPassword,omitempty"`
+	TenantID                    string `json:"tenantID,omitempty"`
 	PortalAPIURL                string `json:"portalAPIURL,omitempty"`
 }
 

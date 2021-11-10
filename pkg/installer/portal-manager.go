@@ -60,15 +60,23 @@ func (in *Installer) installPortalManagerClient() error {
 	}
 
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile),
-		buildStringForKustomize(in.stosConfig.Spec.Install.AdminUsername, in.stosConfig.Spec.Install.AdminPassword, in.stosConfig.Spec.Install.PortalAPIURL),
+		buildStringForKustomize(in.stosConfig.Spec.Install.AdminUsername,
+			in.stosConfig.Spec.Install.AdminPassword,
+			in.stosConfig.Spec.Install.PortalAPIURL,
+			in.stosConfig.Spec.Install.TenantID),
 		"literals", "secretGenerator", "0"); err != nil {
 		return err
 	}
 	return in.kustomizeAndApply(filepath.Join(stosDir, portalClientDir), stosPortalClientFile)
 }
 
-func buildStringForKustomize(clientID, password, portalURL string) string {
-	return fmt.Sprintf("%s%s%s%s%s%s%s", "[CLIENT_ID=", clientID, ",PASSWORD=", password, ",URL=", portalURL, "]")
+func buildStringForKustomize(clientID, password, portalURL, tenantID string) string {
+	return fmt.Sprint("[",
+		"CLIENT_ID", "=", clientID, ",",
+		"PASSWORD", "=", password, ",",
+		"URL", "=", portalURL, ",",
+		"TENANT_ID", "=", tenantID,
+		"]")
 }
 
 // UninstallPortalManager writes backup-filestem and uninstalls portal manager components.

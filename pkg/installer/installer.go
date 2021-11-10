@@ -48,6 +48,7 @@ const (
 	EtcdStorageClassFlag          = "etcd-storage-class"
 	AdminUsernameFlag             = "admin-username"
 	AdminPasswordFlag             = "admin-password"
+	TenantIDFlag                  = "tenant-id"
 	PortalAPIURLFlag              = "portal-api-url"
 	EnablePortalManagerFlag       = "enable-portal-manager"
 
@@ -74,6 +75,7 @@ const (
 	EtcdStorageClassConfig          = "spec.install.etcdStorageClassName"
 	AdminUsernameConfig             = "spec.install.adminUsername"
 	AdminPasswordConfig             = "spec.install.adminPassword"
+	TenantIDConfig                  = "spec.install.tenantID"
 	PortalAPIURLConfig              = "spec.install.portalAPIURL"
 	EnablePortalManagerConfig       = "spec.install.enablePortalManager"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"
