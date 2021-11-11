@@ -29,10 +29,6 @@ data:
       leaderElect: true
       resourceNamespace: storageos
       resourceName: storageos-portal-manager
-    iotCore:
-      project: portal-dev-321112
-      registry: customer
-      region: europe-west1
 kind: ConfigMap
 metadata:
   labels:
