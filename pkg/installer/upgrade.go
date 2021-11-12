@@ -70,11 +70,6 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 		return err
 	}
 
-	// apply the configmap manifest written to disk (now with finalizer to prevent deletion by operator)
-	if err := in.applyBackupManifestWithFinalizer(stosConfigMapsFile); err != nil {
-		return err
-	}
-
 	// if the version being uninstalled during upgrade is that of the 'old' operator (pre v2.5) existing
 	// CSI secrets are applied with finalizer to prevent deletion by operator
 	oldVersion, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
