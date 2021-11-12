@@ -30,7 +30,7 @@ const (
 
 	portalClientYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-client-secret-generator.yaml"
 
-	portalConfigYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-configmap.yaml"
+	portalConfigYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/configmap-storageos-portal-manager.yaml"
 
 	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
 	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
