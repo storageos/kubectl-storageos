@@ -2,6 +2,7 @@ package installer
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
+
+const outputCopyingPortalData = "Attempting to copy portal manager data from existing storageos-portal-client secret..."
 
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
 	// create new installer with in-mem fs of operator and cluster to be installed
@@ -106,17 +109,67 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	if err != nil {
 		return err
 	}
-	secretUsername, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiUsername")
+	secretUsername, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "username")
 	if err != nil {
 		return err
 	}
-	secretPassword, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiPassword")
+	if secretUsername == "" {
+		// also check for apiUsername (pre 2.5.0)
+		secretUsername, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiUsername")
+		if err != nil {
+			return err
+		}
+	}
+	secretPassword, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "password")
+	if err != nil {
+		return err
+	}
+	if secretPassword == "" {
+		// also check for apiPassword (pre 2.5.0)
+		secretPassword, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiPassword")
+		if err != nil {
+			return err
+		}
+	}
+	if installConfig.Spec.Install.AdminUsername == "" {
+		installConfig.Spec.Install.AdminUsername = secretUsername
+	}
+	if installConfig.Spec.Install.AdminPassword == "" {
+		installConfig.Spec.Install.AdminPassword = secretPassword
+	}
+
+	// return early if enable-portal-manager is not set
+	if !installConfig.Spec.Install.EnablePortalManager {
+		return nil
+	}
+	// if all portal flags have been set, return without reading back-up secret for portal data
+	// as values passed by flag take precedent
+	if err := PortalFlagsExist(installConfig); err == nil {
+		return nil
+	}
+
+	fmt.Println("Warning: " + err.Error())
+	fmt.Println(outputCopyingPortalData)
+
+	storageosPortalClientSecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-portal-client")
+	if err != nil {
+		return err
+	}
+	secretPortalAPIURL, err := pluginutils.GetFieldInManifest(storageosPortalClientSecret, "data", "URL")
+	if err != nil {
+		return err
+	}
+	secretTenantID, err := pluginutils.GetFieldInManifest(storageosPortalClientSecret, "data", "TENANT_ID")
 	if err != nil {
 		return err
 	}
 
-	installConfig.Spec.Install.AdminUsername = secretUsername
-	installConfig.Spec.Install.AdminPassword = secretPassword
+	if installConfig.Spec.Install.PortalAPIURL == "" {
+		installConfig.Spec.Install.PortalAPIURL = secretPortalAPIURL
+	}
+	if installConfig.Spec.Install.TenantID == "" {
+		installConfig.Spec.Install.TenantID = secretTenantID
+	}
 
 	return nil
 }

@@ -4,9 +4,18 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+)
+
+const (
+	errNoUsername     = "admin-username not provided"
+	errNoPassword     = "admin-password not provided"
+	errNoPortalAPIURL = "portal-api-url not provided"
+	errNoTenantID     = "tenant-id not provided"
 )
 
 // EnablePortalManager applies the existing storageoscluster with enablePortalManager set to value of 'enable'.
@@ -111,4 +120,25 @@ func (in *Installer) uninstallPortalManagerConfig(storageOSClusterNamespace stri
 	}
 
 	return in.kustomizeAndDelete(filepath.Join(stosDir, portalConfigDir), stosPortalConfigFile)
+}
+
+func PortalFlagsExist(config *apiv1.KubectlStorageOSConfig) error {
+	missingFlags := make([]string, 0)
+	if config.Spec.Install.AdminUsername == "" {
+		missingFlags = append(missingFlags, errNoUsername)
+	}
+	if config.Spec.Install.AdminPassword == "" {
+		missingFlags = append(missingFlags, errNoPassword)
+	}
+	if config.Spec.Install.PortalAPIURL == "" {
+		missingFlags = append(missingFlags, errNoPortalAPIURL)
+	}
+	if config.Spec.Install.TenantID == "" {
+		missingFlags = append(missingFlags, errNoTenantID)
+	}
+
+	if len(missingFlags) != 0 {
+		return fmt.Errorf(strings.Join(missingFlags, ", "))
+	}
+	return nil
 }
