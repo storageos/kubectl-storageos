@@ -84,6 +84,9 @@ func NewClientConfig() (*rest.Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, consts.ErrUnableToConstructClientConfig)
 	}
+
+	config.Timeout = time.Minute
+
 	return config, nil
 }
 
