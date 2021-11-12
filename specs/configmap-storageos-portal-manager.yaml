@@ -13,12 +13,6 @@ data:
       leaderElect: true
       resourceNamespace: storageos
       resourceName: storageos-portal-manager
-    iotCore:
-      project: portal-dev-321112
-      registry: customer
-      region: europe-west1
-      privateKeyPath: ssl/c9a7c661-efa6-47ac-9828-db09af72ca15.key
-      publicKeyPath: ssl/gcp-ca.pem
 kind: ConfigMap
 metadata:
   labels:
