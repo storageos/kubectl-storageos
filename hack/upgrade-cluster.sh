@@ -28,8 +28,8 @@ docker run --rm storageos/operator-manifests:$VERSION | \
     sed "s|RELATED_IMAGE_STORAGEOS_NODE.*|RELATED_IMAGE_STORAGEOS_NODE: ${nodeImage}|" > \
     storageos-operator.yaml
 
-cat storageos-operator.yaml | grep -e "\simage:\s"
-cat storageos-operator.yaml | grep "RELATED_IMAGE_"
+grep -e "\simage:\s" cat storageos-operator.yaml
+grep "RELATED_IMAGE_" cat storageos-operator.yaml
 
 trap cleanup EXIT
 
