@@ -9,7 +9,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-KUBECTL_STOS_VERSION ?= v1.0.0-beta.4
+KUBECTL_STOS_VERSION ?= v1.0.0-beta.6
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
