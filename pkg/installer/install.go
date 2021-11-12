@@ -2,6 +2,7 @@ package installer
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -221,7 +222,7 @@ func (in *Installer) installStorageOS() error {
 		usernamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/username",
-			Value: in.stosConfig.Spec.Install.AdminUsername,
+			Value: base64.StdEncoding.EncodeToString([]byte(in.stosConfig.Spec.Install.AdminUsername)),
 		}
 
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{usernamePatch}); err != nil {
@@ -233,7 +234,7 @@ func (in *Installer) installStorageOS() error {
 		passwordPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/data/password",
-			Value: in.stosConfig.Spec.Install.AdminPassword,
+			Value: base64.StdEncoding.EncodeToString([]byte(in.stosConfig.Spec.Install.AdminPassword)),
 		}
 
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch}); err != nil {
