@@ -69,7 +69,7 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if err := versionSupportsPortal(existingOperatorVersion); err != nil {
 		return err
 	}
-	if err := portalFlagsExist(config); err != nil {
+	if err := installer.PortalFlagsExist(config); err != nil {
 		return err
 	}
 

@@ -123,9 +123,6 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 			if err := versionSupportsPortal(installConfig.Spec.Install.StorageOSVersion); err != nil {
 				return err
 			}
-			if err := portalFlagsExist(installConfig); err != nil {
-				return err
-			}
 		}
 		version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
 	}
