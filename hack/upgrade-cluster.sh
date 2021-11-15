@@ -4,7 +4,6 @@
 # shellcheck disable=SC2223
 
 : ${VERSION:=develop}
-: ${UPGRADE:=}
 : ${EXTRA_FLAGS:=--skip-stos-cluster --wait --stack-trace}
 
 cleanup() {
@@ -33,12 +32,5 @@ grep "RELATED_IMAGE_" storageos-operator.yaml
 
 trap cleanup EXIT
 
-if [[ -z "$UPGRADE" ]]; then
-    ./bin/kubectl-storageos install --include-etcd --stos-operator-yaml storageos-operator.yaml $EXTRA_FLAGS
-    
-    docker run --rm -v ~/.kube/config:/kubeconfig -e KUBECONFIG=/kubeconfig nixery.dev/kubectl kubectl delete deployment -n storageos storageos-api-manager storageos-portal-manager
-    docker run --rm -v ~/.kube/config:/kubeconfig -e KUBECONFIG=/kubeconfig nixery.dev/kubectl kubectl delete daemonset -n storageos storageos-node
-else
-    ./bin/kubectl-storageos upgrade --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml $EXTRA_FLAGS
-fi
+./bin/kubectl-storageos upgrade --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml --enable-portal-manager $EXTRA_FLAGS
     

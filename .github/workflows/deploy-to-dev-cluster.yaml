@@ -12,8 +12,8 @@ on:
         description: Target zone
         default: "europe-west1-b"
         required: true
-      upgrade:
-        description: Force upgrade instead of re-apply. Default false ("")
+      extraFlags:
+        description: Extra flags for the installer (default --skip-stos-cluster --wait --stack-trace)
         default: ""
         required: false
 
@@ -46,4 +46,4 @@ jobs:
       - name: Update StorageOS deployment
         run: ./hack/upgrade-cluster.sh
         env:
-          UPGRADE: ${{ github.event.inputs.upgrade }}
+          EXTRA_FLAGS: ${{ github.event.inputs.extraFlags }}

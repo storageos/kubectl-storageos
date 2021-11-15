@@ -144,7 +144,7 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	}
 	// if all portal flags have been set, return without reading back-up secret for portal data
 	// as values passed by flag take precedent
-	if err := PortalFlagsExist(installConfig); err == nil {
+	if err = PortalFlagsExist(installConfig); err == nil {
 		return nil
 	}
 
