@@ -35,6 +35,9 @@ trap cleanup EXIT
 
 if [[ -z "$UPGRADE" ]]; then
     ./bin/kubectl-storageos install --include-etcd --stos-operator-yaml storageos-operator.yaml $EXTRA_FLAGS
+    
+    docker run --rm -v ~/.kube/config:/kubeconfig -e KUBECONFIG=/kubeconfig nixery.dev/kubectl kubectl delete deployment -n storageos storageos-api-manager storageos-portal-manager
+    docker run --rm -v ~/.kube/config:/kubeconfig -e KUBECONFIG=/kubeconfig nixery.dev/kubectl kubectl delete daemonset -n storageos storageos-node
 else
     ./bin/kubectl-storageos upgrade --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml $EXTRA_FLAGS
 fi
