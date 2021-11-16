@@ -17,9 +17,19 @@ The main goal of this project is to seemlessly enable StorageOS related administ
 
 * Go 1.16+
 
-Since the project is under active development there isn't a release process or pre-compiled binaries yet.  
-For now, to install the plugin you have to build your own version.
+### Download
+Download a specific binary release.
+```lang-none
+curl -sSLo kubectl-storageos.tar.gz \
+    https://github.com/storageos/kubectl-storageos/releases/download/v1.0.0-beta.7/kubectl-storageos_1.0.0-beta.7_linux_amd64.tar.gz \
+    && tar -xf kubectl-storageos.tar.gz \
+    && chmod +x kubectl-storageos \
+    && sudo mv kubectl-storageos /usr/local/bin/ \
+    && rm kubectl-storageos.tar.gz
+```
 
+### Manual Build
+You can also manually build your own version.
 ```lang-none
 # git clone https://github.com/storageos/kubectl-storageos.git
 # cd kubectl-storageos
