@@ -86,6 +86,17 @@ func UpgradeCmd() *cobra.Command {
 }
 
 func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig) error {
+	if installConfig.Spec.Install.StorageOSVersion == "" {
+		installConfig.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
+	}
+
+	if installConfig.Spec.Install.EnablePortalManager {
+		if err := versionSupportsPortal(installConfig.Spec.Install.StorageOSVersion); err != nil {
+			return err
+		}
+	}
+	version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
+
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !uninstallConfig.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
 		var err error
@@ -116,17 +127,6 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	}
 
 	// Let's start install
-
-	// user specified the version
-	if installConfig.Spec.Install.StorageOSVersion != "" {
-		if installConfig.Spec.Install.EnablePortalManager {
-			if err := versionSupportsPortal(installConfig.Spec.Install.StorageOSVersion); err != nil {
-				return err
-			}
-		}
-		version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
-	}
-
 	err = installer.Upgrade(uninstallConfig, installConfig, existingVersion)
 
 	return err
