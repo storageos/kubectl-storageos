@@ -5,3 +5,19 @@ metadata:
   namespace: storageos
 status:
   replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-api-manager
+  namespace: storageos
+status:
+  replicas: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-csi-helper
+  namespace: storageos
+status:
+  replicas: 1
