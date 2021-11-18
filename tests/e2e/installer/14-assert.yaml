@@ -1,14 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: storageos-operator
-  namespace: storageos
-status:
-  replicas: 1 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: storageos-portal-manager
   namespace: storageos
 status:
@@ -36,19 +28,3 @@ metadata:
     app.kubernetes.io/component: portal-manager
   name: storageos-portal-manager
   namespace: storageos 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: storageos-etcd-controller-manager
-  namespace: storageos-etcd
-status:
-  replicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: storageos-etcd-proxy
-  namespace: storageos-etcd
-status:
-  replicas: 1

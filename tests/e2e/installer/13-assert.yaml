@@ -1,23 +1,43 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
-  name: storageos-operator
+  name: storageos-node
   namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: control-plane
 status:
-  replicas: 1
+  numberReady: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: storageos-api-manager
   namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: api-manager
 status:
-  replicas: 2
+  readyReplicas: 2
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: storageos-csi-helper
   namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: csi
 status:
-  replicas: 1
+  readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-scheduler
+  namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: scheduler
+status:
+  readyReplicas: 1
