@@ -2,6 +2,7 @@ package installer
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -131,11 +132,20 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 			return err
 		}
 	}
+
+	decodedSecretUsername, err := base64.StdEncoding.DecodeString(secretUsername)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	if installConfig.Spec.Install.AdminUsername == "" {
-		installConfig.Spec.Install.AdminUsername = secretUsername
+		installConfig.Spec.Install.AdminUsername = string(decodedSecretUsername)
+	}
+	decodedSecretPassword, err := base64.StdEncoding.DecodeString(secretPassword)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	if installConfig.Spec.Install.AdminPassword == "" {
-		installConfig.Spec.Install.AdminPassword = secretPassword
+		installConfig.Spec.Install.AdminPassword = string(decodedSecretPassword)
 	}
 
 	// return early if enable-portal-manager is not set
@@ -164,13 +174,20 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 		return err
 	}
 
+	decodedPortalAPIURL, err := base64.StdEncoding.DecodeString(secretPortalAPIURL)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	if installConfig.Spec.Install.PortalAPIURL == "" {
-		installConfig.Spec.Install.PortalAPIURL = secretPortalAPIURL
+		installConfig.Spec.Install.PortalAPIURL = string(decodedPortalAPIURL)
+	}
+	decodedTenantID, err := base64.StdEncoding.DecodeString(secretTenantID)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	if installConfig.Spec.Install.TenantID == "" {
-		installConfig.Spec.Install.TenantID = secretTenantID
+		installConfig.Spec.Install.TenantID = string(decodedTenantID)
 	}
-
 	return nil
 }
 
