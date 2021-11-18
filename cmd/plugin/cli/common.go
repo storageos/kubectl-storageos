@@ -36,7 +36,7 @@ func etcdEndpointsPrompt() (string, error) {
 
 // skipNamespaceDeletionPrompt uses promptui to prompt the user to enter decision of skipping namespace deletion
 func skipNamespaceDeletionPrompt() (bool, error) {
-	logger.Printf("   Please confirm namespace deletion.")
+	logger.Printf("   Please confirm namespace deletion.\n   Warning: protected namespaces (default, kube-system, kube-node-lease, kube-public) cannot be deleted by kubectl-storageos.")
 	yesValues := map[string]bool{
 		"y":   true,
 		"yes": true,
