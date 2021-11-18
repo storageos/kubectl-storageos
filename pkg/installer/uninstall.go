@@ -31,6 +31,9 @@ const (
 	errStosUninstallAborted = `
 	StorageOS uninstall aborted`
 
+	errProtectedNamespace = `
+	StorageOS components exist in protected namespace %s, you must enable --skip-namespace-deletion to uninstall successfully.`
+
 	errPVCsExist = `
 	Discovered bound PVC [%s/%s] provisioned by StorageOS storageclass provisioner [` + stosSCProvisioner + `].
 	No PVCs should be bound to StorageOS volumes before uninstalling ETCD.
@@ -51,7 +54,10 @@ const (
 )
 
 var protectedNamespaces = map[string]bool{
-	"kube-system": true,
+	"kube-system":     true,
+	"kube-node-lease": true,
+	"kube-public":     true,
+	"default":         true,
 }
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
@@ -109,6 +115,11 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 			return err
 		}
 	}
+	if !in.stosConfig.Spec.SkipNamespaceDeletion {
+		if err := in.checkForProtectedNamespaces(storageOSCluster); err != nil {
+			return errors.Wrap(err, errStosUninstallAborted)
+		}
+	}
 
 	if !upgrade && in.distribution == pluginutils.DistributionGKE {
 		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
@@ -132,7 +143,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 
 		// StorageOS cluster resources should be in a different namespace, on that case need to delete
 		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-			if err = in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
+			if err := in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
 				return err
 			}
 		}
@@ -315,6 +326,25 @@ func (in *Installer) uninstallEtcdOperator() error {
 	err := in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 
 	return err
+}
+
+func (in *Installer) checkForProtectedNamespaces(storageOSCluster *operatorapi.StorageOSCluster) error {
+	if _, ok := protectedNamespaces[in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace]; ok {
+		return fmt.Errorf(errProtectedNamespace, in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace)
+	}
+	if storageOSCluster == nil {
+		return nil
+	}
+	if _, ok := protectedNamespaces[storageOSCluster.Namespace]; ok {
+		return fmt.Errorf(errProtectedNamespace, storageOSCluster.Namespace)
+	}
+	if storageOSCluster.Spec.Namespace == "" {
+		return nil
+	}
+	if _, ok := protectedNamespaces[storageOSCluster.Spec.Namespace]; ok {
+		return fmt.Errorf(errProtectedNamespace, storageOSCluster.Spec.Namespace)
+	}
+	return nil
 }
 
 // storageOSPVCs returns a PersistenVolumeClaimList of bound PVCs provisioned by storageos.
