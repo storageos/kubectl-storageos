@@ -2,6 +2,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
 - ./tests/e2e
-kindConfig: tests/e2e/kind-config.yaml
+kindConfig: tests/e2e/kind-config-latest.yaml
 startKIND: true
 timeout: 300 
