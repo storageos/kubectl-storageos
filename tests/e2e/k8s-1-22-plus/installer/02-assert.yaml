@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: ReplicaSet 
+metadata:
+  name: storageos-etcd-0
+  namespace: etcd-install-full
+status:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet 
+metadata:
+  name: storageos-etcd-1
+  namespace: etcd-install-full
+status:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet 
+metadata:
+  name: storageos-etcd-2
+  namespace: etcd-install-full
+status:
+  replicas: 1 

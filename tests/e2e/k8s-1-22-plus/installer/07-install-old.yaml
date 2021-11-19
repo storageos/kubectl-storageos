@@ -1,0 +1,4 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl-storageos install --stos-version=develop --stos-operator-namespace=storageos-operator --etcd-endpoints=storageos-etcd.etcd-install-full:2379
