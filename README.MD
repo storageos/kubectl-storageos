@@ -1,8 +1,9 @@
 # StorageOS kubectl plugin
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/storageos/kubectl-storageos)](https://goreportcard.com/report/github.com/storageos/kubectl-storageos)
-[![e2e test](https://github.com/storageos/kubectl-storageos/actions/workflows/kuttl-e2e-test.yaml/badge.svg)](https://github.com/storageos/kubectl-storageos/actions/workflows/kuttl-e2e-test.yaml)
+[![e2e test](https://github.com/storageos/kubectl-storageos/actions/workflows/kuttl-e2e-test-latest.yaml/badge.svg)](https://github.com/storageos/kubectl-storageos/actions/workflows/kuttl-e2e-test.yaml)
 [![CodeQL](https://github.com/storageos/kubectl-storageos/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/storageos/kubectl-storageos/actions/workflows/codeql-analysis.yml)
+[![GitHub Super-Linter](https://github.com/storageos/kubectl-storageos/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 [![Active](http://img.shields.io/badge/Status-Active-green.svg)](https://github.com/storageos/kubectl-storageos)
 [![PR's Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](https://github.com/storageos/kubectl-storageos/pulls)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
