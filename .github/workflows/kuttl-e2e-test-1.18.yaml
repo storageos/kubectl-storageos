@@ -1,4 +1,4 @@
-name: kuttl e2e test
+name: kuttl e2e test 1.18
 
 on: [push, pull_request]
 
@@ -22,5 +22,5 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Run kuttl
-        run: sudo kubectl-kuttl test --config tests/e2e/kuttl-test.yaml
+      - name: Run kuttl 1.18
+        run: sudo kubectl-kuttl test --config tests/e2e/k8s-1-21-minus/kuttl-test.yaml --kind-config tests/e2e/k8s-1-21-minus/kind-versions/kind-config-1.18.yaml

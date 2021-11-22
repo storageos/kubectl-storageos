@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+- ./tests/e2e/k8s-1-21-minus
+kindConfig: tests/e2e/k8s-1-21-minus/kind-config-1.21.yaml
+#startKIND: true
+timeout: 300 

@@ -176,12 +176,8 @@ func (in *Installer) installStorageOS() error {
 			return err
 		}
 	}
-	fsStosClusterNamespace, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "namespace")
-	if err != nil {
-		return err
-	}
 
-	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != fsStosClusterNamespace {
+	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != in.stosConfig.Spec.Install.StorageOSOperatorNamespace {
 		// apply the provided storageos cluster ns
 		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
 			return err
