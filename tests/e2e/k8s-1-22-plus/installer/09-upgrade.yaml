@@ -1,5 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-        - command: sleep 2m
-        - command: kubectl-storageos upgrade --uninstall-stos-operator-namespace=storageos-operator --install-stos-operator-namespace=storageos --skip-namespace-deletion

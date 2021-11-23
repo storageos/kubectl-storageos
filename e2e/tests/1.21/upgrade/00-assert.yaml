@@ -1,0 +1,19 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 120
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-etcd-controller-manager
+  namespace: storageos-etcd
+status:
+  readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-etcd-proxy
+  namespace: storageos-etcd
+status:
+  readyReplicas: 1

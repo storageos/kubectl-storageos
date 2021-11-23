@@ -22,5 +22,7 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Run kuttl 1.20
-        run: sudo kubectl-kuttl test --config tests/e2e/k8s-1-21-minus/kuttl-test.yaml --kind-config tests/e2e/k8s-1-21-minus/kind-versions/kind-config-1.20.yaml
+      - name: Run kuttl installer 1.20
+        run: sudo kubectl-kuttl test --config e2e/kuttl/installer-1.20.yaml
+      - name: Run kuttl upgrade 1.20
+        run: sudo kubectl-kuttl test --config e2e/kuttl/upgrade-1.20.yaml

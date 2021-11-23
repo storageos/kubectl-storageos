@@ -1,4 +1,4 @@
-name: kuttl e2e test 1.18
+name: kuttl e2e test 1.22 
 
 on: [push, pull_request]
 
@@ -22,7 +22,7 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Run kuttl installer 1.18
-        run: sudo kubectl-kuttl test --config e2e/kuttl/installer-1.18.yaml
-      - name: Run kuttl upgrade 1.18
-        run: sudo kubectl-kuttl test --config e2e/kuttl/upgrade-1.18.yaml
+      - name: Run kuttl installer 1.22
+        run: sudo kubectl-kuttl test --config e2e/kuttl/installer-1.22.yaml
+      - name: Run kuttl upgrade 1.22
+        run: sudo kubectl-kuttl test --config e2e/kuttl/upgrade-1.22.yaml
