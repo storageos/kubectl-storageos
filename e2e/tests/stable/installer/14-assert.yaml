@@ -19,7 +19,7 @@ data:
       port: 9443
     leaderElection:
       leaderElect: true
-      resourceNamespace: storageos
+      resourceNamespace: stos-cluster-install-skip-etcd-config
       resourceName: storageos-portal-manager
 kind: ConfigMap
 metadata:
@@ -27,4 +27,4 @@ metadata:
     app: storageos
     app.kubernetes.io/component: portal-manager
   name: storageos-portal-manager
-  namespace: storageos 
+  namespace: storageos
