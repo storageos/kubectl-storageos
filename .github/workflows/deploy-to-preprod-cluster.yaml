@@ -1,4 +1,4 @@
-name: Deploy to dev cluster
+name: Deploy to preprod cluster
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     inputs:
       project:
         description: Google Cloud project
-        default: "portal-dev-321112"
+        default: "portal-preprod-331817"
         required: true
       zone:
         description: Target zone
@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.DH_USERNAME }}
           password: ${{ secrets.DH_PASSWORD }}
       - name: Persist Service account key
-        run: echo -n '${{ secrets.GOOGLE_DEV_SA_KEY }}' > ${{ github.event.inputs.project }}.json
+        run: echo -n '${{ secrets.GOOGLE_PREPROD_SA_KEY }}' > ${{ github.event.inputs.project }}.json
       - name: Fetch Kubeconfig
         run: ./hack/fetch-kube-congif.sh
         env:
