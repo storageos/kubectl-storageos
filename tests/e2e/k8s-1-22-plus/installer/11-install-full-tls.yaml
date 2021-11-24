@@ -1,5 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: ../../../../hack/remove-config.sh
-  - command: kubectl storageos install --include-etcd --etcd-tls-enabled --etcd-secret-name=test-secret

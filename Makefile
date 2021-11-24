@@ -1,3 +1,4 @@
+.PHONY: e2e
 
 # Image URL to use all building/pushing image targets
 IMG ?= storageos/kubectl-storageos:test
@@ -60,7 +61,8 @@ test: fmt vet generate ## Run tests.
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ${BUILDFLAGS} github.com/storageos/kubectl-storageos/...
 
 e2e: ## Run e2e tests against latest supported k8s cluster.  
-	kubectl-kuttl test --config tests/e2e/k8s-1-22-plus/kuttl-test.yaml
+	kubectl-kuttl test --config e2e/kuttl/installer-1.22.yaml
+	kubectl-kuttl test --config e2e/kuttl/upgrade-1.22.yaml
 
 ##@ Build
 
