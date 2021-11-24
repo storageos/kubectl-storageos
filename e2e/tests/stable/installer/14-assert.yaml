@@ -19,7 +19,7 @@ data:
       port: 9443
     leaderElection:
       leaderElect: true
-      resourceNamespace: stos-cluster-install-skip-etcd-config
+      resourceNamespace: storageos
       resourceName: storageos-portal-manager
 kind: ConfigMap
 metadata:
