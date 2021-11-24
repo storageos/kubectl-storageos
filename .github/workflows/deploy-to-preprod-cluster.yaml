@@ -10,7 +10,7 @@ on:
         required: true
       zone:
         description: Target zone
-        default: "europe-west1-b"
+        default: "europe-west2-b"
         required: true
       cluster:
         description: Target cluster
