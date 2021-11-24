@@ -50,8 +50,6 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-configmap.yaml path or url")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos portal clientID (plaintext)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos portal password (plaintext)")
 	cmd.Flags().String(installer.TenantIDFlag, "", "storageos tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
 
@@ -69,7 +67,10 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if err := versionSupportsPortal(existingOperatorVersion); err != nil {
 		return err
 	}
-	if err := installer.PortalFlagsExist(config); err != nil {
+	if err := installer.FlagsAreSet(map[string]string{
+		installer.TenantIDFlag:     config.Spec.Install.TenantID,
+		installer.PortalAPIURLFlag: config.Spec.Install.PortalAPIURL,
+	}); err != nil {
 		return err
 	}
 
