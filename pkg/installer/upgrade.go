@@ -86,12 +86,47 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 		}
 	}
 
+	// if no storageos-cluster.yaml has been passed to the cli, use the backed-up storageos cluster.
+	if installConfig.Spec.Install.StorageOSClusterYaml == "" {
+		if err := in.copyStorageOSClusterToMemory(); err != nil {
+			return err
+		}
+	}
 	// discover uninstalled secret username and password for upgrade. Here we use (1) the (un)installer
 	// as it contains the on-disk FS of the uninstalled secrets and (2) the installConfig so we can
 	// set secret username and password in the secret manifest to be installed later
 	err = in.copyStorageOSSecretData(installConfig)
 
 	return err
+}
+
+// copyStorageOSClusterToMemory takes the (uninstalled) on-disk storageos-cluster manifest and combines it with
+// the installer's in-memory storageos-api secret to create a multi-doc storageos-cluster.yaml. This manifest
+// is written to the installer's in-memory fs for installation. Thus maintaining the original cluster's specs.
+func (in *Installer) copyStorageOSClusterToMemory() error {
+	backupPath, err := in.getBackupPath()
+	if err != nil {
+		return err
+	}
+
+	onDiskStosClusterManifest, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosClusterFile))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	inMemStosClusterManifest, err := in.fileSys.ReadFile(filepath.Join(stosDir, clusterDir, stosClusterFile))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	inMemStosAPISecret, err := pluginutils.GetManifestFromMultiDocByKind(string(inMemStosClusterManifest), "Secret")
+	if err != nil {
+		return err
+	}
+
+	stosClusterManifest := makeMultiDoc(string(onDiskStosClusterManifest), inMemStosAPISecret)
+
+	return in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest))
 }
 
 // copyStorageOSSecretData uses the (un)installer's on-disk filesystem to read the username and password
