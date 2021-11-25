@@ -50,8 +50,6 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-configmap.yaml path or url")
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
-	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos portal clientID (plaintext)")
-	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos portal password (plaintext)")
 	cmd.Flags().String(installer.TenantIDFlag, "", "storageos tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
 
@@ -69,7 +67,10 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if err := versionSupportsPortal(existingOperatorVersion); err != nil {
 		return err
 	}
-	if err := installer.PortalFlagsExist(config); err != nil {
+	if err := installer.FlagsAreSet(map[string]string{
+		installer.TenantIDFlag:     config.Spec.Install.TenantID,
+		installer.PortalAPIURLFlag: config.Spec.Install.PortalAPIURL,
+	}); err != nil {
 		return err
 	}
 
@@ -105,8 +106,6 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterNamespace = cmd.Flags().Lookup(installer.StosClusterNSFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
-		config.Spec.Install.AdminUsername = cmd.Flags().Lookup(installer.AdminUsernameFlag).Value.String()
-		config.Spec.Install.AdminPassword = cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.TenantID = cmd.Flags().Lookup(installer.TenantIDFlag).Value.String()
 		return nil
@@ -116,8 +115,6 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.StosPortalConfigYamlConfig)
 	config.Spec.Install.StorageOSClusterNamespace = viper.GetString(installer.StosClusterNSConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
-	config.Spec.Install.AdminUsername = viper.GetString(installer.AdminUsernameConfig)
-	config.Spec.Install.AdminPassword = viper.GetString(installer.AdminPasswordConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.Spec.Install.TenantID = viper.GetString(installer.TenantIDConfig)
 	return nil

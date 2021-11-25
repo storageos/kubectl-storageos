@@ -110,51 +110,32 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	if err != nil {
 		return err
 	}
-	secretUsername, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "username")
+	decodedSecretUsername, err := in.getDecodedAPISecretUsername(storageosAPISecret)
 	if err != nil {
 		return err
 	}
-	if secretUsername == "" {
-		// also check for apiUsername (pre 2.5.0)
-		secretUsername, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiUsername")
-		if err != nil {
-			return err
-		}
-	}
-	secretPassword, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "password")
+	decodedSecretPassword, err := in.getDecodedAPISecretPassword(storageosAPISecret)
 	if err != nil {
 		return err
-	}
-	if secretPassword == "" {
-		// also check for apiPassword (pre 2.5.0)
-		secretPassword, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiPassword")
-		if err != nil {
-			return err
-		}
 	}
 
-	decodedSecretUsername, err := base64.StdEncoding.DecodeString(secretUsername)
-	if err != nil {
-		return errors.WithStack(err)
-	}
 	if installConfig.Spec.Install.AdminUsername == "" {
-		installConfig.Spec.Install.AdminUsername = string(decodedSecretUsername)
-	}
-	decodedSecretPassword, err := base64.StdEncoding.DecodeString(secretPassword)
-	if err != nil {
-		return errors.WithStack(err)
+		installConfig.Spec.Install.AdminUsername = decodedSecretUsername
 	}
 	if installConfig.Spec.Install.AdminPassword == "" {
-		installConfig.Spec.Install.AdminPassword = string(decodedSecretPassword)
+		installConfig.Spec.Install.AdminPassword = decodedSecretPassword
 	}
 
 	// return early if enable-portal-manager is not set
 	if !installConfig.Spec.Install.EnablePortalManager {
 		return nil
 	}
-	// if all portal flags have been set, return without reading back-up secret for portal data
+	// if --tenant-id and --portal-api-url have been set, return without reading back-up secret for portal data
 	// as values passed by flag take precedent
-	if err = PortalFlagsExist(installConfig); err == nil {
+	if err = FlagsAreSet(map[string]string{
+		TenantIDFlag:     in.stosConfig.Spec.Install.TenantID,
+		PortalAPIURLFlag: in.stosConfig.Spec.Install.PortalAPIURL,
+	}); err == nil {
 		return nil
 	}
 

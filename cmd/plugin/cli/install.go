@@ -84,7 +84,12 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
 			return err
 		}
-		if err := installer.PortalFlagsExist(config); err != nil {
+		if err := installer.FlagsAreSet(map[string]string{
+			installer.AdminUsernameFlag: config.Spec.Install.AdminUsername,
+			installer.AdminPasswordFlag: config.Spec.Install.AdminPassword,
+			installer.TenantIDFlag:      config.Spec.Install.TenantID,
+			installer.PortalAPIURLFlag:  config.Spec.Install.PortalAPIURL,
+		}); err != nil {
 			return err
 		}
 	}

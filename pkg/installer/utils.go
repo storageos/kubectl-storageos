@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/kustomize/api/filesys"
 )
 
+const errFlagsNotSet = "The following flags have not been set and are required to perform this command:"
+
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
 // etcd manifests.
 // If '--skip-etcd-install' flag is set, etcd dir is not created
@@ -438,4 +440,19 @@ func collectErrors(errChan <-chan error) error {
 			mErr.errors = append(mErr.errors, err.Error())
 		}
 	}
+}
+
+// FlagsAreSet takes a map[string]string of flag-name:flag-value and returns an error listing
+// all flag-names in 'flags' map that have not been set.
+func FlagsAreSet(flags map[string]string) error {
+	missingFlags := make([]string, 0)
+	for flagName, flagValue := range flags {
+		if flagValue == "" {
+			missingFlags = append(missingFlags, flagName)
+		}
+	}
+	if len(missingFlags) != 0 {
+		return fmt.Errorf(errFlagsNotSet + strings.Join(missingFlags, ","))
+	}
+	return nil
 }

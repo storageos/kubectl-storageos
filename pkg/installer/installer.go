@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -441,4 +442,44 @@ func (in *Installer) getBackupPath() (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return filepath.Join(homeDir, kubeDir, stosDir, fmt.Sprintf("%s%v", uninstallDirPrefix, in.kubeClusterID)), nil
+}
+
+func (in *Installer) getDecodedAPISecretUsername(storageosAPISecret string) (string, error) {
+	secretUsername, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "username")
+	if err != nil {
+		return "", err
+	}
+	if secretUsername == "" {
+		// also check for apiUsername (pre 2.5.0)
+		secretUsername, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiUsername")
+		if err != nil {
+			return "", err
+		}
+	}
+	decodedSecretUsername, err := base64.StdEncoding.DecodeString(secretUsername)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return string(decodedSecretUsername), nil
+}
+
+func (in *Installer) getDecodedAPISecretPassword(storageosAPISecret string) (string, error) {
+	secretPassword, err := pluginutils.GetFieldInManifest(storageosAPISecret, "data", "password")
+	if err != nil {
+		return "", err
+	}
+	if secretPassword == "" {
+		// also check for apiPassword (pre 2.5.0)
+		secretPassword, err = pluginutils.GetFieldInManifest(storageosAPISecret, "data", "apiPassword")
+		if err != nil {
+			return "", err
+		}
+	}
+	decodedSecretPassword, err := base64.StdEncoding.DecodeString(secretPassword)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return string(decodedSecretPassword), nil
 }
