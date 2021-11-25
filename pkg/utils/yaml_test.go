@@ -281,6 +281,110 @@ spec:
 	}
 }
 
+func TestGetFieldInManifestiMultiSearch(t *testing.T) {
+	tcases := []struct {
+		name        string
+		manifest    string
+		searchPaths [][]string
+		expString   string
+		expError    bool
+	}{
+		{
+			name: "find pod name",
+			manifest: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-pod
+  namespace: default
+  labels:
+    app: java
+  annotations:
+    a.b.c: d.e.f
+spec:
+  templates:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+`,
+			searchPaths: [][]string{{"metadata", "testname"}, {"metadata", "name"}},
+			expString:   "test-pod",
+		},
+		{
+			name: "find pod namespace",
+			manifest: `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-pod
+  namespace: default
+  labels:
+    app: java
+  annotations:
+    a.b.c: d.e.f
+spec:
+  templates:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+`,
+			searchPaths: [][]string{{"metadata", "namespace"}},
+			expString:   "default",
+		},
+		{
+			name: "find secret password",
+			manifest: `
+apiVersion: v1
+data:
+  apiPassword: c3RvcmFnZW9z
+  apiUsername: c3RvcmFnZW9z
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    app: storageos
+  name: storageos-api
+  namespace: storageos-operator
+type: kubernetes.io/storageos
+`,
+			searchPaths: [][]string{{"data", "password"}, {"data", "apiPassword"}},
+			expString:   "c3RvcmFnZW9z",
+		},
+		{
+			name: "find secret username",
+			manifest: `
+apiVersion: v1
+data:
+  apiPassword: c3RvcmFnZW9z
+  apiUsername: c3RvcmFnZW9z
+kind: Secret
+metadata:
+  creationTimestamp: null
+  labels:
+    app: storageos
+  name: storageos-api
+  namespace: storageos-operator
+type: kubernetes.io/storageos
+`,
+			searchPaths: [][]string{{"data", "name"}, {"data", "apiUsername"}, {"data", "username"}},
+			expString:   "c3RvcmFnZW9z",
+		},
+	}
+	for _, tc := range tcases {
+		field, err := GetFieldInManifestMultiSearch(tc.manifest, tc.searchPaths)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+		}
+		if field != tc.expString {
+			t.Errorf("expected %v, got %v", tc.expString, field)
+		}
+	}
+}
+
 func TestAddPatchesToKustomize(t *testing.T) {
 	tcases := []struct {
 		name       string
