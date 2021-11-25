@@ -141,7 +141,6 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
 	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-api")
 	if err != nil {
 		return err
