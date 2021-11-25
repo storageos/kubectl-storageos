@@ -269,10 +269,7 @@ func (in *Installer) installStorageOS() error {
 	}
 
 	if in.stosConfig.Spec.Install.EnablePortalManager {
-		if err := in.installPortalManagerClient(); err != nil {
-			return err
-		}
-		if err := in.installPortalManagerConfig(); err != nil {
+		if err := in.InstallPortalManager(); err != nil {
 			return err
 		}
 		if err := in.enablePortalManager(fsStosClusterName, true); err != nil {
