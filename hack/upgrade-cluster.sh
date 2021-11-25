@@ -32,5 +32,5 @@ grep "RELATED_IMAGE_" storageos-operator.yaml
 
 trap cleanup EXIT
 
-./bin/kubectl-storageos upgrade --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml --enable-portal-manager $EXTRA_FLAGS
+./bin/kubectl-storageos upgrade --stos-version $VERSION --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml --enable-portal-manager $EXTRA_FLAGS
     
