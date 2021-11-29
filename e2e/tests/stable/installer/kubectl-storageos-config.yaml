@@ -13,7 +13,7 @@ spec:
     enablePortalManager: true
     adminUsername: storageos
     adminPassword: storageos
-    portalUsername: storageosportal
-    portalPassword: storageosportal
+    portalClientID: storageosportal
+    portalSecret: storageosportal
     tenantID: storageos
     portalAPIURL: storageos
