@@ -2,7 +2,6 @@ package installer
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -14,7 +13,19 @@ import (
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
-const outputCopyingPortalData = "Attempting to copy portal manager data from existing storageos-portal-client secret..."
+const (
+	outputCopyingPortalData  = "Attempting to copy portal manager data from existing storageos-portal-client secret..."
+	errPortalManagerNotFound = `
+	Portal manager data necessary to perform upgrade was not found locally.
+
+	Please use the following flags to configure portal manager:
+
+	--portal-client-id
+	--portal-secret
+	--portal-api-url
+	--tenant-id
+	`
+)
 
 func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
 	// create new installer with in-mem fs of operator and cluster to be installed
@@ -129,9 +140,100 @@ func (in *Installer) copyStorageOSClusterToMemory() error {
 	return in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest))
 }
 
-// copyStorageOSSecretData uses the (un)installer's on-disk filesystem to read the username and password
+// copyStorageOSAPIData uses the (un)installer's on-disk filesystem to read the username and password
 // of the storageos secret which is to be uninstalled. This data is then copied to the installConfig so
 // that it can be added to the new storageos secret to be created during the install phase of the upgrade
+func (in *Installer) copyStorageOSAPIData(installConfig *apiv1.KubectlStorageOSConfig, stosSecrets string) error {
+	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(stosSecrets, "storageos-api")
+	if err != nil {
+		return err
+	}
+
+	// need to search both apiUsername (pre 2.5.0) and username
+	decodedAdminUsername, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifestMultiSearch(
+			storageosAPISecret, [][]string{{"data", "apiUsername"}, {"data", "username"}})
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.AdminUsername == "" {
+		installConfig.Spec.Install.AdminUsername = decodedAdminUsername
+	}
+
+	// need to search both apiPassword (pre 2.5.0) and password
+	decodedAdminPassword, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifestMultiSearch(
+			storageosAPISecret, [][]string{{"data", "apiPassword"}, {"data", "password"}})
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.AdminPassword == "" {
+		installConfig.Spec.Install.AdminPassword = decodedAdminPassword
+	}
+
+	return nil
+}
+
+// copyStorageOSPortalClientData uses the (un)installer's on-disk filesystem to read the portal-username,
+// portal-password, tenant-id and portal-api-url of the portal client secret which is to be uninstalled.
+// This data is then copied to the installConfig so that it can be added to the new storageos portal client
+// to be created during the install phase of the upgrade
+func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlStorageOSConfig, stosSecrets string) error {
+	storageosPortalClientSecret, err := pluginutils.GetManifestFromMultiDocByName(stosSecrets, "storageos-portal-client")
+	if err != nil {
+		return errors.Wrap(err, errPortalManagerNotFound)
+	}
+
+	decodedPortalClientID, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifest(
+			storageosPortalClientSecret, "data", "CLIENT_ID")
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.PortalClientID == "" {
+		installConfig.Spec.Install.PortalClientID = decodedPortalClientID
+	}
+
+	decodedPortalSecret, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifest(
+			storageosPortalClientSecret, "data", "PASSWORD")
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.PortalSecret == "" {
+		installConfig.Spec.Install.PortalSecret = decodedPortalSecret
+	}
+
+	decodedPortalTenantID, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifest(
+			storageosPortalClientSecret, "data", "TENANT_ID")
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.TenantID == "" {
+		installConfig.Spec.Install.TenantID = decodedPortalTenantID
+	}
+
+	decodedPortalAPIURL, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+		return pluginutils.GetFieldInManifest(
+			storageosPortalClientSecret, "data", "URL")
+	})
+	if err != nil {
+		return err
+	}
+	if installConfig.Spec.Install.PortalAPIURL == "" {
+		installConfig.Spec.Install.PortalAPIURL = decodedPortalAPIURL
+	}
+
+	return nil
+}
+
+// copyStorageOSSecretData
 func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorageOSConfig) error {
 	backupPath, err := in.getBackupPath()
 	if err != nil {
@@ -141,35 +243,22 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-api")
-	if err != nil {
-		return err
-	}
-	decodedSecretUsername, err := in.getDecodedAPISecretUsername(storageosAPISecret)
-	if err != nil {
-		return err
-	}
-	decodedSecretPassword, err := in.getDecodedAPISecretPassword(storageosAPISecret)
-	if err != nil {
-		return err
-	}
 
-	if installConfig.Spec.Install.AdminUsername == "" {
-		installConfig.Spec.Install.AdminUsername = decodedSecretUsername
-	}
-	if installConfig.Spec.Install.AdminPassword == "" {
-		installConfig.Spec.Install.AdminPassword = decodedSecretPassword
+	if err := in.copyStorageOSAPIData(installConfig, string(stosSecrets)); err != nil {
+		return err
 	}
 
 	// return early if enable-portal-manager is not set
 	if !installConfig.Spec.Install.EnablePortalManager {
 		return nil
 	}
-	// if --tenant-id and --portal-api-url have been set, return without reading back-up secret for portal data
+	// if all portal-manager flags have been set, return without reading back-up secret for portal data
 	// as values passed by flag take precedent
 	if err = FlagsAreSet(map[string]string{
-		TenantIDFlag:     in.stosConfig.Spec.Install.TenantID,
-		PortalAPIURLFlag: in.stosConfig.Spec.Install.PortalAPIURL,
+		PortalClientIDFlag: in.stosConfig.Spec.Install.PortalClientID,
+		PortalSecretFlag:   in.stosConfig.Spec.Install.PortalSecret,
+		TenantIDFlag:       in.stosConfig.Spec.Install.TenantID,
+		PortalAPIURLFlag:   in.stosConfig.Spec.Install.PortalAPIURL,
 	}); err == nil {
 		return nil
 	}
@@ -177,34 +266,7 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	fmt.Println("Warning: " + err.Error())
 	fmt.Println(outputCopyingPortalData)
 
-	storageosPortalClientSecret, err := pluginutils.GetManifestFromMultiDocByName(string(stosSecrets), "storageos-portal-client")
-	if err != nil {
-		return err
-	}
-	secretPortalAPIURL, err := pluginutils.GetFieldInManifest(storageosPortalClientSecret, "data", "URL")
-	if err != nil {
-		return err
-	}
-	secretTenantID, err := pluginutils.GetFieldInManifest(storageosPortalClientSecret, "data", "TENANT_ID")
-	if err != nil {
-		return err
-	}
-
-	decodedPortalAPIURL, err := base64.StdEncoding.DecodeString(secretPortalAPIURL)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if installConfig.Spec.Install.PortalAPIURL == "" {
-		installConfig.Spec.Install.PortalAPIURL = string(decodedPortalAPIURL)
-	}
-	decodedTenantID, err := base64.StdEncoding.DecodeString(secretTenantID)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if installConfig.Spec.Install.TenantID == "" {
-		installConfig.Spec.Install.TenantID = string(decodedTenantID)
-	}
-	return nil
+	return in.copyStorageOSPortalClientData(installConfig, string(stosSecrets))
 }
 
 // applyBackupManifest applies file from the (un)installer's on-disk filesystem with finalizer

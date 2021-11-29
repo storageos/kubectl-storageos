@@ -41,27 +41,6 @@ func (in *Installer) enablePortalManager(storageOSClusterName string, enable boo
 
 // InstallPortalManager installs portal manager necessary components.
 func (in *Installer) InstallPortalManager() error {
-	stosCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
-	if err != nil {
-		return err
-	}
-	storageosAPISecret, err := pluginutils.GetSecret(in.clientConfig, "storageos-api", stosCluster.Namespace)
-	if err != nil {
-		return err
-	}
-
-	storageosAPISecretManifest, err := secretToManifest(storageosAPISecret)
-	if err != nil {
-		return err
-	}
-	in.stosConfig.Spec.Install.AdminUsername, err = in.getDecodedAPISecretUsername(string(storageosAPISecretManifest))
-	if err != nil {
-		return err
-	}
-	in.stosConfig.Spec.Install.AdminPassword, err = in.getDecodedAPISecretPassword(string(storageosAPISecretManifest))
-	if err != nil {
-		return err
-	}
 	if err := in.installPortalManagerClient(); err != nil {
 		return err
 	}
@@ -81,8 +60,8 @@ func (in *Installer) installPortalManagerClient() error {
 	}
 
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile),
-		buildStringForKustomize(in.stosConfig.Spec.Install.AdminUsername,
-			in.stosConfig.Spec.Install.AdminPassword,
+		buildStringForKustomize(in.stosConfig.Spec.Install.PortalClientID,
+			in.stosConfig.Spec.Install.PortalSecret,
 			in.stosConfig.Spec.Install.PortalAPIURL,
 			in.stosConfig.Spec.Install.TenantID),
 		"literals", "secretGenerator", "0"); err != nil {

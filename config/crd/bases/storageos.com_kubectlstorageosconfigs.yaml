@@ -74,6 +74,10 @@ spec:
                     type: boolean
                   portalAPIURL:
                     type: string
+                  portalClientID:
+                    type: string
+                  portalSecret:
+                    type: string
                   resourceQuotaYaml:
                     type: string
                   skipEtcdEndpointsValidation:

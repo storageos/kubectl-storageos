@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -30,7 +31,7 @@ func GetManifestFromMultiDocByName(multiDoc, name string) (string, error) {
 		}
 		return string(objYaml), nil
 	}
-	return "", fmt.Errorf("no object of name: %s found in multi doc manifest", name)
+	return "", errors.WithStack(fmt.Errorf("no object of name: %s found in multi doc manifest", name))
 }
 
 // GetManifestFromMultiDocByKind returns an individual object string from a multi-doc yaml file
@@ -153,6 +154,38 @@ func GetFieldInManifest(manifest string, fields ...string) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	return strings.TrimSpace(val.MustString()), nil
+}
+
+// GetFieldInManifestMultiSearch searches multiple paths and return string value when found.
+// See TestGetFieldInManifestMultiSearch for examples.
+func GetFieldInManifestMultiSearch(manifest string, searchPaths [][]string) (string, error) {
+	var secretData string
+	var err error
+	for _, searchPath := range searchPaths {
+		secretData, err = GetFieldInManifest(manifest, searchPath...)
+		if err != nil {
+			return "", err
+		}
+		if secretData != "" {
+			return secretData, nil
+		}
+	}
+	return secretData, nil
+}
+
+// GetDecodediFieldInManifest returns a decoded field from a manifest (useful for secrets).
+// This function can accept fn GetFieldInManifest() or GetFieldInManifestMultiSearch().
+func GetDecodedManifestField(fn func() (string, error)) (string, error) {
+	data, err := fn()
+	if err != nil {
+		return "", err
+	}
+	decodedData, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return string(decodedData), nil
 }
 
 // GetFieldInMultiDocByKind uses GetManifestFromMultiDocByKind and GetFieldInManifest internally
