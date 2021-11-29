@@ -74,9 +74,9 @@ spec:
                     type: boolean
                   portalAPIURL:
                     type: string
-                  portalPassword:
+                  portalClientID:
                     type: string
-                  portalUsername:
+                  portalSecret:
                     type: string
                   resourceQuotaYaml:
                     type: string

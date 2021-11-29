@@ -20,8 +20,8 @@ const (
 
 	Please use the following flags to configure portal manager:
 
-	--portal-username
-	--portal-passsword
+	--portal-client-id
+	--portal-secret
 	--portal-api-url
 	--tenant-id
 	`
@@ -186,26 +186,26 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 		return errors.Wrap(err, errPortalManagerNotFound)
 	}
 
-	decodedPortalUsername, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+	decodedPortalClientID, err := pluginutils.GetDecodedManifestField(func() (string, error) {
 		return pluginutils.GetFieldInManifest(
 			storageosPortalClientSecret, "data", "CLIENT_ID")
 	})
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalUsername == "" {
-		installConfig.Spec.Install.PortalUsername = decodedPortalUsername
+	if installConfig.Spec.Install.PortalClientID == "" {
+		installConfig.Spec.Install.PortalClientID = decodedPortalClientID
 	}
 
-	decodedPortalPassword, err := pluginutils.GetDecodedManifestField(func() (string, error) {
+	decodedPortalSecret, err := pluginutils.GetDecodedManifestField(func() (string, error) {
 		return pluginutils.GetFieldInManifest(
 			storageosPortalClientSecret, "data", "PASSWORD")
 	})
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalPassword == "" {
-		installConfig.Spec.Install.PortalPassword = decodedPortalPassword
+	if installConfig.Spec.Install.PortalSecret == "" {
+		installConfig.Spec.Install.PortalSecret = decodedPortalSecret
 	}
 
 	decodedPortalTenantID, err := pluginutils.GetDecodedManifestField(func() (string, error) {
@@ -255,8 +255,8 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	// if all portal-manager flags have been set, return without reading back-up secret for portal data
 	// as values passed by flag take precedent
 	if err = FlagsAreSet(map[string]string{
-		PortalUsernameFlag: in.stosConfig.Spec.Install.PortalUsername,
-		PortalPasswordFlag: in.stosConfig.Spec.Install.PortalPassword,
+		PortalClientIDFlag: in.stosConfig.Spec.Install.PortalClientID,
+		PortalSecretFlag:   in.stosConfig.Spec.Install.PortalSecret,
 		TenantIDFlag:       in.stosConfig.Spec.Install.TenantID,
 		PortalAPIURLFlag:   in.stosConfig.Spec.Install.PortalAPIURL,
 	}); err == nil {
