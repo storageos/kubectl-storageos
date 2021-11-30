@@ -303,7 +303,7 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 		}
 		if err = pluginutils.WaitFor(func() error {
 			return pluginutils.IsDeploymentReady(in.clientConfig, deploymentName, deploymentNamespace)
-		}, 90, 5); err != nil {
+		}, 120, 5); err != nil {
 			return err
 		}
 	}
