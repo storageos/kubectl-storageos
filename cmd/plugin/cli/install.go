@@ -69,7 +69,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
-	cmd.Flags().String(installer.TenantIDFlag, "", "storageos portal tenant id")
+	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 
 	viper.BindPFlags(cmd.Flags())
@@ -89,7 +89,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		if err := installer.FlagsAreSet(map[string]string{
 			installer.PortalClientIDFlag: config.Spec.Install.PortalClientID,
 			installer.PortalSecretFlag:   config.Spec.Install.PortalSecret,
-			installer.TenantIDFlag:       config.Spec.Install.TenantID,
+			installer.PortalTenantIDFlag: config.Spec.Install.PortalTenantID,
 			installer.PortalAPIURLFlag:   config.Spec.Install.PortalAPIURL,
 		}); err != nil {
 			return err
@@ -174,7 +174,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.AdminPassword = cmd.Flags().Lookup(installer.AdminPasswordFlag).Value.String()
 		config.Spec.Install.PortalClientID = cmd.Flags().Lookup(installer.PortalClientIDFlag).Value.String()
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
-		config.Spec.Install.TenantID = cmd.Flags().Lookup(installer.TenantIDFlag).Value.String()
+		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
@@ -203,7 +203,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.AdminPassword = viper.GetString(installer.AdminPasswordConfig)
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
-	config.Spec.Install.TenantID = viper.GetString(installer.TenantIDConfig)
+	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil

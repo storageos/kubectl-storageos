@@ -63,7 +63,7 @@ func (in *Installer) installPortalManagerClient() error {
 		buildStringForKustomize(in.stosConfig.Spec.Install.PortalClientID,
 			in.stosConfig.Spec.Install.PortalSecret,
 			in.stosConfig.Spec.Install.PortalAPIURL,
-			in.stosConfig.Spec.Install.TenantID),
+			in.stosConfig.Spec.Install.PortalTenantID),
 		"literals", "secretGenerator", "0"); err != nil {
 		return err
 	}
