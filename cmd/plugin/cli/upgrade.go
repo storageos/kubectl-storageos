@@ -80,7 +80,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
-	cmd.Flags().String(installer.TenantIDFlag, "", "storageos portal tenant id")
+	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -188,7 +188,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		config.Spec.Install.PortalClientID = cmd.Flags().Lookup(installer.PortalClientIDFlag).Value.String()
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
-		config.Spec.Install.TenantID = cmd.Flags().Lookup(installer.TenantIDFlag).Value.String()
+		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -213,7 +213,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
-	config.Spec.Install.TenantID = viper.GetString(installer.TenantIDConfig)
+	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

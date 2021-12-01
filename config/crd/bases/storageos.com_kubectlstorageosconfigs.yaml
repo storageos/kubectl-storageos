@@ -78,6 +78,8 @@ spec:
                     type: string
                   portalSecret:
                     type: string
+                  portalTenantID:
+                    type: string
                   resourceQuotaYaml:
                     type: string
                   skipEtcdEndpointsValidation:
@@ -93,8 +95,6 @@ spec:
                   storageOSPortalConfigYaml:
                     type: string
                   storageOSVersion:
-                    type: string
-                  tenantID:
                     type: string
                   wait:
                     type: boolean

@@ -50,7 +50,7 @@ const (
 	AdminPasswordFlag             = "admin-password"
 	PortalClientIDFlag            = "portal-client-id"
 	PortalSecretFlag              = "portal-secret"
-	TenantIDFlag                  = "tenant-id"
+	PortalTenantIDFlag            = "portal-tenant-id"
 	PortalAPIURLFlag              = "portal-api-url"
 	EnablePortalManagerFlag       = "enable-portal-manager"
 
@@ -79,7 +79,7 @@ const (
 	AdminPasswordConfig             = "spec.install.adminPassword"
 	PortalClientIDConfig            = "spec.install.portalClientID"
 	PortalSecretConfig              = "spec.install.portalSecret"
-	TenantIDConfig                  = "spec.install.tenantID"
+	PortalTenantIDConfig            = "spec.install.portalTenantID"
 	PortalAPIURLConfig              = "spec.install.portalAPIURL"
 	EnablePortalManagerConfig       = "spec.install.enablePortalManager"
 	UninstallEtcdNSConfig           = "spec.uninstall.etcdNamespace"

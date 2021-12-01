@@ -15,5 +15,5 @@ spec:
     adminPassword: storageos
     portalClientID: storageosportal
     portalSecret: storageosportal
-    tenantID: storageos
+    portalTenantID: storageos
     portalAPIURL: storageos

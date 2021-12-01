@@ -215,8 +215,8 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.TenantID == "" {
-		installConfig.Spec.Install.TenantID = decodedPortalTenantID
+	if installConfig.Spec.Install.PortalTenantID == "" {
+		installConfig.Spec.Install.PortalTenantID = decodedPortalTenantID
 	}
 
 	decodedPortalAPIURL, err := pluginutils.GetDecodedManifestField(func() (string, error) {
@@ -257,7 +257,7 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 	if err = FlagsAreSet(map[string]string{
 		PortalClientIDFlag: in.stosConfig.Spec.Install.PortalClientID,
 		PortalSecretFlag:   in.stosConfig.Spec.Install.PortalSecret,
-		TenantIDFlag:       in.stosConfig.Spec.Install.TenantID,
+		PortalTenantIDFlag: in.stosConfig.Spec.Install.PortalTenantID,
 		PortalAPIURLFlag:   in.stosConfig.Spec.Install.PortalAPIURL,
 	}); err == nil {
 		return nil

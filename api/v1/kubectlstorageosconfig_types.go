@@ -71,7 +71,7 @@ type Install struct {
 	AdminPassword               string `json:"adminPassword,omitempty"`
 	PortalClientID              string `json:"portalClientID,omitempty"`
 	PortalSecret                string `json:"portalSecret,omitempty"`
-	TenantID                    string `json:"tenantID,omitempty"`
+	PortalTenantID              string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                string `json:"portalAPIURL,omitempty"`
 }
 
