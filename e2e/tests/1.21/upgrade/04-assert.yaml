@@ -9,8 +9,11 @@ status:
 apiVersion: storageos.com/v1
 kind: StorageOSCluster
 metadata:
-  name: storageoscluster
-  namespace: storageos 
+  name: test-storageoscluster
+  # spec.namespace not set in original storageoscluster.
+  # Therefore it will have defaulted to kube-system. 
+  # As, such the upgraded installation will also exist in kube-system.
+  namespace: kube-system
 status:
   conditions:
   - message: Scheduler Ready
