@@ -44,6 +44,18 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
 	}
 
+	// if storageOSClusterNamespace was not passed via config, use that of existing cluster
+	if installConfig.Spec.Install.StorageOSClusterNamespace == "" {
+		// First, check spec.namespace which defines the namespace for storageos installation by storageos/cluster-operator,
+		// (this field is deprecated in storageos/operator). Otherwise, use metadata.Namespace for storageos installation
+		// (default behaviour for storageos/operator).
+		if storageOSCluster.Spec.Namespace != "" {
+			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Spec.Namespace
+		} else {
+			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Namespace
+		}
+	}
+
 	if err = installer.handleEndpointsInput(installConfig.Spec.Install); err != nil {
 		return err
 	}
