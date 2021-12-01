@@ -41,21 +41,26 @@ func (in *Installer) enablePortalManager(storageOSClusterName string, enable boo
 
 // InstallPortalManager installs portal manager necessary components.
 func (in *Installer) InstallPortalManager() error {
-	if err := in.installPortalManagerClient(); err != nil {
+	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+	if err != nil {
 		return err
 	}
-	return in.installPortalManagerConfig()
+
+	if err := in.installPortalManagerClient(storageOSCluster.Namespace); err != nil {
+		return err
+	}
+	return in.installPortalManagerConfig(storageOSCluster.Namespace)
 }
 
-func (in *Installer) installPortalManagerConfig() error {
-	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSClusterNamespace, "namespace", ""); err != nil {
+func (in *Installer) installPortalManagerConfig(stosClusterNamespace string) error {
+	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), stosClusterNamespace, "namespace", ""); err != nil {
 		return err
 	}
 	return in.kustomizeAndApply(filepath.Join(stosDir, portalConfigDir), stosPortalConfigFile)
 }
 
-func (in *Installer) installPortalManagerClient() error {
-	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSClusterNamespace, "namespace", "secretGenerator", "0"); err != nil {
+func (in *Installer) installPortalManagerClient(stosClusterNamespace string) error {
+	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile), stosClusterNamespace, "namespace", "secretGenerator", "0"); err != nil {
 		return err
 	}
 
