@@ -23,7 +23,7 @@ const (
 	--portal-client-id
 	--portal-secret
 	--portal-api-url
-	--tenant-id
+	--portal-tenant-id
 	`
 )
 
