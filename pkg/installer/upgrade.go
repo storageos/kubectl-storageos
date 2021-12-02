@@ -44,6 +44,18 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
 	}
 
+	// if storageOSClusterNamespace was not passed via config, use that of existing cluster
+	if installConfig.Spec.Install.StorageOSClusterNamespace == "" {
+		// First, check spec.namespace which defines the namespace for storageos installation by storageos/cluster-operator,
+		// (this field is deprecated in storageos/operator). Otherwise, use metadata.Namespace for storageos installation
+		// (default behaviour for storageos/operator).
+		if storageOSCluster.Spec.Namespace != "" {
+			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Spec.Namespace
+		} else {
+			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Namespace
+		}
+	}
+
 	if err = installer.handleEndpointsInput(installConfig.Spec.Install); err != nil {
 		return err
 	}
@@ -54,7 +66,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	if err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall); err != nil {
+	if err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall, installer); err != nil {
 		return err
 	}
 
@@ -74,7 +86,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
-func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string) error {
+func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string, installer *Installer) error {
 	// write storageoscluster, secret and storageclass manifests to disk
 	if err := in.writeBackupFileSystem(storageOSCluster); err != nil {
 		return errors.WithStack(err)
@@ -99,7 +111,7 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 
 	// if no storageos-cluster.yaml has been passed to the cli, use the backed-up storageos cluster.
 	if installConfig.Spec.Install.StorageOSClusterYaml == "" {
-		if err := in.copyStorageOSClusterToMemory(); err != nil {
+		if err := in.copyStorageOSClusterToMemory(installer); err != nil {
 			return err
 		}
 	}
@@ -114,7 +126,7 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 // copyStorageOSClusterToMemory takes the (uninstalled) on-disk storageos-cluster manifest and combines it with
 // the installer's in-memory storageos-api secret to create a multi-doc storageos-cluster.yaml. This manifest
 // is written to the installer's in-memory fs for installation. Thus maintaining the original cluster's specs.
-func (in *Installer) copyStorageOSClusterToMemory() error {
+func (in *Installer) copyStorageOSClusterToMemory(installer *Installer) error {
 	backupPath, err := in.getBackupPath()
 	if err != nil {
 		return err
@@ -137,7 +149,8 @@ func (in *Installer) copyStorageOSClusterToMemory() error {
 
 	stosClusterManifest := makeMultiDoc(string(onDiskStosClusterManifest), inMemStosAPISecret)
 
-	return in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest))
+	// write unistalled manifest to instller filesystem
+	return installer.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest))
 }
 
 // copyStorageOSAPIData uses the (un)installer's on-disk filesystem to read the username and password
