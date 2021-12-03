@@ -9,7 +9,7 @@ status:
 apiVersion: storageos.com/v1
 kind: StorageOSCluster
 metadata:
-  name: test-storageoscluster
+  name: example-storageoscluster
   # spec.namespace not set in original storageoscluster.
   # Therefore it will have defaulted to kube-system. 
   # As, such the upgraded installation will also exist in kube-system.

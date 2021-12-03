@@ -1,4 +1,4 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-        - command: kubectl apply -f https://github.com/storageos/cluster-operator/releases/download/v2.4.0/storageos-operator.yaml
+        - command: kubectl apply -f https://github.com/storageos/cluster-operator/releases/download/v2.4.4/storageos-operator.yaml
