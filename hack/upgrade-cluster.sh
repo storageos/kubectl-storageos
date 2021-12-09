@@ -6,6 +6,12 @@
 : ${VERSION:=develop}
 : ${EXTRA_FLAGS:=--skip-stos-cluster --wait --stack-trace}
 
+function timeout_monitor() {
+   sleep 300
+   kill -9 $$
+}
+timeout_monitor &
+
 cleanup() {
     echo "Cleaning up..."
     rm -rf storageos-operator.yaml
@@ -33,4 +39,7 @@ grep "RELATED_IMAGE_" storageos-operator.yaml
 trap cleanup EXIT
 
 ./bin/kubectl-storageos upgrade --stos-version $VERSION --skip-namespace-deletion yes --stos-operator-yaml storageos-operator.yaml --enable-portal-manager $EXTRA_FLAGS
-    
+
+./bin/kubectl-storageos disable-portal
+while kubectl get po -n storageos -l app.kubernetes.io/component=portal-manager --no-headers | grep storageos-portal-manager &>/dev/null; do sleep 1; done
+./bin/kubectl-storageos enable-portal
