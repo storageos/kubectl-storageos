@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test:
-    name: e2e test
+    name: kuttl e2e test 1.20
     runs-on: ubuntu-18.04
     env:
       KUTTL: /usr/local/bin/kubectl-kuttl
@@ -23,6 +23,6 @@ jobs:
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
       - name: Run kuttl installer 1.20
-        run: sudo kubectl-kuttl test --config e2e/kuttl/installer-1.20.yaml
+        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.20.yaml
       - name: Run kuttl upgrade 1.20
-        run: sudo kubectl-kuttl test --config e2e/kuttl/upgrade-1.20.yaml
+        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.20.yaml
