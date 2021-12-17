@@ -12,6 +12,10 @@ endif
 
 KUBECTL_STOS_VERSION ?= v1.0.0
 
+# Generate kuttl e2e tests for the following storageos/kind-node versions.
+TEST_KIND_NODES ?= 1.18.6,1.19.0,1.20.5,1.21.0,1.22.3
+REPO ?= kubectl-storageos
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -77,6 +81,9 @@ _build-pre: ## Build manager binary.
 
 run: fmt vet generate ## Run a controller from your host.
 	go run ./main.go
+
+generate-tests: ## Generate kuttl e2e tests
+	TEST_KIND_NODES=$(TEST_KIND_NODES) REPO=$(REPO) ./hack/generate-tests.sh
 
 ##@ Deployment
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
