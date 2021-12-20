@@ -1,5 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: ../../../../hack/write-pod-data.sh pod-1 /mnt/storageosupgrade StorageOS
-  - command: sleep 5

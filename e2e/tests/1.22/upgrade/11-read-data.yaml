@@ -1,4 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: ../../../../hack/read-pod-data.sh pod-2 /mnt/storageosupgrade StorageOS
