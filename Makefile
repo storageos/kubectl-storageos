@@ -13,7 +13,7 @@ endif
 KUBECTL_STOS_VERSION ?= v1.0.0
 
 # Generate kuttl e2e tests for the following storageos/kind-node versions.
-TEST_KIND_NODES ?= 1.18.6,1.19.0,1.20.5,1.21.0,1.22.3
+TEST_KIND_NODES ?= 1.19.0,1.20.5,1.21.0,1.22.3,1.23.0
 REPO ?= kubectl-storageos
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
