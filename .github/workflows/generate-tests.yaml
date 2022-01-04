@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACTION_TOKEN }}
       - name: Trim version
         run: echo "LATEST_KIND_NODE=$(echo ${{ github.event.client_payload.latest-kind-node }} | tr -d '[:v]')" >> $GITHUB_ENV
       - name: Generate and commit tests
@@ -19,7 +21,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ACTION_TOKEN }}
           commit-message: "Generated test files for new kind node image and removed test files for oldest kind node image."
           branch: "new-kind-node-image"
           title: "Auto-generated: Update kuttl e2e test  files"
