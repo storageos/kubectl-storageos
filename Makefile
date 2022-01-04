@@ -12,8 +12,12 @@ endif
 
 KUBECTL_STOS_VERSION ?= v1.0.0
 
-# Generate kuttl e2e tests for the following storageos/kind-node versions.
+# Generate kuttl e2e tests for the following storageos/kind-node versions
+# TEST_KIND_NODES is not intended to be updated manually.
+# Please edit LATEST_KIND_NODE instead and run 'make update-kind-nodes'.
 TEST_KIND_NODES ?= 1.18.6,1.19.0,1.20.5,1.21.0,1.22.3
+
+LATEST_KIND_NODE ?= 1.22.3
 REPO ?= kubectl-storageos
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
@@ -81,6 +85,9 @@ _build-pre: ## Build manager binary.
 
 run: fmt vet generate ## Run a controller from your host.
 	go run ./main.go
+
+update-kind-nodes: 
+	LATEST_KIND_NODE=$(LATEST_KIND_NODE) ./hack/update-kind-nodes.sh
 
 generate-tests: ## Generate kuttl e2e tests
 	TEST_KIND_NODES=$(TEST_KIND_NODES) REPO=$(REPO) ./hack/generate-tests.sh
