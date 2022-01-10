@@ -30,3 +30,6 @@ kubeconfig
 
 # support bundles
 support-bundle*.tar.gz
+
+# dry-run directory
+storageos-dry-run
