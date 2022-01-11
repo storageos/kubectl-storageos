@@ -72,6 +72,23 @@ startKIND: true
 timeout: 300
 EOF
 
+	# write kuttl config file for version (dry-run)
+	if [ ! -d "./e2e/kuttl" ]; then
+		mkdir -p ./e2e/kuttl
+	fi
+	file=./e2e/kuttl/${REPO}-dry-run-${major}.yaml
+
+	# installer tests always use 'stable' testDir
+	cat <<EOF > "${file}"
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+- ./e2e/tests/dry-run/stable
+kindConfig: e2e/kind/kind-config-${major}.yaml
+startKIND: true
+timeout: 300
+EOF
+
 	# write kuttl github action for version
 	if [ ! -d "./.github/workflows" ]; then
 		mkdir -p ./.github/workflows
@@ -107,6 +124,9 @@ jobs:
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
       - name: Run kuttl upgrade ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
+      - name: Run kuttl installer ${major}
+        run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-dry-run-${major}.yaml
+
 EOF
 
 done
