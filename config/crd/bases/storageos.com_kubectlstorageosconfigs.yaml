@@ -74,6 +74,8 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
+                  k8sVersion:
+                    type: string
                   portalAPIURL:
                     type: string
                   portalClientID:
