@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/pkg/errors"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
@@ -22,7 +24,7 @@ func (in *Installer) Install(upgrade bool) error {
 
 			errChan <- in.installEtcd()
 		}()
-	} else if !in.stosConfig.Spec.IncludeEtcd && !upgrade {
+	} else if !in.stosConfig.Spec.Install.DryRun && !upgrade {
 		if err := in.handleEndpointsInput(in.stosConfig.Spec.Install); err != nil {
 			return err
 		}
@@ -290,6 +292,10 @@ func (in *Installer) installStorageOS() error {
 // operatorDeploymentsAreReady takes the path of an operator manifest and returns no error if all
 // deployments in the manifest have the desired number of ready replicas
 func (in *Installer) operatorDeploymentsAreReady(path string) error {
+	// return early for dry-run
+	if in.stosConfig.Spec.Install.DryRun {
+		return nil
+	}
 	operatorDeployments, err := in.getAllManifestsOfKindFromFsMultiDoc(path, "Deployment")
 	if err != nil {
 		return err
@@ -316,6 +322,10 @@ func (in *Installer) operatorDeploymentsAreReady(path string) error {
 // operatorServicesAreReady takes the path of an operator manifest and returns no error if all
 // services in the manifest have a ClusterIP and at least one endpoint that is ready.
 func (in *Installer) operatorServicesAreReady(path string) error {
+	// return early for dry-run
+	if in.stosConfig.Spec.Install.DryRun {
+		return nil
+	}
 	operatorServices, err := in.getAllManifestsOfKindFromFsMultiDoc(path, "Service")
 	if err != nil {
 		return err
@@ -359,6 +369,14 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 		return err
 	}
 
+	if in.stosConfig.Spec.Install.DryRun {
+		if err := writeDryRunManifests(file, resYaml); err != nil {
+			return err
+		}
+		// return early for dry-run without applying manifest
+		return nil
+	}
+
 	namespaces, err := in.omitAndReturnKindFromFSMultiDoc(filepath.Join(dir, file), "Namespace")
 	if err != nil {
 		return err
@@ -395,4 +413,20 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 	}, 120, 5)
 
 	return err
+}
+
+func writeDryRunManifests(filename string, fileData []byte) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = os.Stat(filepath.Join(cwd, stosDryRunDir)); err != nil {
+		if err = os.Mkdir(filepath.Join(cwd, stosDryRunDir), 0666); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	if err = os.WriteFile(filepath.Join(cwd, stosDryRunDir, filename), fileData, 0666); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }

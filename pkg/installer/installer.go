@@ -29,7 +29,9 @@ const (
 	SkipNamespaceDeletionFlag     = "skip-namespace-deletion"
 	SkipExistingWorkloadCheckFlag = "skip-existing-workload-check"
 	StosVersionFlag               = "stos-version"
+	K8sVersionFlag                = "k8s-version"
 	WaitFlag                      = "wait"
+	DryRunFlag                    = "dry-run"
 	StosOperatorYamlFlag          = "stos-operator-yaml"
 	StosClusterYamlFlag           = "stos-cluster-yaml"
 	StosPortalConfigYamlFlag      = "stos-portal-config-yaml"
@@ -61,7 +63,9 @@ const (
 	SkipStosClusterConfig           = "spec.skipStorageOSCluster"
 	IncludeEtcdConfig               = "spec.includeEtcd"
 	WaitConfig                      = "spec.install.wait"
+	DryRunConfig                    = "spec.install.dryRun"
 	StosVersionConfig               = "spec.install.storageOSVersion"
+	K8sVersionConfig                = "spec.install.kubernetesVersion"
 	InstallEtcdNamespaceConfig      = "spec.install.etcdNamespace"
 	InstallStosOperatorNSConfig     = "spec.install.storageOSOperatorNamespace"
 	StosClusterNSConfig             = "spec.install.storageOSClusterNamespace"
@@ -107,6 +111,7 @@ const (
 	kustomizationFile    = "kustomization.yaml"
 	kubeDir              = ".kube"
 	uninstallDirPrefix   = "uninstall-"
+	stosDryRunDir        = "storageos-dry-run"
 
 	// kustomization template
 	kustTemp = `apiVersion: kustomize.config.k8s.io/v1beta1
@@ -175,19 +180,23 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 		}
 	}
 
-	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
-	if err != nil {
-		return installer, err
+	currentVersionStr := config.Spec.Install.KubernetesVersion
+	if currentVersionStr == "" {
+		currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
+		if err != nil {
+			return installer, err
+		}
+		currentVersionStr = currentVersion.String()
 	}
 
-	distribution := pluginutils.DetermineDistribution(currentVersion.String())
+	distribution := pluginutils.DetermineDistribution(currentVersionStr)
 
 	if validateKubeVersion {
 		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
 		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), pluginversion.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
 		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
 		if err == nil && minVersion != "" {
-			supported, err := pluginversion.IsSupported(currentVersion.String(), minVersion)
+			supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
 			if err != nil {
 				return installer, err
 			} else if !supported {

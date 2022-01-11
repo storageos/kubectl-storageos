@@ -51,7 +51,9 @@ type KubectlStorageOSConfigStatus struct {
 // Install defines options for cli install subcommand
 type Install struct {
 	Wait                        bool   `json:"wait,omitempty"`
+	DryRun                      bool   `json:"dryRun,omitempty"`
 	StorageOSVersion            string `json:"storageOSVersion,omitempty"`
+	KubernetesVersion           string `json:"k8sVersion,omitempty"`
 	StorageOSOperatorNamespace  string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace   string `json:"storageOSClusterNamespace,omitempty"`
 	EtcdNamespace               string `json:"etcdNamespace,omitempty"`

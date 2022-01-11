@@ -47,7 +47,9 @@ func InstallCmd() *cobra.Command {
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storageos cluster to enter running phase")
+	cmd.Flags().Bool(installer.DryRunFlag, false, "no installation performed, installation manifests stored locally at \"./storageos-dry-run\"")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
+	cmd.Flags().String(installer.K8sVersionFlag, "", "version of kubernetes cluster")
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
@@ -150,6 +152,10 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.DryRun, err = strconv.ParseBool(cmd.Flags().Lookup(installer.DryRunFlag).Value.String())
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.SkipEtcdEndpointsValidation, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
 		if err != nil {
 			return err
@@ -159,6 +165,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			return err
 		}
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
+		config.Spec.Install.KubernetesVersion = cmd.Flags().Lookup(installer.K8sVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
@@ -185,7 +192,9 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
+	config.Spec.Install.DryRun = viper.GetBool(installer.DryRunConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
+	config.Spec.Install.KubernetesVersion = viper.GetString(installer.K8sVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.StosPortalConfigYamlConfig)

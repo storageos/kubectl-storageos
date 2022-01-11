@@ -17,7 +17,7 @@ spec:
   includeEtcd: false #common for both uninstall and install     
   install:
     wait: false
-    version: "<storageos-version>"
+    stosVersion: "<storageos-version>"
     storageOSOperatorNamespace: "<storageos-operator-namespace>"
     storageOSClusterNamespace: "<storageos-cluster-namespace>"
     etcdNamespace: "<etcd-namespace>"  
