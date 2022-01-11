@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# shellcheck disable=SC1072
+# shellcheck disable=SC1073
+
 : ${OPERATOR_DIR:=operator}
 
 IMAGE="nixery.dev/shell/jq/git/curl/kustomize/gnutar/gzip"
