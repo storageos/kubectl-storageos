@@ -1,0 +1,25 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: rm -rf storageos-dry-run
+  - command: kubectl storageos install --stos-version=develop --dry-run
+  - command: ../../../../../hack/fetch-operator-manifest.sh
+  - command: diff storageos-operator.yaml storageos-dry-run/storageos-operator.yaml
+  - command: diff test-data/storageos-cluster.yaml storageos-dry-run/storageos-cluster.yaml
+  - command: rm -rf storageos-dry-run storageos-operator.yaml
+
+  - command: kubectl storageos install --include-etcd --dry-run
+  - command: wget https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml
+  - command: diff storageos-etcd-cluster-operator.yaml storageos-dry-run/etcd-operator.yaml
+  - command: diff test-data/etcd-cluster.yaml storageos-dry-run/etcd-cluster.yaml
+  - command: rm -rf storageos-dry-run storageos-etcd-cluster-operator.yaml
+
+  - command: kubectl storageos install --stos-version=develop --enable-portal-manager --portal-api-url=www.test.com --portal-tenant-id=storageos --portal-client-id=storageos --portal-secret=storageos --dry-run
+  - command: wget https://github.com/storageos/kubectl-storageos/releases/download/v1.0.0/configmap-storageos-portal-manager.yaml
+  - command: diff configmap-storageos-portal-manager.yaml storageos-dry-run/storageos-portal-configmap.yaml
+  - command: diff test-data/storageos-portal-client.yaml storageos-dry-run/storageos-portal-client.yaml
+  - command: rm -rf storageos-dry-run configmap-storageos-portal-manager.yaml
+
+  - command: kubectl storageos install --k8s-version=v1.22.0-gke.0 --dry-run
+  - command: diff test-data/resource-quota.yaml storageos-dry-run/resource-quota.yaml
+  - command: rm -rf storageos-dry-run
