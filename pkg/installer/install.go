@@ -24,7 +24,7 @@ func (in *Installer) Install(upgrade bool) error {
 
 			errChan <- in.installEtcd()
 		}()
-	} else if !in.stosConfig.Spec.IncludeEtcd && !in.stosConfig.Spec.Install.DryRun && !upgrade {
+	} else if !in.stosConfig.Spec.Install.DryRun && !upgrade {
 		if err := in.handleEndpointsInput(in.stosConfig.Spec.Install); err != nil {
 			return err
 		}
