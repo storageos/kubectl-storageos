@@ -53,6 +53,7 @@ release:
   # Default is false.
   prerelease: false
   extra_files:
+    - glob: ./specs/storageos-operator-manifests.tar.gz
     - glob: ./specs/storageos-cluster.yaml
     - glob: ./specs/resource-quota.yaml
     - glob: ./specs/portal-client-secret-generator.yaml

@@ -111,6 +111,9 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 deps: controller-gen kustomize ## Download all dependencies if necessary.
 
+fetch-latest-operator-manifests: ## Fetches latest released operator manifests from GitHub.
+	hack/fetch-latest-operator-manifests.sh
+
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
