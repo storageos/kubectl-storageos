@@ -124,7 +124,7 @@ jobs:
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
       - name: Run kuttl upgrade ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
-      - name: Run kuttl installer ${major}
+      - name: Run kuttl dry-run ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-dry-run-${major}.yaml
 
 EOF
