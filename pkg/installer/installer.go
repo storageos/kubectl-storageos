@@ -193,7 +193,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 
 	if validateKubeVersion {
 		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
-		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), pluginversion.OperatorLatestSupportedURL(), "cat MIN_KUBE_VERSION")
+		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), pluginversion.OperatorLatestSupportedImageURL(), "cat MIN_KUBE_VERSION")
 		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
 		if err == nil && minVersion != "" {
 			supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
@@ -220,6 +220,30 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 		kubectlClient: otkkubectl.New(),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
+		stosConfig:    config,
+		fileSys:       fileSys,
+		onDiskFileSys: filesys.MakeFsOnDisk(),
+	}
+
+	return installer, nil
+}
+
+// NewDryRunInstaller returns a lightweight Installer object for '--dry-run' enabled commands
+func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+	installer := &Installer{}
+
+	clientConfig, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return installer, err
+	}
+
+	fileSys, err := buildInstallerFileSys(config, clientConfig)
+	if err != nil {
+		return installer, err
+	}
+
+	installer = &Installer{
+		clientConfig:  clientConfig,
 		stosConfig:    config,
 		fileSys:       fileSys,
 		onDiskFileSys: filesys.MakeFsOnDisk(),

@@ -147,7 +147,7 @@ func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version stri
 	}
 
 	// set additional values to be used by Installer for in memory fs build
-	config.Spec.Install.StorageOSOperatorYaml, err = pluginversion.OperatorUrlByVersion(version)
+	config.Spec.Install.StorageOSOperatorYaml, err = pluginversion.OperatorImageUrlByVersion(version)
 	if err != nil {
 		return
 	}

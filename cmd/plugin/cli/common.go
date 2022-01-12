@@ -74,6 +74,25 @@ func skipNamespaceDeletionPrompt() (bool, error) {
 	return yes, nil
 }
 
+// storageClassPrompt uses promptui the user to enter the etcd storage class name
+func storageClassPrompt() (string, error) {
+	logger.Printf("   Please enter the name of the storage class used by the ETCD cluster\n\n")
+	validate := func(input string) error {
+		match, _ := regexp.MatchString("^[a-z0-9.-]+$", input)
+		if !match {
+			return errors.New("invalid entry")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    "ETCD storageo class name",
+		Validate: validate,
+	}
+
+	return pluginutils.AskUser(prompt)
+}
+
 func valueOrDefault(value string, def string) string {
 	if value != "" {
 		return value

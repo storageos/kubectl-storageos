@@ -80,6 +80,7 @@ func InstallCmd() *cobra.Command {
 }
 
 func installCmd(config *apiv1.KubectlStorageOSConfig) error {
+	var err error
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
@@ -103,18 +104,31 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if !config.Spec.Install.SkipEtcdEndpointsValidation {
 		// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
 		if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
-			var err error
 			config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
 			if err != nil {
 				return err
 			}
 		}
 	}
-	cliInstaller, err := installer.NewInstaller(config, true, true)
-	if err != nil {
-		return err
+	cliInstaller := &installer.Installer{}
+	if config.Spec.Install.DryRun {
+		if config.Spec.IncludeEtcd && config.Spec.Install.EtcdStorageClassName == "" {
+			config.Spec.Install.EtcdStorageClassName, err = storageClassPrompt()
+			if err != nil {
+				return err
+			}
+		}
+		config.Spec.Install.StorageOSOperatorYaml = version.OperatorLatestSupportedURL()
+		cliInstaller, err = installer.NewDryRunInstaller(config)
+		if err != nil {
+			return err
+		}
+	} else {
+		cliInstaller, err = installer.NewInstaller(config, true, true)
+		if err != nil {
+			return err
+		}
 	}
-
 	err = cliInstaller.Install(false)
 
 	return err
