@@ -3,5 +3,5 @@ kind: TestSuite
 testDirs:
 - ./e2e/tests/dry-run/stable
 kindConfig: e2e/kind/kind-config-1.22.yaml
-startKIND: false
+startKIND: true
 timeout: 300
