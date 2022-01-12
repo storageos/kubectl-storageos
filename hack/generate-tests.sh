@@ -120,13 +120,12 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos \$KUBECTL_STORAGEOS
+      - name: Run kuttl dry-run ${major}
+        run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-dry-run-${major}.yaml
       - name: Run kuttl installer ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
       - name: Run kuttl upgrade ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
-      - name: Run kuttl dry-run ${major}
-        run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-dry-run-${major}.yaml
-
 EOF
 
 done

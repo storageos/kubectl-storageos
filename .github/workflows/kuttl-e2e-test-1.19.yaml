@@ -22,10 +22,9 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
+      - name: Run kuttl dry-run 1.19
+        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-dry-run-1.19.yaml
       - name: Run kuttl installer 1.19
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.19.yaml
       - name: Run kuttl upgrade 1.19
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.19.yaml
-      - name: Run kuttl dry-run 1.19
-        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-dry-run-1.19.yaml
-
