@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  password: c3RvcmFnZW9z
+  username: c3RvcmFnZW9z
+kind: Secret
+metadata:
+  labels:
+    app: storageos
+  name: storageos-api
+  namespace: storageos
+---
+apiVersion: storageos.com/v1
+kind: StorageOSCluster
+metadata:
+  name: storageoscluster
+  namespace: storageos
+spec:
+  kvBackend:
+    address: storageos-etcd.storageos-etcd:2379
+  secretRefName: storageos-api
+  storageClassName: storageos

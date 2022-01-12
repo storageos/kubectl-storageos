@@ -1,0 +1,55 @@
+apiVersion: etcd.improbable.io/v1alpha1
+kind: EtcdCluster
+metadata:
+  name: storageos-etcd
+  namespace: storageos-etcd
+spec:
+  podTemplate:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: etcd.improbable.io/cluster-name
+                operator: In
+                values:
+                - storageos-etcd
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+    etcdEnv:
+    - name: ETCD_HEARTBEAT_INTERVAL
+      value: "100"
+    - name: ETCD_ELECTION_TIMEOUT
+      value: "5000"
+    - name: ETCD_MAX_SNAPSHOTS
+      value: "10"
+    - name: ETCD_MAX_WALS
+      value: "10"
+    - name: ETCD_QUOTA_BACKEND_BYTES
+      value: "8589934592"
+    - name: ETCD_SNAPSHOT_COUNT
+      value: "100000"
+    - name: ETCD_AUTO_COMPACTION_RETENTION
+      value: "20000"
+    - name: ETCD_AUTO_COMPACTION_MODE
+      value: revision
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 200m
+        memory: 200Mi
+  replicas: 3
+  storage:
+    volumeClaimTemplate:
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: standard
+  tls:
+    enabled: false
+    storageOSClusterNamespace: storageos
+    storageOSEtcdSecretName: storageos-etcd-secret
+  version: 3.5.0

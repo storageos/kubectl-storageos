@@ -99,6 +99,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	}
 	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 
+	config.Spec.Install.SkipEtcdEndpointsValidation = config.Spec.Install.DryRun
 	if !config.Spec.Install.SkipEtcdEndpointsValidation {
 		// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
 		if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
