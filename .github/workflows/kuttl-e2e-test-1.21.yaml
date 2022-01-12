@@ -26,6 +26,6 @@ jobs:
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.21.yaml
       - name: Run kuttl upgrade 1.21
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.21.yaml
-      - name: Run kuttl installer 1.21
+      - name: Run kuttl dry-run 1.21
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-dry-run-1.21.yaml
 
