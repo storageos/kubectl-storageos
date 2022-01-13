@@ -17,7 +17,10 @@ jobs:
         run: |
           make _build-pre
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
+      - name: Determine latest version
+        run: echo "LATEST_VERSION=$(curl -s https://api.github.com/repos/storageos/operator/releases/latest | grep tag_name | head -1 | cut -d'"' -f4 | tr -d v)" >> $GITHUB_ENV
+
       - name: Run dry-run-test.sh
         run: |
           cd e2e/tests/dry-run
-          sudo ./dry-run-test.sh 
+          sudo LATEST_VERSION=$LATEST_VERSION ./dry-run-test.sh
