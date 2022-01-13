@@ -1,0 +1,23 @@
+name: dry-run test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: dry-run test
+    runs-on: ubuntu-18.04
+    env:
+      KUBECTL_STORAGEOS: /usr/local/bin/kubectl-storageos
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+      - name: Install kubectl-storageos
+        run: |
+          make _build-pre
+          sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
+      - name: Run dry-run-test.sh
+        run: |
+          cd e2e/tests/dry-run
+          sudo ./dry-run-test.sh 
