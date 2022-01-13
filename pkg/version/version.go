@@ -22,7 +22,9 @@ const (
 
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
-	newClusterYamlUrl             = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
+	stosOperatorManifestsUrl      = "https://github.com/storageos/operator/releases/download/%s/storageos-operator.yaml"
+
+	newClusterYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
 
 	resourceQuotaYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/resource-quota.yaml"
 
@@ -133,7 +135,7 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	return version, nil
 }
 
-func OperatorUrlByVersion(operatorVersion string) (string, error) {
+func OperatorImageUrlByVersion(operatorVersion string) (string, error) {
 	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
@@ -143,6 +145,18 @@ func OperatorUrlByVersion(operatorVersion string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, operatorVersion), nil
+}
+
+func OperatorUrlByVersion(operatorVersion string) (string, error) {
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
+	if err != nil {
+		return "", err
+	}
+	if lessThanOrEqual {
+		return fmt.Sprintf(oldOperatorYamlUrl, operatorVersion), nil
+	}
+
+	return fmt.Sprintf("%s:%s", stosOperatorManifestsUrl, operatorVersion), nil
 }
 
 func ClusterUrlByVersion(operatorVersion string) (string, error) {
@@ -250,8 +264,12 @@ func VersionIsEqualTo(version, marker string) (bool, error) {
 	return ver.Equal(mar), nil
 }
 
-func OperatorLatestSupportedURL() string {
+func OperatorLatestSupportedImageURL() string {
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, OperatorLatestSupportedVersion())
+}
+
+func OperatorLatestSupportedURL() string {
+	return fmt.Sprintf(stosOperatorManifestsUrl, OperatorLatestSupportedVersion())
 }
 
 func ClusterLatestSupportedURL() string {

@@ -55,7 +55,7 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	stosSubDirs := make(map[string]map[string][]byte)
 
 	// build storageos/operator
-	stosOpFiles, err := createFileWithKustPair(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), stosOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
+	stosOpFiles, err := createFileWithKustPair(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
