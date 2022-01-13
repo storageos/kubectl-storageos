@@ -86,7 +86,7 @@ func storageClassPrompt() (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:    "ETCD storageo class name",
+		Label:    "ETCD storage class name",
 		Validate: validate,
 	}
 
