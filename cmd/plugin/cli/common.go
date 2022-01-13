@@ -80,7 +80,7 @@ func storageClassPrompt() (string, error) {
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("^[a-z0-9.-]+$", input)
 		if !match {
-			return errors.New("invalid entry")
+			return errors.New("invalid entry - must consist only of lowercase alphanumeric characters, '-', or '.'")
 		}
 		return nil
 	}
