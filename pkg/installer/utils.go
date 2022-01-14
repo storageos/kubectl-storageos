@@ -42,6 +42,9 @@ const errFlagsNotSet = "The following flags have not been set and are required t
 //   - portal-config
 //     - portal-configmap.yaml
 //     - kustomization.yaml
+//   - resource-quota
+//     - resource-quota.yaml
+//     - kustomization.yaml
 // - etcd
 //   - operator
 //     - etcd-operator.yaml
