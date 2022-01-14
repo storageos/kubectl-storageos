@@ -3,6 +3,8 @@
 # shellcheck disable=SC2086
 # shellcheck disable=SC2223
 
+: "${LATEST_VERSION?= required}"
+
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMPDIR"' EXIT
 
