@@ -113,7 +113,6 @@ const (
 	kustomizationFile    = "kustomization.yaml"
 	kubeDir              = ".kube"
 	uninstallDirPrefix   = "uninstall-"
-	stosDryRunDir        = "storageos-dry-run"
 
 	// kustomization template
 	kustTemp = `apiVersion: kustomize.config.k8s.io/v1beta1
