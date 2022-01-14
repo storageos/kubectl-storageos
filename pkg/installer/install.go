@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/pkg/errors"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
@@ -370,7 +368,7 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 	}
 
 	if in.stosConfig.Spec.Install.DryRun {
-		if err := writeDryRunManifests(file, resYaml); err != nil {
+		if err := pluginutils.WriteDryRunManifests(file, resYaml); err != nil {
 			return err
 		}
 		// return early for dry-run without applying manifest
@@ -413,20 +411,4 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 	}, 120, 5)
 
 	return err
-}
-
-func writeDryRunManifests(filename string, fileData []byte) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if _, err = os.Stat(filepath.Join(cwd, stosDryRunDir)); err != nil {
-		if err = os.Mkdir(filepath.Join(cwd, stosDryRunDir), 0770); err != nil {
-			return errors.WithStack(err)
-		}
-	}
-	if err = os.WriteFile(filepath.Join(cwd, stosDryRunDir, filename), fileData, 0640); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
 }
