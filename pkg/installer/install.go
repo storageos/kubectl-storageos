@@ -421,11 +421,11 @@ func writeDryRunManifests(filename string, fileData []byte) error {
 		return errors.WithStack(err)
 	}
 	if _, err = os.Stat(filepath.Join(cwd, stosDryRunDir)); err != nil {
-		if err = os.Mkdir(filepath.Join(cwd, stosDryRunDir), 0666); err != nil {
+		if err = os.Mkdir(filepath.Join(cwd, stosDryRunDir), 0770); err != nil {
 			return errors.WithStack(err)
 		}
 	}
-	if err = os.WriteFile(filepath.Join(cwd, stosDryRunDir, filename), fileData, 0666); err != nil {
+	if err = os.WriteFile(filepath.Join(cwd, stosDryRunDir, filename), fileData, 0640); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

@@ -147,18 +147,6 @@ func OperatorImageUrlByVersion(operatorVersion string) (string, error) {
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, operatorVersion), nil
 }
 
-func OperatorUrlByVersion(operatorVersion string) (string, error) {
-	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
-	if err != nil {
-		return "", err
-	}
-	if lessThanOrEqual {
-		return fmt.Sprintf(oldOperatorYamlUrl, operatorVersion), nil
-	}
-
-	return fmt.Sprintf("%s:%s", stosOperatorManifestsUrl, operatorVersion), nil
-}
-
 func ClusterUrlByVersion(operatorVersion string) (string, error) {
 	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
