@@ -243,7 +243,10 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 		return installer, err
 	}
 
+	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
+
 	installer = &Installer{
+		distribution:  distribution,
 		clientConfig:  clientConfig,
 		stosConfig:    config,
 		fileSys:       fileSys,

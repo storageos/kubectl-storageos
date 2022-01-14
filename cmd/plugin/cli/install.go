@@ -102,6 +102,12 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 
 	var err error
 	if config.Spec.Install.DryRun {
+		if config.Spec.Install.KubernetesVersion == "" {
+			config.Spec.Install.KubernetesVersion, err = k8sVersionPrompt()
+			if err != nil {
+				return err
+			}
+		}
 		config.Spec.Install.SkipEtcdEndpointsValidation = true
 		if config.Spec.IncludeEtcd && config.Spec.Install.EtcdStorageClassName == "" {
 			config.Spec.Install.EtcdStorageClassName, err = storageClassPrompt()

@@ -93,6 +93,25 @@ func storageClassPrompt() (string, error) {
 	return pluginutils.AskUser(prompt)
 }
 
+// k8sVersionPrompt uses promptui the user to enter the kubernetes version of the target cluster
+func k8sVersionPrompt() (string, error) {
+	logger.Printf("   Please enter the version of the target Kubernetes cluster\n\n")
+	validate := func(input string) error {
+		match, _ := regexp.MatchString("v[0-9]+.[0-9]+.[0-9]+", input)
+		if !match {
+			return errors.New("invalid entry, example of valid entry: 'v1.23.0'")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    "Version of target Kubernetes cluster",
+		Validate: validate,
+	}
+
+	return pluginutils.AskUser(prompt)
+}
+
 func valueOrDefault(value string, def string) string {
 	if value != "" {
 		return value
