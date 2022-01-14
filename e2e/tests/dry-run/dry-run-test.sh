@@ -9,7 +9,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMPDIR"' EXIT
 
 # Run install --dry-run command and move output to tmpdir
-kubectl storageos install --dry-run
+kubectl storageos install --dry-run --k8s-version=v1.22.0
 cp -r storageos-dry-run $TMPDIR/ && rm -r storageos-dry-run
 # Fetch operator-manifests and store in temp dir
 docker run "storageos/operator-manifests:v${LATEST_VERSION}" > ${TMPDIR}/storageos-operator.yaml
@@ -18,7 +18,7 @@ diff ${TMPDIR}/storageos-operator.yaml ${TMPDIR}/storageos-dry-run/storageos-ope
 diff test-data/storageos-cluster.yaml ${TMPDIR}/storageos-dry-run/storageos-cluster.yaml
 
 #  Run install --dry-run command and move output to tmpdir
-kubectl storageos install --include-etcd --dry-run --etcd-storage-class=standard
+kubectl storageos install --include-etcd --dry-run --etcd-storage-class=standard --k8s-version=v1.22.0
 cp -r storageos-dry-run $TMPDIR/ && rm -r storageos-dry-run
 # Fetch etcd-operator manifest 
 wget -q https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml -P ${TMPDIR}/
