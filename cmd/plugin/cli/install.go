@@ -121,7 +121,6 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 				return err
 			}
 		}
-		config.Spec.Install.StorageOSOperatorYaml = version.OperatorLatestSupportedURL()
 		config.Spec.Install.SkipEtcdEndpointsValidation = true
 		cliInstaller, err := installer.NewDryRunInstaller(config)
 		if err != nil {

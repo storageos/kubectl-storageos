@@ -7,23 +7,23 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/darkowlzz/operator-toolkit v0.0.0-20210603234749-4f4acec01835
 	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/fatih/color v1.12.0
+	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/snappy v0.0.3 // indirect
+	github.com/google/go-containerregistry v0.8.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/improbable-eng/etcd-cluster-operator v0.2.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/manifoldco/promptui v0.8.0
-	github.com/mattn/go-isatty v0.0.12
+	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851
 	github.com/replicatedhq/troubleshoot v0.13.5
-	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.8.1
+	github.com/spf13/cobra v1.3.0
+	github.com/spf13/viper v1.10.0
 	github.com/storageos/cluster-operator v2.1.0+incompatible
 	github.com/tj/go-spin v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect

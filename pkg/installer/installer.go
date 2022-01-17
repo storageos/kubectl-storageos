@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
@@ -193,8 +191,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 	distribution := pluginutils.DetermineDistribution(currentVersionStr)
 
 	if validateKubeVersion {
-		jobName := "storageos-operator-kube-version-" + strconv.FormatInt(time.Now().Unix(), 10)
-		minVersion, err := pluginutils.CreateJobAndFetchResult(clientConfig, jobName, config.Spec.GetOperatorNamespace(), pluginversion.OperatorLatestSupportedImageURL(), "cat MIN_KUBE_VERSION")
+		minVersion, err := fetchImageAndExtractFileFromTarball(pluginversion.OperatorLatestSupportedImageURL(), "MIN_KUBE_VERSION")
 		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
 		if err == nil && minVersion != "" {
 			supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)

@@ -1,11 +1,17 @@
 package utils
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/google/go-containerregistry/pkg/crane"
+	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
 
 	"github.com/pkg/errors"
 
@@ -124,4 +130,51 @@ func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
 
 	defer resp.Body.Close()
 	return ioutil.ReadAll(resp.Body)
+}
+
+// PullImage pulls an image from imageUrl string of the form 'repo:tag'
+func PullImage(imageUrl string) (gocontainerv1.Image, error) {
+	pulledImage, err := crane.Pull(imageUrl)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return pulledImage, nil
+}
+
+// ExportTarball take image and return an tarball of that image
+func ExportTarball(image gocontainerv1.Image) (bytes.Buffer, error) {
+	var buf bytes.Buffer
+	if err := crane.Export(image, &buf); err != nil {
+		return buf, errors.WithStack(err)
+	}
+	return buf, nil
+}
+
+// ExtractFile returns the contents of filename from tarball stored in r
+func ExtractFile(filename string, r io.Reader) ([]byte, error) {
+	tr := tar.NewReader(r)
+
+	for {
+		header, err := tr.Next()
+		switch {
+		// if no more files are found return
+		case err == io.EOF:
+			return nil, errors.WithStack(fmt.Errorf("file %s not found in tarball", filename))
+
+		// return any other error
+		case err != nil:
+			return nil, errors.WithStack(err)
+
+		// if the header is nil, continue
+		case header == nil:
+			continue
+
+		case header.Name == filename:
+			file, err := ioutil.ReadAll(tr)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			return file, nil
+		}
+	}
 }
