@@ -1,14 +1,13 @@
 package installer
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -17,6 +16,7 @@ import (
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
@@ -244,8 +244,13 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 		return "", errors.WithStack(err)
 	}
 
-	jobName := "storageos-operator-manifests-fetch-" + strconv.FormatInt(time.Now().Unix(), 10)
-	return pluginutils.CreateJobAndFetchResult(config, jobName, namespace, location, "")
+	// At this point, we know 'location' is neither a path nor a URL. Which means it must be the
+	// storageos/operator-manifest image repo.
+	file, err := fetchImageAndExtractFileFromTarball(version.OperatorLatestSupportedImageURL(), "operator.yaml")
+	if err != nil {
+		return "", err
+	}
+	return string(file), nil
 }
 
 // pullManifest returns a string of contents at url
@@ -260,6 +265,25 @@ func pullManifest(url string) (string, error) {
 	}
 
 	return string(contents), nil
+}
+
+// fetchImageAndExtractFromTarball creates a tarball from an OCI image and returns the file at filePath
+func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, error) {
+	pulled, err := pluginutils.PullImage(imageURL)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	exported, err := pluginutils.ExportTarball(pulled)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	file, err := pluginutils.ExtractFile(filePath, bytes.NewReader(exported.Bytes()))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return string(file), nil
 }
 
 // storageClassToManifest returns a manifest for storageClass
