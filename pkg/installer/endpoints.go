@@ -69,7 +69,7 @@ const (
 kind: Pod
 metadata:
   name: storageos-etcd-shell
-  namespace: default
+  namespace: storageos
 spec:
   restartPolicy: OnFailure      
   containers:
@@ -137,6 +137,11 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 	var err error
 	etcdShell := etcdShellPod
+	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, configInstall.StorageOSClusterNamespace, "namespace", "metadata")
+	if err != nil {
+		return err
+	}
+
 	if configInstall.EtcdTLSEnabled {
 		etcdShell, err = in.tlsValidationPrep(configInstall)
 		if err != nil {
