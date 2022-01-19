@@ -16,6 +16,6 @@ metadata:
   namespace: storageos
 spec:
   kvBackend:
-    address: storageos-etcd.storageos-etcd:2379
+    address: storageos.etcd:2379
   secretRefName: storageos-api
   storageClassName: storageos

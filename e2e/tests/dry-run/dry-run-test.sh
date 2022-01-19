@@ -9,7 +9,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf -- "$TMPDIR"' EXIT
 
 # Run install --dry-run command and move output to tmpdir
-kubectl storageos install --dry-run --k8s-version=v1.22.0 --etcd-endpoints=storageos-etcd.storageos-etcd:2379
+kubectl storageos install --dry-run --k8s-version=v1.22.0 --etcd-endpoints=storageos.etcd:2379
 cp -r storageos-dry-run $TMPDIR/ && rm -r storageos-dry-run
 # Fetch operator-manifests and store in temp dir
 docker run "storageos/operator-manifests:v${LATEST_VERSION}" > ${TMPDIR}/storageos-operator.yaml

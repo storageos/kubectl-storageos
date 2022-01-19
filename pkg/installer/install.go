@@ -22,7 +22,7 @@ func (in *Installer) Install(upgrade bool) error {
 
 			errChan <- in.installEtcd()
 		}()
-	} else if !in.stosConfig.Spec.Install.DryRun && !upgrade {
+	} else if !upgrade {
 		if err := in.handleEndpointsInput(in.stosConfig.Spec.Install); err != nil {
 			return err
 		}
