@@ -14,11 +14,6 @@ import (
 )
 
 const (
-	errNSForSecretNotFound = `
-	Namespace %s not found for %s while attempting to validate ETCD endpoints.
-
-	To skip ETCD endpoints validation during installation, set the --%s flag`
-
 	errSecretNotFound = `
 	Unable to find etcd client secret %s in namespace %s for ETCD endpoint validation.
 
@@ -69,7 +64,7 @@ const (
 kind: Pod
 metadata:
   name: storageos-etcd-shell
-  namespace: default
+  namespace: storageos
 spec:
   restartPolicy: OnFailure      
   containers:
@@ -107,8 +102,8 @@ spec:
 
 // handleEndpointsInput adds validated (or not validated) endpoints patch to kustomization file
 // for storageos-cluster.yaml
-func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
-	if !configInstall.SkipEtcdEndpointsValidation {
+func (in *Installer) handleEndpointsInput(configInstall apiv1.KubectlStorageOSConfigSpec) error {
+	if !configInstall.Install.SkipEtcdEndpointsValidation {
 		if err := in.validateEtcd(configInstall); err != nil {
 			return err
 		}
@@ -116,7 +111,7 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 	endpointPatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/spec/kvBackend/address",
-		Value: configInstall.EtcdEndpoints,
+		Value: configInstall.Install.EtcdEndpoints,
 	}
 
 	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
@@ -134,11 +129,18 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.Install) error {
 // - deletes the etcd-shell pod (deferred)
 // - prompts the user for endpoints input if required
 // - validates the endpoints using the etcd-shell-pod
-func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
+func (in *Installer) validateEtcd(configSpec apiv1.KubectlStorageOSConfigSpec) error {
 	var err error
 	etcdShell := etcdShellPod
-	if configInstall.EtcdTLSEnabled {
-		etcdShell, err = in.tlsValidationPrep(configInstall)
+
+	etcdNS := configSpec.GetETCDValidationNamespace()
+	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, etcdNS, "namespace", "metadata")
+	if err != nil {
+		return err
+	}
+
+	if configSpec.Install.EtcdTLSEnabled {
+		etcdShell, err = in.tlsValidationPrep(etcdNS, configSpec.Install)
 		if err != nil {
 			return err
 		}
@@ -155,7 +157,7 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 		}
 	}()
 
-	err = in.validateEndpoints(configInstall.EtcdEndpoints, string(etcdShell), configInstall.EtcdTLSEnabled)
+	err = in.validateEndpoints(configSpec.Install.EtcdEndpoints, string(etcdShell), configSpec.Install.EtcdTLSEnabled)
 
 	return err
 }
@@ -164,13 +166,10 @@ func (in *Installer) validateEtcd(configInstall apiv1.Install) error {
 // - searches for the etcd-secret
 // - applies app=storageos label to secret
 // - returns the tls equipped etcd-shell pod with storageos cluster namespace and secret name
-func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, error) {
-	if err := pluginutils.NamespaceExists(in.clientConfig, configInstall.StorageOSClusterNamespace); err != nil {
-		return "", errors.WithStack(fmt.Errorf(errNSForSecretNotFound, configInstall.StorageOSClusterNamespace, configInstall.EtcdSecretName, SkipEtcdEndpointsValFlag))
-	}
-	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace)
+func (in *Installer) tlsValidationPrep(namespace string, configInstall apiv1.Install) (string, error) {
+	etcdSecret, err := pluginutils.GetSecret(in.clientConfig, configInstall.EtcdSecretName, namespace)
 	if err != nil {
-		return "", fmt.Errorf(errSecretNotFound, configInstall.EtcdSecretName, configInstall.StorageOSClusterNamespace, SkipEtcdEndpointsValFlag)
+		return "", fmt.Errorf(errSecretNotFound, configInstall.EtcdSecretName, namespace, SkipEtcdEndpointsValFlag)
 	}
 
 	// apply app=storageos label to secret, this way it will be backed up locally during uninstall
@@ -181,12 +180,12 @@ func (in *Installer) tlsValidationPrep(configInstall apiv1.Install) (string, err
 	if err != nil {
 		return "", err
 	}
-	if err = in.kubectlClient.Apply(context.TODO(), configInstall.StorageOSClusterNamespace, string(etcdSecretManifest), true); err != nil {
+	if err = in.kubectlClient.Apply(context.TODO(), namespace, string(etcdSecretManifest), true); err != nil {
 		return "", errors.WithStack(err)
 	}
 
 	etcdShell := etcdShellPodTLS
-	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, configInstall.StorageOSClusterNamespace, "namespace", "metadata")
+	etcdShell, err = pluginutils.SetFieldInManifest(etcdShell, namespace, "namespace", "metadata")
 	if err != nil {
 		return "", err
 	}

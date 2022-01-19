@@ -177,6 +177,13 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 		if err != nil {
 			return installer, err
 		}
+
+		if etcdNS := config.Spec.GetETCDValidationNamespace(); etcdNS != "" && etcdNS != config.Spec.GetOperatorNamespace() {
+			err = pluginutils.EnsureNamespace(clientConfig, etcdNS)
+			if err != nil {
+				return installer, err
+			}
+		}
 	}
 
 	currentVersionStr := config.Spec.Install.KubernetesVersion

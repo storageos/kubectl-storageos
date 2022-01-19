@@ -23,7 +23,7 @@ func (in *Installer) Install(upgrade bool) error {
 			errChan <- in.installEtcd()
 		}()
 	} else if !upgrade {
-		if err := in.handleEndpointsInput(in.stosConfig.Spec.Install); err != nil {
+		if err := in.handleEndpointsInput(in.stosConfig.Spec); err != nil {
 			return err
 		}
 	}

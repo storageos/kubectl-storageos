@@ -133,27 +133,29 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 		}
 	}
 
-	if storageOSCluster.Name != "" && !in.stosConfig.Spec.SkipStorageOSCluster {
-		if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
+	if storageOSCluster.Name != "" {
+		if !in.stosConfig.Spec.SkipStorageOSCluster {
+			if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
+				return err
+			}
+			if err := in.ensureStorageOSClusterRemoved(); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+
+		if err := in.uninstallPortalManagerConfig(storageOSCluster.Namespace); err != nil {
 			return err
 		}
-		if err := in.ensureStorageOSClusterRemoved(); err != nil {
-			return errors.WithStack(err)
+		if err := in.uninstallPortalManagerClient(storageOSCluster.Namespace); err != nil {
+			return err
 		}
 
 		// StorageOS cluster resources should be in a different namespace, on that case need to delete
-		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		if !in.stosConfig.Spec.SkipStorageOSCluster && storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 			if err := in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
 				return err
 			}
 		}
-	}
-
-	if err := in.uninstallPortalManagerConfig(storageOSCluster.Namespace); err != nil {
-		return err
-	}
-	if err := in.uninstallPortalManagerClient(storageOSCluster.Namespace); err != nil {
-		return err
 	}
 
 	return in.uninstallStorageOSOperator()

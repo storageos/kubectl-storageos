@@ -44,6 +44,18 @@ func (spec *KubectlStorageOSConfigSpec) GetOperatorNamespace() (namespace string
 	return
 }
 
+// GetETCDValidationNamespace tries to figure out ETCD validation namespace
+func (spec *KubectlStorageOSConfigSpec) GetETCDValidationNamespace() (namespace string) {
+	if spec.Install.SkipEtcdEndpointsValidation {
+		return ""
+	}
+	if spec.SkipStorageOSCluster {
+		return spec.Install.StorageOSOperatorNamespace
+	}
+
+	return spec.Install.StorageOSClusterNamespace
+}
+
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
 type KubectlStorageOSConfigStatus struct {
 }

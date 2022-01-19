@@ -5,3 +5,15 @@ metadata:
   namespace: stos-operator-install-skip-etcd
 status:
   replicas: 1 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storageos-api
+  namespace: stos-cluster-install-skip-etcd
+---
+apiVersion: storageos.com/v1
+kind: StorageOSCluster
+metadata:
+  name: storageoscluster
+  namespace: stos-cluster-install-skip-etcd
