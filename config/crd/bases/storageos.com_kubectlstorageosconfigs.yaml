@@ -66,6 +66,8 @@ spec:
                     type: string
                   etcdNamespace:
                     type: string
+                  etcdOperatorVersion:
+                    type: string
                   etcdOperatorYaml:
                     type: string
                   etcdSecretName:
