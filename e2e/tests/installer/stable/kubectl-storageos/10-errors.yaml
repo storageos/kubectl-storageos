@@ -1,10 +1,7 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Namespace 
 metadata:
-  name: storageos-cluster-operator
-  namespace: storageos-operator
-status:
-  replicas: 1 
+  name: etcd-install-full
 ---
 apiVersion: apps/v1
 kind: Deployment
