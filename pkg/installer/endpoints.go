@@ -14,11 +14,6 @@ import (
 )
 
 const (
-	errNSForSecretNotFound = `
-	Namespace %s not found for %s while attempting to validate ETCD endpoints.
-
-	To skip ETCD endpoints validation during installation, set the --%s flag`
-
 	errSecretNotFound = `
 	Unable to find etcd client secret %s in namespace %s for ETCD endpoint validation.
 
