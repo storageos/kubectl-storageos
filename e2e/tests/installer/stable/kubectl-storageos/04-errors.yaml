@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace 
 metadata:
-  name: stos-cluster-install-skip-etcd
+  name: stos-operator-install-skip-etcd
 ---
 apiVersion: v1
 kind: Namespace 
