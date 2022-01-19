@@ -85,6 +85,9 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
+	if config.Spec.Install.EtcdOperatorVersion == "" {
+		config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
+	}
 
 	if config.Spec.Install.EnablePortalManager {
 		if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
@@ -100,6 +103,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}
 	}
 	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
+	version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
 
 	var err error
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually

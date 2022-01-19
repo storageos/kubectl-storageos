@@ -11,14 +11,17 @@ import (
 
 const (
 	operatorReleasesUrl        = "https://api.github.com/repos/storageos/operator/releases"
+	etcdOperatorReleasesUrl    = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
 	clusterOperatorReleasesUrl = "https://api.github.com/repos/storageos/cluster-operator/releases"
 )
 
 var (
 	operatorLatestVersion      string
+	etcdOperatorLatestVersion  string
 	clusterOperatorLastVersion string
 
 	fetchOperatorVersionOnce        = sync.Once{}
+	fetchEtcdOperatorVersionOnce    = sync.Once{}
 	fetchClusterOperatorVersionOnce = sync.Once{}
 )
 
@@ -74,8 +77,24 @@ func OperatorLatestSupportedVersion() string {
 	return operatorLatestVersion
 }
 
+func EtcdOperatorLatestSupportedVersion() string {
+	fetchEtcdOperatorVersionOnce.Do(func() {
+		if etcdOperatorLatestVersion != "" {
+			return
+		}
+		releases := fetchVersionsOrPanic(etcdOperatorReleasesUrl)
+		etcdOperatorLatestVersion = selectLatestVersionOrPanic(releases)
+	})
+
+	return etcdOperatorLatestVersion
+}
+
 func SetOperatorLatestSupportedVersion(version string) {
 	operatorLatestVersion = version
+}
+
+func SetEtcdOperatorLatestSupportedVersion(version string) {
+	etcdOperatorLatestVersion = version
 }
 
 func ClusterOperatorLastVersion() string {
