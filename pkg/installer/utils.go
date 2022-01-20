@@ -16,7 +16,6 @@ import (
 	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
@@ -119,7 +118,7 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	etcdSubDirs := make(map[string]map[string][]byte)
 
 	// build etcd/operator
-	etcdOpFiles, err := createFileWithKustPair(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedURL(), etcdOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
+	etcdOpFiles, err := createFileWithKustPair(config.Spec.Install.EtcdOperatorYaml, pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, clientConfig, config.Spec.GetOperatorNamespace())
 	if err != nil {
 		return fs, err
 	}
@@ -244,12 +243,13 @@ func readOrPullManifest(path, url string, config *rest.Config, namespace string)
 		return "", errors.WithStack(err)
 	}
 
-	// At this point, we know 'location' is neither a path nor a URL. Which means it must be the
-	// storageos/operator-manifest image repo.
-	file, err := fetchImageAndExtractFileFromTarball(version.OperatorLatestSupportedImageURL(), "operator.yaml")
+	// At this point, we know 'location' is neither a path nor a URL. Which means it must be
+	// a manifest image repo
+	file, err := fetchImageAndExtractFileFromTarball(location, "operator.yaml")
 	if err != nil {
 		return "", err
 	}
+
 	return string(file), nil
 }
 

@@ -65,6 +65,7 @@ type Install struct {
 	Wait                        bool   `json:"wait,omitempty"`
 	DryRun                      bool   `json:"dryRun,omitempty"`
 	StorageOSVersion            string `json:"storageOSVersion,omitempty"`
+	EtcdOperatorVersion         string `json:"etcdOperatorVersion,omitempty"`
 	KubernetesVersion           string `json:"k8sVersion,omitempty"`
 	StorageOSOperatorNamespace  string `json:"storageOSOperatorNamespace,omitempty"`
 	StorageOSClusterNamespace   string `json:"storageOSClusterNamespace,omitempty"`

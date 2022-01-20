@@ -22,7 +22,6 @@ const (
 
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
-	stosOperatorManifestsUrl      = "https://github.com/storageos/operator/releases/download/%s/storageos-operator.yaml"
 
 	newClusterYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
 
@@ -34,8 +33,9 @@ const (
 
 	portalConfigYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/configmap-storageos-portal-manager.yaml"
 
-	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster-operator.yaml"
-	etcdClusterYamlUrl  = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
+	etcdOperatorManifestsImageUrl = "docker.io/storageos/etcd-cluster-operator-manifests"
+
+	etcdClusterYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
 )
 
 var (
@@ -256,10 +256,6 @@ func OperatorLatestSupportedImageURL() string {
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, OperatorLatestSupportedVersion())
 }
 
-func OperatorLatestSupportedURL() string {
-	return fmt.Sprintf(stosOperatorManifestsUrl, OperatorLatestSupportedVersion())
-}
-
 func ClusterLatestSupportedURL() string {
 	return fmt.Sprintf(newClusterYamlUrl, PluginVersion)
 }
@@ -280,13 +276,11 @@ func PortalConfigLatestSupportedURL() string {
 	return fmt.Sprintf(portalConfigYamlUrl, PluginVersion)
 }
 
-func EtcdOperatorLatestSupportedURL() string {
-	// TODO add etcd-operator-version flag to return correct url
-	return etcdOperatorYamlUrl
+func EtcdOperatorLatestSupportedImageURL() string {
+	return fmt.Sprintf("%s:%s", etcdOperatorManifestsImageUrl, EtcdOperatorLatestSupportedVersion())
 }
 
 func EtcdClusterLatestSupportedURL() string {
-	// TODO add etcd-operator-version flag to return correct url
 	return etcdClusterYamlUrl
 }
 
