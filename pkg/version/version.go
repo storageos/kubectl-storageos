@@ -22,10 +22,13 @@ const (
 
 	// URLs to installation manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
+	stosOperatorManifestsUrl      = "https://github.com/storageos/operator/releases/download/%s/storageos-operator.yaml"
 
 	newClusterYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/storageos-cluster.yaml"
 
 	resourceQuotaYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/resource-quota.yaml"
+
+	portalManagerManifestsImageUrl = "docker.io/storageos/portal-manager-manifests"
 
 	portalSecretYamlUrl = "https://github.com/storageos/kubectl-storageos/releases/download/%s/portal-secret-generator.yaml"
 
@@ -256,12 +259,20 @@ func OperatorLatestSupportedImageURL() string {
 	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, OperatorLatestSupportedVersion())
 }
 
+func OperatorLatestSupportedURL() string {
+	return fmt.Sprintf(stosOperatorManifestsUrl, OperatorLatestSupportedVersion())
+}
+
 func ClusterLatestSupportedURL() string {
 	return fmt.Sprintf(newClusterYamlUrl, PluginVersion)
 }
 
 func ResourceQuotaLatestSupportedURL() string {
 	return fmt.Sprintf(resourceQuotaYamlUrl, PluginVersion)
+}
+
+func PortalManagerLatestSupportedImageURL() string {
+	return fmt.Sprintf("%s:%s", portalManagerManifestsImageUrl, PortalManagerLatestSupportedVersion())
 }
 
 func PortalSecretLatestSupportedURL() string {
