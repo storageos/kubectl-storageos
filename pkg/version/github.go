@@ -10,18 +10,23 @@ import (
 )
 
 const (
-	operatorReleasesUrl        = "https://api.github.com/repos/storageos/operator/releases"
-	etcdOperatorReleasesUrl    = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
+	operatorReleasesUrl     = "https://api.github.com/repos/storageos/operator/releases"
+	etcdOperatorReleasesUrl = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
+	// TODO: No release exists for portal-manager yet
+	// portalManagerReleasesUrl   = "https://api.github.com/repos/storageos/portal-manager/releases"
 	clusterOperatorReleasesUrl = "https://api.github.com/repos/storageos/cluster-operator/releases"
 )
 
 var (
 	operatorLatestVersion      string
 	etcdOperatorLatestVersion  string
+	portalManagerLatestVersion string
 	clusterOperatorLastVersion string
 
-	fetchOperatorVersionOnce        = sync.Once{}
-	fetchEtcdOperatorVersionOnce    = sync.Once{}
+	fetchOperatorVersionOnce     = sync.Once{}
+	fetchEtcdOperatorVersionOnce = sync.Once{}
+	// TODO: No release exists for portal-manager yet
+	// fetchPortalManagerVersionOnce   = sync.Once{}
 	fetchClusterOperatorVersionOnce = sync.Once{}
 )
 
@@ -89,12 +94,32 @@ func EtcdOperatorLatestSupportedVersion() string {
 	return etcdOperatorLatestVersion
 }
 
+func PortalManagerLatestSupportedVersion() string {
+	// TODO: No release exists for portal-manager yet
+	/*
+		fetchPortalManagerVersionOnce.Do(func() {
+			if portalManagerLatestVersion != "" {
+				return
+			}
+			releases := fetchVersionsOrPanic(portalManagerReleasesUrl)
+			portalManagerLatestVersion = selectLatestVersionOrPanic(releases)
+		})
+
+		return portalManagerLatestVersion
+	*/
+	return portalManagerLatestVersion
+}
+
 func SetOperatorLatestSupportedVersion(version string) {
 	operatorLatestVersion = version
 }
 
 func SetEtcdOperatorLatestSupportedVersion(version string) {
 	etcdOperatorLatestVersion = version
+}
+
+func SetPortalManagerLatestSupportedVersion(version string) {
+	portalManagerLatestVersion = version
 }
 
 func ClusterOperatorLastVersion() string {
