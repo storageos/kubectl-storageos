@@ -11,8 +11,8 @@ import (
 
 	gyaml "github.com/ghodss/yaml"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
-	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
 	"sigs.k8s.io/kustomize/api/filesys"

@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
-	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
+	operatorapi "github.com/storageos/operator/api/v1"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -593,7 +593,7 @@ func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluste
 	}
 
 	if len(stosClusterList.Items) == 0 {
-		return stosCluster, kerrors.NewNotFound(operatorapi.SchemeGroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
+		return stosCluster, kerrors.NewNotFound(operatorapi.SchemeBuilder.GroupVersion.WithResource("StorageOSCluster").GroupResource(), "")
 	}
 
 	stosCluster = &stosClusterList.Items[0]
