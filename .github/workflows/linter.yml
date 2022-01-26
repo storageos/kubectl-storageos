@@ -24,6 +24,10 @@ jobs:
     name: Go Linter
     runs-on: ubuntu-18.04
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
       - name: Deps
         run: |
           sudo apt update
@@ -52,6 +56,10 @@ jobs:
     # Load all steps #
     ##################
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
       ##########################
       # Checkout the code base #
       ##########################
