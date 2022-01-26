@@ -94,7 +94,7 @@ jobs:
       KUTTL: /usr/local/bin/kubectl-kuttl
       KUBECTL_STORAGEOS: /usr/local/bin/kubectl-storageos
     steps:
-	  - name: Cancel Previous Runs
+      - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
