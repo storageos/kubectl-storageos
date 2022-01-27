@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/darkowlzz/operator-toolkit v0.0.0-20210603234749-4f4acec01835
+	github.com/darkowlzz/operator-toolkit v0.0.0-20210721205719-05b03cd74f02
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.13.0 // indirect
@@ -24,7 +24,7 @@ require (
 	github.com/replicatedhq/troubleshoot v0.13.5
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
-	github.com/storageos/cluster-operator v2.1.0+incompatible
+	github.com/storageos/operator v0.0.0-20220126155253-f456a9d8b204
 	github.com/tj/go-spin v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gopkg.in/yaml.v2 v2.4.0

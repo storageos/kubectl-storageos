@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	operatorapi "github.com/storageos/cluster-operator/pkg/apis/storageos/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
+	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
