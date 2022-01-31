@@ -104,6 +104,7 @@ func storageClassToManifest(storageClass *kstoragev1.StorageClass) ([]byte, erro
 	newStorageClass.SetNamespace(storageClass.Namespace)
 	newStorageClass.SetLabels(storageClass.Labels)
 	newStorageClass.SetAnnotations(storageClass.Annotations)
+	newStorageClass.SetResourceVersion(storageClass.GetResourceVersion())
 	newStorageClass.SetFinalizers(storageClass.GetFinalizers())
 	newStorageClass.Provisioner = storageClass.Provisioner
 	newStorageClass.Parameters = storageClass.Parameters
@@ -133,6 +134,7 @@ func storageOSClusterToManifest(storageOSCluster *operatorapi.StorageOSCluster) 
 	newStorageOSCluster.SetNamespace(storageOSCluster.GetNamespace())
 	newStorageOSCluster.SetLabels(storageOSCluster.GetLabels())
 	newStorageOSCluster.SetAnnotations(storageOSCluster.GetAnnotations())
+	newStorageOSCluster.SetResourceVersion(storageOSCluster.GetResourceVersion())
 	newStorageOSCluster.SetFinalizers(storageOSCluster.GetFinalizers())
 	newStorageOSCluster.Spec = storageOSCluster.Spec
 
@@ -156,6 +158,7 @@ func secretToManifest(secret *corev1.Secret) ([]byte, error) {
 	newSecret.SetNamespace(secret.GetNamespace())
 	newSecret.SetLabels(secret.GetLabels())
 	newSecret.SetAnnotations(secret.GetAnnotations())
+	newSecret.SetResourceVersion(secret.GetResourceVersion())
 	newSecret.SetFinalizers(secret.GetFinalizers())
 	newSecret.Immutable = secret.Immutable
 	newSecret.Data = secret.Data
@@ -183,6 +186,7 @@ func configMapToManifest(configMap *corev1.ConfigMap) ([]byte, error) {
 	newConfigMap.SetLabels(configMap.GetLabels())
 	newConfigMap.SetAnnotations(configMap.GetAnnotations())
 	newConfigMap.SetFinalizers(configMap.GetFinalizers())
+	newConfigMap.SetResourceVersion(configMap.GetResourceVersion())
 	newConfigMap.Immutable = configMap.Immutable
 	newConfigMap.Data = configMap.Data
 	newConfigMap.BinaryData = configMap.BinaryData
