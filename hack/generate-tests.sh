@@ -108,7 +108,7 @@ jobs:
           sudo chmod +x \$KUTTL
       - name: Install kubectl-storageos
         run: |
-          make _build-pre
+          make _build
           sudo cp bin/kubectl-storageos \$KUBECTL_STORAGEOS
       - name: Run kuttl installer ${major}
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
