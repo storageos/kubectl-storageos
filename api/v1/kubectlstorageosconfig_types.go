@@ -62,38 +62,46 @@ type KubectlStorageOSConfigStatus struct {
 
 // Install defines options for cli install subcommand
 type Install struct {
-	Wait                        bool   `json:"wait,omitempty"`
-	DryRun                      bool   `json:"dryRun,omitempty"`
-	StorageOSVersion            string `json:"storageOSVersion,omitempty"`
-	EtcdOperatorVersion         string `json:"etcdOperatorVersion,omitempty"`
-	KubernetesVersion           string `json:"k8sVersion,omitempty"`
-	StorageOSOperatorNamespace  string `json:"storageOSOperatorNamespace,omitempty"`
-	StorageOSClusterNamespace   string `json:"storageOSClusterNamespace,omitempty"`
-	EtcdNamespace               string `json:"etcdNamespace,omitempty"`
-	StorageOSOperatorYaml       string `json:"storageOSOperatorYaml,omitempty"`
-	StorageOSClusterYaml        string `json:"storageOSClusterYaml,omitempty"`
-	StorageOSPortalConfigYaml   string `json:"storageOSPortalConfigYaml,omitempty"`
-	ResourceQuotaYaml           string `json:"resourceQuotaYaml,omitempty"`
-	EtcdOperatorYaml            string `json:"etcdOperatorYaml,omitempty"`
-	EtcdClusterYaml             string `json:"etcdClusterYaml,omitempty"`
-	EtcdEndpoints               string `json:"etcdEndpoints,omitempty"`
-	EtcdTLSEnabled              bool   `json:"etcdTLSEnabled,omitempty"`
-	EtcdSecretName              string `json:"etcdSecretName,omitempty"`
-	SkipEtcdEndpointsValidation bool   `json:"skipEtcdEndpointsValidation,omitempty"`
-	EnablePortalManager         bool   `json:"enablePortalManager,omitempty"`
-	EtcdStorageClassName        string `json:"etcdStorageClassName,omitempty"`
-	AdminUsername               string `json:"adminUsername,omitempty"`
-	AdminPassword               string `json:"adminPassword,omitempty"`
-	PortalClientID              string `json:"portalClientID,omitempty"`
-	PortalSecret                string `json:"portalSecret,omitempty"`
-	PortalTenantID              string `json:"portalTenantID,omitempty"`
-	PortalAPIURL                string `json:"portalAPIURL,omitempty"`
+	Wait                            bool   `json:"wait,omitempty"`
+	DryRun                          bool   `json:"dryRun,omitempty"`
+	StorageOSVersion                string `json:"storageOSVersion,omitempty"`
+	EtcdOperatorVersion             string `json:"etcdOperatorVersion,omitempty"`
+	KubernetesVersion               string `json:"k8sVersion,omitempty"`
+	StorageOSOperatorNamespace      string `json:"storageOSOperatorNamespace,omitempty"`
+	StorageOSClusterNamespace       string `json:"storageOSClusterNamespace,omitempty"`
+	EtcdNamespace                   string `json:"etcdNamespace,omitempty"`
+	StorageOSOperatorYaml           string `json:"storageOSOperatorYaml,omitempty"`
+	StorageOSClusterYaml            string `json:"storageOSClusterYaml,omitempty"`
+	StorageOSPortalConfigYaml       string `json:"storageOSPortalConfigYaml,omitempty"`
+	StorageOSPortalClientSecretYaml string `json:"storageOSPortalClientSecretYaml,omitempty"`
+	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
+	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
+	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
+	EtcdEndpoints                   string `json:"etcdEndpoints,omitempty"`
+	EtcdTLSEnabled                  bool   `json:"etcdTLSEnabled,omitempty"`
+	EtcdSecretName                  string `json:"etcdSecretName,omitempty"`
+	SkipEtcdEndpointsValidation     bool   `json:"skipEtcdEndpointsValidation,omitempty"`
+	EnablePortalManager             bool   `json:"enablePortalManager,omitempty"`
+	EtcdStorageClassName            string `json:"etcdStorageClassName,omitempty"`
+	AdminUsername                   string `json:"adminUsername,omitempty"`
+	AdminPassword                   string `json:"adminPassword,omitempty"`
+	PortalClientID                  string `json:"portalClientID,omitempty"`
+	PortalSecret                    string `json:"portalSecret,omitempty"`
+	PortalTenantID                  string `json:"portalTenantID,omitempty"`
+	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
 type Uninstall struct {
-	StorageOSOperatorNamespace string `json:"storageOSOperatorNamespace,omitempty"`
-	EtcdNamespace              string `json:"etcdNamespace,omitempty"`
+	StorageOSOperatorNamespace      string `json:"storageOSOperatorNamespace,omitempty"`
+	EtcdNamespace                   string `json:"etcdNamespace,omitempty"`
+	StorageOSOperatorYaml           string `json:"storageOSOperatorYaml,omitempty"`
+	StorageOSClusterYaml            string `json:"storageOSClusterYaml,omitempty"`
+	StorageOSPortalConfigYaml       string `json:"storageOSPortalConfigYaml,omitempty"`
+	StorageOSPortalClientSecretYaml string `json:"storageOSPortalClientSecretYaml,omitempty"`
+	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
+	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
+	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
 }
 
 type InstallerMeta struct {
