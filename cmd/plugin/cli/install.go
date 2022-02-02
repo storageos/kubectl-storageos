@@ -93,7 +93,6 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
 		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
-
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -111,9 +110,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		// TODO: Do we need to add a --portal-manager-version flag?
 		// for now, there is no released version so default to 'develop'
 		version.SetPortalManagerLatestSupportedVersion("develop")
-
 	}
-	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 
 	var err error
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually

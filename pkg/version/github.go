@@ -15,14 +15,12 @@ const (
 	etcdOperatorReleasesUrl = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
 	// TODO: No release exists for portal-manager yet
 	// portalManagerReleasesUrl   = "https://api.github.com/repos/storageos/portal-manager/releases"
-	clusterOperatorReleasesUrl = "https://api.github.com/repos/storageos/cluster-operator/releases"
 )
 
 var (
 	operatorLatestVersion      string
 	etcdOperatorLatestVersion  string
 	portalManagerLatestVersion string
-	clusterOperatorLastVersion string
 
 	fetchOperatorVersionOnce     = sync.Once{}
 	fetchEtcdOperatorVersionOnce = sync.Once{}
