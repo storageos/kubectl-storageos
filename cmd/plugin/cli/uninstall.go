@@ -13,6 +13,7 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -79,13 +80,23 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}
 	}
 
-	version, err := pluginversion.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
+	operatorVersion, err := pluginversion.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Discovered StorageOS cluster and operator version %s...\n", version)
+	fmt.Printf("Discovered StorageOS cluster and operator version %s...\n", operatorVersion)
+	version.SetOperatorLatestSupportedVersion(operatorVersion)
 
-	if err = setVersionSpecificValues(config, version); err != nil {
+	if config.Spec.IncludeEtcd {
+		etcdOperatorVersion, err := pluginversion.GetExistingEtcdOperatorVersion(config.Spec.Uninstall.EtcdNamespace)
+		if err != nil {
+			return err
+		}
+
+		version.SetEtcdOperatorLatestSupportedVersion(etcdOperatorVersion)
+	}
+
+	if err = setVersionSpecificValues(config, operatorVersion); err != nil {
 		return err
 	}
 
@@ -94,7 +105,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	err = cliInstaller.Uninstall(false, version)
+	err = cliInstaller.Uninstall(false, operatorVersion)
 
 	return err
 }
@@ -170,22 +181,27 @@ func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version stri
 	}
 
 	// set additional values to be used by Installer for in memory fs build
-	config.Spec.Install.StorageOSOperatorYaml, err = pluginversion.OperatorImageUrlByVersion(version)
-	if err != nil {
-		return
+	if config.Spec.Uninstall.StorageOSOperatorYaml == "" {
+		config.Spec.Uninstall.StorageOSOperatorYaml, err = pluginversion.OperatorImageUrlByVersion(version)
+		if err != nil {
+			return
+		}
+	}
+
+	if config.Spec.Uninstall.StorageOSClusterYaml == "" {
+		config.Spec.Uninstall.StorageOSClusterYaml, err = pluginversion.ClusterUrlByVersion(version)
+		if err != nil {
+			return
+		}
+	}
+	if config.Spec.Uninstall.ResourceQuotaYaml == "" {
+		config.Spec.Uninstall.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(version)
+		if err != nil {
+			return
+		}
 	}
 
 	config.InstallerMeta.StorageOSSecretYaml, err = pluginversion.SecretUrlByVersion(version)
-	if err != nil {
-		return
-	}
-
-	config.Spec.Install.StorageOSClusterYaml, err = pluginversion.ClusterUrlByVersion(version)
-	if err != nil {
-		return
-	}
-
-	config.Spec.Install.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(version)
 	if err != nil {
 		return
 	}

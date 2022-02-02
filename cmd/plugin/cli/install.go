@@ -86,8 +86,14 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
-	if config.Spec.Install.EtcdOperatorVersion == "" {
-		config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
+	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
+
+	if config.Spec.IncludeEtcd {
+		if config.Spec.Install.EtcdOperatorVersion == "" {
+			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
+		}
+		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
+
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -102,12 +108,12 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}); err != nil {
 			return err
 		}
+		// TODO: Do we need to add a --portal-manager-version flag?
+		// for now, there is no released version so default to 'develop'
+		version.SetPortalManagerLatestSupportedVersion("develop")
+
 	}
 	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
-	version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
-	// TODO: Do we need to add a --portal-manager-version flag?
-	// for now, there is no released version so default to 'develop'
-	version.SetPortalManagerLatestSupportedVersion("develop")
 
 	var err error
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually

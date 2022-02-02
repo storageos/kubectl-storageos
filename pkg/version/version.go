@@ -138,6 +138,30 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	return version, nil
 }
 
+func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
+	if namespace != "" {
+		namespace = "storageos-etcd"
+	}
+	config, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return "", err
+	}
+
+	clientset, err := pluginutils.GetClientsetFromConfig(config)
+	if err != nil {
+		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	etcdDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "storageos-etcd-controller-manager", metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to detect StorageOS ETCD Operator version")
+	}
+	imageName := etcdDeployment.Spec.Template.Spec.Containers[0].Image
+	splitImageName := strings.SplitAfter(imageName, ":")
+	version := splitImageName[len(splitImageName)-1]
+
+	return version, nil
+}
+
 func OperatorImageUrlByVersion(operatorVersion string) (string, error) {
 	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
