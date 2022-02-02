@@ -139,7 +139,7 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 }
 
 func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
-	if namespace != "" {
+	if namespace == "" {
 		namespace = "storageos-etcd"
 	}
 	config, err := pluginutils.NewClientConfig()
