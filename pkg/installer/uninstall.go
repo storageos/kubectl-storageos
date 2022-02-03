@@ -115,10 +115,30 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 			return err
 		}
 	}
-	if !in.stosConfig.Spec.SkipNamespaceDeletion {
-		if err := in.checkForProtectedNamespaces(storageOSCluster); err != nil {
-			return errors.Wrap(err, errStosUninstallAborted)
+	storageOSClusterNamespace := in.stosConfig.Spec.GetOperatorNamespace()
+	if storageOSCluster.Namespace != "" {
+		if !in.stosConfig.Spec.SkipNamespaceDeletion {
+			if err := in.checkForProtectedNamespaces(storageOSCluster); err != nil {
+				return errors.Wrap(err, errStosUninstallAborted)
+			}
 		}
+		if !in.stosConfig.Spec.SkipStorageOSCluster {
+			if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
+				return errors.WithStack(err)
+			}
+			if err := in.ensureStorageOSClusterRemoved(); err != nil {
+				return errors.WithStack(err)
+			}
+
+		}
+		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+			defer func() {
+				if err := in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
+					panic(err)
+				}
+			}()
+		}
+		storageOSClusterNamespace = storageOSCluster.Namespace
 	}
 
 	if !upgrade && in.installerOptions.resourceQuota {
@@ -127,35 +147,18 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 			return err
 		}
 		if !lessThanOrEqual {
-			if err = in.uninstallResourceQuota(storageOSCluster); err != nil {
+			if err = in.uninstallResourceQuota(storageOSClusterNamespace); err != nil {
 				return err
 			}
 		}
 	}
 
-	if storageOSCluster.Name != "" {
-		if !in.stosConfig.Spec.SkipStorageOSCluster {
-			if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
-				return err
-			}
-			if err := in.ensureStorageOSClusterRemoved(); err != nil {
-				return errors.WithStack(err)
-			}
-		}
+	if err := in.uninstallPortalManagerConfig(storageOSClusterNamespace); err != nil {
+		return err
+	}
 
-		if err := in.uninstallPortalManagerConfig(storageOSCluster.Namespace); err != nil {
-			return err
-		}
-		if err := in.uninstallPortalManagerClient(storageOSCluster.Namespace); err != nil {
-			return err
-		}
-
-		// StorageOS cluster resources should be in a different namespace, on that case need to delete
-		if !in.stosConfig.Spec.SkipStorageOSCluster && storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-			if err := in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
-				return err
-			}
-		}
+	if err := in.uninstallPortalManagerClient(storageOSClusterNamespace); err != nil {
+		return err
 	}
 
 	return in.uninstallStorageOSOperator()
@@ -237,7 +240,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	return err
 }
 
-func (in *Installer) uninstallResourceQuota(storageOSCluster *operatorapi.StorageOSCluster) error {
+func (in *Installer) uninstallResourceQuota(storageOSClusterNamespace string) error {
 	// make changes to storageos/resource-quota/kustomization.yaml based on flags (or cli config file) before
 	// kustomizeAndDelete call
 	fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
@@ -248,7 +251,7 @@ func (in *Installer) uninstallResourceQuota(storageOSCluster *operatorapi.Storag
 	clusterNamespacePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/namespace",
-		Value: storageOSCluster.Namespace,
+		Value: storageOSClusterNamespace,
 	}
 
 	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {

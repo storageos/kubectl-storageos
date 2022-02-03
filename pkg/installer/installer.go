@@ -15,6 +15,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -348,16 +349,23 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		return uninstaller, errors.WithStack(err)
 	}
 
+	uninstallPortal := false
 	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
 	if err != nil {
-		return uninstaller, errors.WithStack(err)
+		if !kerrors.IsNotFound(err) {
+			return uninstaller, errors.WithStack(err)
+
+		}
+	}
+	if stosCluster != nil {
+		uninstallPortal = stosCluster.Spec.EnablePortalManager
 	}
 
 	uninstallerOptions := &installerOptions{
 		storageosOperator: true,
 		storageosCluster:  !config.Spec.SkipStorageOSCluster,
-		portalClient:      stosCluster.Spec.EnablePortalManager,
-		portalConfig:      stosCluster.Spec.EnablePortalManager,
+		portalClient:      uninstallPortal,
+		portalConfig:      uninstallPortal,
 		resourceQuota:     distribution == pluginutils.DistributionGKE,
 		etcdOperator:      config.Spec.IncludeEtcd,
 		etcdCluster:       config.Spec.IncludeEtcd,
