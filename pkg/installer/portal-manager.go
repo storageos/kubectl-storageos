@@ -22,6 +22,14 @@ func (in *Installer) EnablePortalManager(enable bool) error {
 	if err := in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(storageOSClusterManifest)); err != nil {
 		return errors.WithStack(err)
 	}
+	kustYamlContents, err := pluginutils.SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", stosClusterFile, "]"), "resources", "")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if err := in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, kustomizationFile), []byte(kustYamlContents)); err != nil {
+		return errors.WithStack(err)
+	}
+
 	if err := in.enablePortalManager(storageOSCluster.Name, enable); err != nil {
 		return err
 	}
