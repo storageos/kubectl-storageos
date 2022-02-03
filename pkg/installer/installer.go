@@ -354,7 +354,6 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return uninstaller, errors.WithStack(err)
-
 		}
 	}
 	if stosCluster != nil {

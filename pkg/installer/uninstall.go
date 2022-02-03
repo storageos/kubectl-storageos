@@ -129,7 +129,6 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 			if err := in.ensureStorageOSClusterRemoved(); err != nil {
 				return errors.WithStack(err)
 			}
-
 		}
 		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 			defer func() {
