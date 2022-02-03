@@ -309,7 +309,6 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 		etcdOperator:      config.Spec.IncludeEtcd,
 		etcdCluster:       config.Spec.IncludeEtcd,
 	}
-	installer.installerOptions = installerOptions
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
@@ -317,11 +316,12 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	}
 
 	installer = &Installer{
-		distribution:  distribution,
-		clientConfig:  clientConfig,
-		stosConfig:    config,
-		fileSys:       fileSys,
-		onDiskFileSys: filesys.MakeFsOnDisk(),
+		distribution:     distribution,
+		clientConfig:     clientConfig,
+		stosConfig:       config,
+		fileSys:          fileSys,
+		onDiskFileSys:    filesys.MakeFsOnDisk(),
+		installerOptions: installerOptions,
 	}
 
 	return installer, nil

@@ -108,6 +108,9 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.KubectlStorageOSCo
 			return err
 		}
 	}
+	if configInstall.SkipStorageOSCluster {
+		return nil
+	}
 	endpointPatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/spec/kvBackend/address",
@@ -119,9 +122,7 @@ func (in *Installer) handleEndpointsInput(configInstall apiv1.KubectlStorageOSCo
 		return err
 	}
 
-	err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointPatch})
-
-	return err
+	return in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{endpointPatch})
 }
 
 // validateEtcd:
