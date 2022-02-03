@@ -165,13 +165,14 @@ type fsData map[string]map[string]map[string][]byte
 
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
-	distribution  pluginutils.Distribution
-	kubectlClient *otkkubectl.DefaultKubectl
-	clientConfig  *rest.Config
-	kubeClusterID types.UID
-	stosConfig    *apiv1.KubectlStorageOSConfig
-	fileSys       filesys.FileSystem
-	onDiskFileSys filesys.FileSystem
+	distribution     pluginutils.Distribution
+	kubectlClient    *otkkubectl.DefaultKubectl
+	clientConfig     *rest.Config
+	kubeClusterID    types.UID
+	stosConfig       *apiv1.KubectlStorageOSConfig
+	fileSys          filesys.FileSystem
+	onDiskFileSys    filesys.FileSystem
+	installerOptions *installerOptions
 }
 
 // NewInstaller returns an Installer used for install command
@@ -190,6 +191,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		etcdOperator:      config.Spec.IncludeEtcd,
 		etcdCluster:       config.Spec.IncludeEtcd,
 	}
+	in.installerOptions = installerOptions
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
 	if err != nil {
@@ -217,6 +219,7 @@ func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRe
 		etcdOperator:      false,
 		etcdCluster:       false,
 	}
+	in.installerOptions = installerOptions
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
 	if err != nil {
@@ -306,6 +309,7 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 		etcdOperator:      config.Spec.IncludeEtcd,
 		etcdCluster:       config.Spec.IncludeEtcd,
 	}
+	installer.installerOptions = installerOptions
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
@@ -354,10 +358,11 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		storageosCluster:  !config.Spec.SkipStorageOSCluster,
 		portalClient:      stosCluster.Spec.EnablePortalManager,
 		portalConfig:      stosCluster.Spec.EnablePortalManager,
-		resourceQuota:     (distribution == pluginutils.DistributionGKE),
+		resourceQuota:     distribution == pluginutils.DistributionGKE,
 		etcdOperator:      config.Spec.IncludeEtcd,
 		etcdCluster:       config.Spec.IncludeEtcd,
 	}
+	uninstaller.installerOptions = uninstallerOptions
 
 	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
@@ -365,13 +370,14 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	}
 
 	uninstaller = &Installer{
-		distribution:  distribution,
-		kubectlClient: otkkubectl.New(),
-		clientConfig:  clientConfig,
-		kubeClusterID: kubesystemNS.GetUID(),
-		stosConfig:    config,
-		fileSys:       fileSys,
-		onDiskFileSys: filesys.MakeFsOnDisk(),
+		distribution:     distribution,
+		kubectlClient:    otkkubectl.New(),
+		clientConfig:     clientConfig,
+		kubeClusterID:    kubesystemNS.GetUID(),
+		stosConfig:       config,
+		fileSys:          fileSys,
+		onDiskFileSys:    filesys.MakeFsOnDisk(),
+		installerOptions: uninstallerOptions,
 	}
 
 	return uninstaller, nil

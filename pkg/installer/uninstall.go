@@ -121,7 +121,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 		}
 	}
 
-	if !upgrade && in.distribution == pluginutils.DistributionGKE {
+	if !upgrade && in.installerOptions.resourceQuota {
 		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
 		if err != nil {
 			return err

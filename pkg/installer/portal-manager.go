@@ -53,6 +53,10 @@ func (in *Installer) InstallPortalManager() error {
 }
 
 func (in *Installer) installPortalManagerConfig(stosClusterNamespace string) error {
+	if !in.installerOptions.portalConfig {
+		return nil
+	}
+
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), stosClusterNamespace, "namespace", ""); err != nil {
 		return err
 	}
@@ -60,6 +64,10 @@ func (in *Installer) installPortalManagerConfig(stosClusterNamespace string) err
 }
 
 func (in *Installer) installPortalManagerClient(stosClusterNamespace string) error {
+	if !in.installerOptions.portalClient {
+		return nil
+	}
+
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile), stosClusterNamespace, "namespace", "secretGenerator", "0"); err != nil {
 		return err
 	}
@@ -103,6 +111,9 @@ func (in *Installer) UninstallPortalManager() error {
 }
 
 func (in *Installer) uninstallPortalManagerClient(storageOSClusterNamespace string) error {
+	if !in.installerOptions.portalClient {
+		return nil
+	}
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalClientDir, kustomizationFile), storageOSClusterNamespace, "namespace", "secretGenerator", "0"); err != nil {
 		return err
 	}
@@ -111,6 +122,10 @@ func (in *Installer) uninstallPortalManagerClient(storageOSClusterNamespace stri
 }
 
 func (in *Installer) uninstallPortalManagerConfig(storageOSClusterNamespace string) error {
+	if !in.installerOptions.portalConfig {
+		return nil
+	}
+
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), storageOSClusterNamespace, "namespace", ""); err != nil {
 		return err
 	}
