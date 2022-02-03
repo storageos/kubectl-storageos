@@ -157,26 +157,90 @@ func (in *Installer) installEtcd() error {
 	if err = in.operatorDeploymentsAreReady(filepath.Join(etcdDir, operatorDir, etcdOperatorFile)); err != nil {
 		return err
 	}
-	err = in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
 
-	return err
+	return in.kustomizeAndApply(filepath.Join(etcdDir, clusterDir), etcdClusterFile)
 }
 
 func (in *Installer) installStorageOS() error {
-	var err error
-	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
-	// to storageos/operator/kustomization.yaml and/or storageos/cluster/kustomization.yaml
-	// based on flags (or cli in.stosConfig file)
-	fsStosOperatorNamespace, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, operatorDir, stosOperatorFile), "Deployment", "metadata", "namespace")
-	if err != nil {
+	if err := in.installStorageOSOperator(); err != nil {
 		return err
 	}
-	if in.stosConfig.Spec.Install.StorageOSOperatorNamespace != fsStosOperatorNamespace {
-		if err = in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSOperatorNamespace, "namespace", ""); err != nil {
+	if err := in.operatorDeploymentsAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
+		return err
+	}
+	if err := in.operatorServicesAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
+		return err
+	}
+
+	if in.installerOptions.resourceQuota {
+		fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
+		if err != nil {
+			return err
+		}
+
+		clusterNamespacePatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/metadata/namespace",
+			Value: in.stosConfig.Spec.Install.StorageOSClusterNamespace,
+		}
+
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
+			return err
+		}
+
+		if err = in.kustomizeAndApply(filepath.Join(stosDir, resourceQuotaDir), resourceQuotaFile); err != nil {
 			return err
 		}
 	}
 
+	if in.stosConfig.Spec.Install.EnablePortalManager {
+		if err := in.installPortalManagerClient(in.stosConfig.Spec.Install.StorageOSClusterNamespace); err != nil {
+			return err
+		}
+		if err := in.installPortalManagerConfig(in.stosConfig.Spec.Install.StorageOSClusterNamespace); err != nil {
+			return err
+		}
+		if !in.stosConfig.Spec.SkipStorageOSCluster {
+			fsStosClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
+			if err != nil {
+				return err
+			}
+
+			if err := in.enablePortalManager(fsStosClusterName, true); err != nil {
+				return err
+			}
+		}
+	}
+
+	if in.stosConfig.Spec.SkipStorageOSCluster {
+		return nil
+	}
+
+	return in.installStorageOSCluster()
+}
+
+func (in *Installer) installStorageOSOperator() error {
+	var err error
+	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
+	// to storageos/operator/kustomization.yaml based on flags (or cli in.stosConfig file)
+	fsStosOperatorNamespace, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, operatorDir, stosOperatorFile), "Deployment", "metadata", "namespace")
+	if err != nil {
+		return err
+	}
+
+	if in.stosConfig.Spec.Install.StorageOSOperatorNamespace != fsStosOperatorNamespace {
+		if err := in.setFieldInFsManifest(filepath.Join(stosDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSOperatorNamespace, "namespace", ""); err != nil {
+			return err
+		}
+	}
+
+	return in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile)
+}
+
+func (in *Installer) installStorageOSCluster() error {
+	var err error
+	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
+	// to storageos/cluster/kustomization.yaml based on flags (or cli in.stosConfig file)
 	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != in.stosConfig.Spec.Install.StorageOSOperatorNamespace {
 		// apply the provided storageos cluster ns
 		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
@@ -236,52 +300,6 @@ func (in *Installer) installStorageOS() error {
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{passwordPatch}); err != nil {
 			return err
 		}
-	}
-	if err = in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile); err != nil {
-		return err
-	}
-	if err = in.operatorDeploymentsAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
-		return err
-	}
-	if err = in.operatorServicesAreReady(filepath.Join(stosDir, operatorDir, stosOperatorFile)); err != nil {
-		return err
-	}
-
-	if in.installerOptions.resourceQuota {
-		fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
-		if err != nil {
-			return err
-		}
-
-		clusterNamespacePatch := pluginutils.KustomizePatch{
-			Op:    "replace",
-			Path:  "/metadata/namespace",
-			Value: in.stosConfig.Spec.Install.StorageOSClusterNamespace,
-		}
-
-		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, resourceQuotaDir, kustomizationFile), resourceQuotaKind, fsResourceQuotaName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
-			return err
-		}
-
-		if err = in.kustomizeAndApply(filepath.Join(stosDir, resourceQuotaDir), resourceQuotaFile); err != nil {
-			return err
-		}
-	}
-
-	if in.stosConfig.Spec.Install.EnablePortalManager {
-		if err := in.installPortalManagerClient(in.stosConfig.Spec.Install.StorageOSClusterNamespace); err != nil {
-			return err
-		}
-		if err := in.installPortalManagerConfig(in.stosConfig.Spec.Install.StorageOSClusterNamespace); err != nil {
-			return err
-		}
-		if err := in.enablePortalManager(fsStosClusterName, true); err != nil {
-			return err
-		}
-	}
-
-	if in.stosConfig.Spec.SkipStorageOSCluster {
-		return nil
 	}
 
 	return in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
