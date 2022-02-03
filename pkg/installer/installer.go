@@ -174,26 +174,76 @@ type Installer struct {
 	onDiskFileSys filesys.FileSystem
 }
 
-// NewInstaller returns an Installer object with the kubectl client and in-memory filesystem
-func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, validateKubeVersion bool) (*Installer, error) {
-	installer := &Installer{}
+// NewInstaller returns an Installer used for install command
+func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+	in, err := newCommonInstaller(config)
+	if err != nil {
+		return in, errors.WithStack(err)
+	}
 
+	installerOptions := &installerOptions{
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      config.Spec.Install.EnablePortalManager,
+		portalConfig:      config.Spec.Install.EnablePortalManager,
+		resourceQuota:     (in.distribution == pluginutils.DistributionGKE),
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
+	}
+
+	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
+	if err != nil {
+		return in, err
+	}
+
+	in.fileSys = fileSys
+
+	return in, nil
+}
+
+// NewPortalManagerInstaller returns an Installer used for all portal manager commands
+func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool) (*Installer, error) {
+	in, err := newCommonInstaller(config)
+	if err != nil {
+		return in, errors.WithStack(err)
+	}
+
+	installerOptions := &installerOptions{
+		storageosOperator: false,
+		storageosCluster:  false,
+		portalClient:      manifestsRequired, // manifests are required for install-portal, and uninstall-portal
+		portalConfig:      manifestsRequired, // but not for enable-portal and disable-portal
+		resourceQuota:     false,
+		etcdOperator:      false,
+		etcdCluster:       false,
+	}
+
+	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
+	if err != nil {
+		return in, err
+	}
+
+	in.fileSys = fileSys
+
+	return in, nil
+}
+
+// newCommonInstaller contains logic that is common to NewInstaller and NewPortalManagerInstaller
+func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+	installer := &Installer{}
 	clientConfig, err := pluginutils.NewClientConfig()
 	if err != nil {
 		return installer, err
 	}
 
-	if ensureNamespace {
-		err = pluginutils.EnsureNamespace(clientConfig, config.Spec.GetOperatorNamespace())
+	if err := pluginutils.EnsureNamespace(clientConfig, config.Spec.GetOperatorNamespace()); err != nil {
+		return installer, err
+	}
+
+	if etcdNS := config.Spec.GetETCDValidationNamespace(); etcdNS != "" && etcdNS != config.Spec.GetOperatorNamespace() {
+		err = pluginutils.EnsureNamespace(clientConfig, etcdNS)
 		if err != nil {
 			return installer, err
-		}
-
-		if etcdNS := config.Spec.GetETCDValidationNamespace(); etcdNS != "" && etcdNS != config.Spec.GetOperatorNamespace() {
-			err = pluginutils.EnsureNamespace(clientConfig, etcdNS)
-			if err != nil {
-				return installer, err
-			}
 		}
 	}
 
@@ -208,16 +258,14 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 
 	distribution := pluginutils.DetermineDistribution(currentVersionStr)
 
-	if validateKubeVersion {
-		minVersion, err := fetchImageAndExtractFileFromTarball(pluginversion.OperatorLatestSupportedImageURL(), "MIN_KUBE_VERSION")
-		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
-		if err == nil && minVersion != "" {
-			supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
-			if err != nil {
-				return installer, err
-			} else if !supported {
-				return installer, fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion)
-			}
+	minVersion, err := fetchImageAndExtractFileFromTarball(pluginversion.OperatorLatestSupportedImageURL(), "MIN_KUBE_VERSION")
+	// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
+	if err == nil && minVersion != "" {
+		supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
+		if err != nil {
+			return installer, err
+		} else if !supported {
+			return installer, fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion)
 		}
 	}
 
@@ -226,18 +274,12 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, ensureNamespace bool, va
 		return installer, errors.WithStack(err)
 	}
 
-	fileSys, err := buildInstallerFileSys(config, clientConfig)
-	if err != nil {
-		return installer, err
-	}
-
 	installer = &Installer{
 		distribution:  distribution,
 		kubectlClient: otkkubectl.New(),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
 		stosConfig:    config,
-		fileSys:       fileSys,
 		onDiskFileSys: filesys.MakeFsOnDisk(),
 	}
 
@@ -253,12 +295,22 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 		return installer, err
 	}
 
-	fileSys, err := buildInstallerFileSys(config, clientConfig)
+	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
+
+	installerOptions := &installerOptions{
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      config.Spec.Install.EnablePortalManager,
+		portalConfig:      config.Spec.Install.EnablePortalManager,
+		resourceQuota:     (distribution == pluginutils.DistributionGKE),
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
+	}
+
+	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
 		return installer, err
 	}
-
-	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
 
 	installer = &Installer{
 		distribution:  distribution,
@@ -269,6 +321,60 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	}
 
 	return installer, nil
+}
+
+// NewUninstaller returns an Installer used for uninstall command
+func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+	uninstaller := &Installer{}
+
+	clientConfig, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return uninstaller, err
+	}
+
+	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
+	if err != nil {
+		return uninstaller, err
+	}
+
+	distribution := pluginutils.DetermineDistribution(currentVersion.String())
+
+	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
+	if err != nil {
+		return uninstaller, errors.WithStack(err)
+	}
+
+	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
+	if err != nil {
+		return uninstaller, errors.WithStack(err)
+	}
+
+	uninstallerOptions := &installerOptions{
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      stosCluster.Spec.EnablePortalManager,
+		portalConfig:      stosCluster.Spec.EnablePortalManager,
+		resourceQuota:     (distribution == pluginutils.DistributionGKE),
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
+	}
+
+	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
+	if err != nil {
+		return uninstaller, err
+	}
+
+	uninstaller = &Installer{
+		distribution:  distribution,
+		kubectlClient: otkkubectl.New(),
+		clientConfig:  clientConfig,
+		kubeClusterID: kubesystemNS.GetUID(),
+		stosConfig:    config,
+		fileSys:       fileSys,
+		onDiskFileSys: filesys.MakeFsOnDisk(),
+	}
+
+	return uninstaller, nil
 }
 
 // addPatchesToFSKustomize uses AddPatchesToKustomize internally to add a list of patches to a kustomization file

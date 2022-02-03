@@ -64,7 +64,7 @@ func enablePortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	cliInstaller, err := installer.NewInstaller(config, true, true)
+	cliInstaller, err := installer.NewPortalManagerInstaller(config, false)
 	if err != nil {
 		return err
 	}

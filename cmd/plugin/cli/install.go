@@ -141,7 +141,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return cliInstaller.Install(false)
 	}
 
-	cliInstaller, err := installer.NewInstaller(config, true, true)
+	cliInstaller, err := installer.NewInstaller(config)
 	if err != nil {
 		return err
 	}
