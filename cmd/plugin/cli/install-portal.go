@@ -48,6 +48,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-configmap.yaml path or url")
+	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-client-secret.yaml path or url")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
@@ -77,7 +78,7 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	cliInstaller, err := installer.NewInstaller(config, true, true)
+	cliInstaller, err := installer.NewPortalManagerInstaller(config, true)
 	if err != nil {
 		return err
 	}
@@ -107,6 +108,7 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 			return err
 		}
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
+		config.Spec.Install.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Install.PortalClientID = cmd.Flags().Lookup(installer.PortalClientIDFlag).Value.String()
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
@@ -116,7 +118,8 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
-	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.StosPortalConfigYamlConfig)
+	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
+	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)

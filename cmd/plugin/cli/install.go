@@ -54,6 +54,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosOperatorYamlFlag, "", "storageos-operator.yaml path or url")
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
+	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().String(installer.ResourceQuotaYamlFlag, "", "resource-quota.yaml path or url")
@@ -85,8 +86,13 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
-	if config.Spec.Install.EtcdOperatorVersion == "" {
-		config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
+	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
+
+	if config.Spec.IncludeEtcd {
+		if config.Spec.Install.EtcdOperatorVersion == "" {
+			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
+		}
+		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -101,12 +107,10 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}); err != nil {
 			return err
 		}
+		// TODO: Do we need to add a --portal-manager-version flag?
+		// for now, there is no released version so default to 'develop'
+		version.SetPortalManagerLatestSupportedVersion("develop")
 	}
-	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
-	version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
-	// TODO: Do we need to add a --portal-manager-version flag?
-	// for now, there is no released version so default to 'develop'
-	version.SetPortalManagerLatestSupportedVersion("develop")
 
 	var err error
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
@@ -137,7 +141,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return cliInstaller.Install(false)
 	}
 
-	cliInstaller, err := installer.NewInstaller(config, true, true)
+	cliInstaller, err := installer.NewInstaller(config)
 	if err != nil {
 		return err
 	}
@@ -196,6 +200,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
+		config.Spec.Install.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
 		config.Spec.Install.EtcdOperatorYaml = cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag).Value.String()
 		config.Spec.Install.EtcdClusterYaml = cmd.Flags().Lookup(installer.EtcdClusterYamlFlag).Value.String()
 		config.Spec.Install.ResourceQuotaYaml = cmd.Flags().Lookup(installer.ResourceQuotaYamlFlag).Value.String()
@@ -224,12 +229,13 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.EtcdOperatorVersion = viper.GetString(installer.EtcdOperatorVersionConfig)
 	config.Spec.Install.KubernetesVersion = viper.GetString(installer.K8sVersionConfig)
-	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.StosOperatorYamlConfig)
-	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.StosClusterYamlConfig)
-	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.StosPortalConfigYamlConfig)
-	config.Spec.Install.EtcdOperatorYaml = viper.GetString(installer.EtcdOperatorYamlConfig)
-	config.Spec.Install.EtcdClusterYaml = viper.GetString(installer.EtcdClusterYamlConfig)
-	config.Spec.Install.ResourceQuotaYaml = viper.GetString(installer.ResourceQuotaYamlConfig)
+	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.InstallStosOperatorYamlConfig)
+	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.InstallStosClusterYamlConfig)
+	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
+	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
+	config.Spec.Install.EtcdOperatorYaml = viper.GetString(installer.InstallEtcdOperatorYamlConfig)
+	config.Spec.Install.EtcdClusterYaml = viper.GetString(installer.InstallEtcdClusterYamlConfig)
+	config.Spec.Install.ResourceQuotaYaml = viper.GetString(installer.InstallResourceQuotaYamlConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.StorageOSClusterNamespace = valueOrDefault(viper.GetString(installer.StosClusterNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.EtcdNamespace = valueOrDefault(viper.GetString(installer.InstallEtcdNamespaceConfig), consts.EtcdOperatorNamespace)

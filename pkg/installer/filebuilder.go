@@ -14,6 +14,16 @@ import (
 	"sigs.k8s.io/kustomize/api/filesys"
 )
 
+type installerOptions struct {
+	storageosOperator bool
+	storageosCluster  bool
+	portalClient      bool
+	portalConfig      bool
+	resourceQuota     bool
+	etcdOperator      bool
+	etcdCluster       bool
+}
+
 // fileBuilder is used to hold data required to build a file in the in-memory fs
 type fileBuilder struct {
 	// yamlPath is passed via plugin flag, it may be a local
@@ -40,9 +50,7 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 }
 
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
-// etcd manifests.
-// If '--skip-etcd-install' flag is set, etcd dir is not created
-// If '--portal-key-path' flag is not set, storageos/portal dir is not created..
+// etcd manifests based on installerOptions.
 // - storageos
 //   - operator
 //     - storageos-operator.yaml
@@ -65,60 +73,71 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 //   - cluster
 //     - etcd-cluster.yaml
 //     - kustomization.yaml
-func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *rest.Config) (filesys.FileSystem, error) {
+func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *rest.Config) (filesys.FileSystem, error) {
 	fs := filesys.MakeFsInMemory()
 	fsData := make(fsData)
 	stosSubDirs := make(map[string]map[string][]byte)
+	var err error
 
 	// build storageos/operator
-	stosOpFiles, err := newFileBuilder(config.Spec.Install.StorageOSOperatorYaml, pluginversion.OperatorLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
-	}
-	stosSubDirs[operatorDir] = stosOpFiles
-
-	// build storageos/cluster
-	stosClusterFiles, err := newFileBuilder(config.Spec.Install.StorageOSClusterYaml, pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
-	}
-
-	// append storageos secret yaml to cluster yaml if necessary. This will happen in the event of an
-	// uninstall of storageos version < 2.5.0.
-	if config.InstallerMeta.StorageOSSecretYaml != "" {
-		stosSecretYaml, err := pullManifest(config.InstallerMeta.StorageOSSecretYaml)
+	if o.storageosOperator {
+		stosOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSOperatorYaml, config.Spec.Uninstall.StorageOSOperatorYaml), pluginversion.OperatorLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
-		stosClusterMulti := makeMultiDoc(string(stosClusterFiles[stosClusterFile]), stosSecretYaml)
-		stosClusterFiles[stosClusterFile] = []byte(stosClusterMulti)
+		stosSubDirs[operatorDir] = stosOpFiles
 	}
-	stosSubDirs[clusterDir] = stosClusterFiles
+
+	// build storageos/cluster
+	if o.storageosCluster {
+		stosClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml), pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosSubDirs[clusterDir] = stosClusterFiles
+
+		// append storageos secret yaml to cluster yaml if necessary. This will happen in the event of an
+		// uninstall of storageos version < 2.5.0.
+		if config.InstallerMeta.StorageOSSecretYaml != "" {
+			stosSecretYaml, err := pullManifest(config.InstallerMeta.StorageOSSecretYaml)
+			if err != nil {
+				return fs, err
+			}
+			stosClusterMulti := makeMultiDoc(string(stosClusterFiles[stosClusterFile]), stosSecretYaml)
+			stosClusterFiles[stosClusterFile] = []byte(stosClusterMulti)
+		}
+		stosSubDirs[clusterDir] = stosClusterFiles
+	}
 
 	// build resource quota
-	resourceQuotaFiles, err := newFileBuilder(config.Spec.Install.ResourceQuotaYaml, pluginversion.ResourceQuotaLatestSupportedURL(), "", resourceQuotaFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
+	if o.resourceQuota {
+		resourceQuotaFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.ResourceQuotaYaml, config.Spec.Uninstall.ResourceQuotaYaml), pluginversion.ResourceQuotaLatestSupportedURL(), "", resourceQuotaFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosSubDirs[resourceQuotaDir] = resourceQuotaFiles
 	}
-	stosSubDirs[resourceQuotaDir] = resourceQuotaFiles
 
 	// build storageos/portal-client this consists only of a kustomization file with a secret generator
-	stosPortalClientFiles := make(map[string][]byte)
+	if o.portalClient {
+		stosPortalClientFiles := make(map[string][]byte)
 
-	stosPortalClientKust, err := newFileBuilder("", pluginversion.PortalClientLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalClientFile, "").readOrPullManifest(clientConfig)
-	if err != nil {
-		return fs, err
+		stosPortalClientKust, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalClientSecretYaml, config.Spec.Uninstall.StorageOSPortalClientSecretYaml), pluginversion.PortalClientLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalClientFile, "").readOrPullManifest(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosPortalClientFiles[kustomizationFile] = []byte(stosPortalClientKust)
+		stosSubDirs[portalClientDir] = stosPortalClientFiles
 	}
-	stosPortalClientFiles[kustomizationFile] = []byte(stosPortalClientKust)
-	stosSubDirs[portalClientDir] = stosPortalClientFiles
 
-	// build storageos/portal-config
-	stosPortalConfigFiles, err := newFileBuilder(config.Spec.Install.StorageOSPortalConfigYaml, pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
+	if o.portalConfig {
+		// build storageos/portal-config
+		stosPortalConfigFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml), pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosSubDirs[portalConfigDir] = stosPortalConfigFiles
 	}
-	stosSubDirs[portalConfigDir] = stosPortalConfigFiles
-
 	fsData[stosDir] = stosSubDirs
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
@@ -133,18 +152,22 @@ func buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *r
 	etcdSubDirs := make(map[string]map[string][]byte)
 
 	// build etcd/operator
-	etcdOpFiles, err := newFileBuilder(config.Spec.Install.EtcdOperatorYaml, "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
+	if o.etcdOperator {
+		etcdOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml), "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		etcdSubDirs[operatorDir] = etcdOpFiles
 	}
-	etcdSubDirs[operatorDir] = etcdOpFiles
 
-	// build etcd/cluster
-	etcdClusterFiles, err := newFileBuilder(config.Spec.Install.EtcdClusterYaml, pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
-	if err != nil {
-		return fs, err
+	if o.etcdCluster {
+		// build etcd/cluster
+		etcdClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml), pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		etcdSubDirs[clusterDir] = etcdClusterFiles
 	}
-	etcdSubDirs[clusterDir] = etcdClusterFiles
 
 	fsData[etcdDir] = etcdSubDirs
 	fs, err = createDirAndFiles(fs, fsData)

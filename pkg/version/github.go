@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
@@ -14,20 +15,17 @@ const (
 	etcdOperatorReleasesUrl = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
 	// TODO: No release exists for portal-manager yet
 	// portalManagerReleasesUrl   = "https://api.github.com/repos/storageos/portal-manager/releases"
-	clusterOperatorReleasesUrl = "https://api.github.com/repos/storageos/cluster-operator/releases"
 )
 
 var (
 	operatorLatestVersion      string
 	etcdOperatorLatestVersion  string
 	portalManagerLatestVersion string
-	clusterOperatorLastVersion string
 
 	fetchOperatorVersionOnce     = sync.Once{}
 	fetchEtcdOperatorVersionOnce = sync.Once{}
 	// TODO: No release exists for portal-manager yet
 	// fetchPortalManagerVersionOnce   = sync.Once{}
-	fetchClusterOperatorVersionOnce = sync.Once{}
 )
 
 type GithubRelease struct {
@@ -123,12 +121,7 @@ func SetPortalManagerLatestSupportedVersion(version string) {
 }
 
 func ClusterOperatorLastVersion() string {
-	fetchClusterOperatorVersionOnce.Do(func() {
-		releases := fetchVersionsOrPanic(clusterOperatorReleasesUrl)
-		clusterOperatorLastVersion = selectLatestVersionOrPanic(releases)
-	})
-
-	return clusterOperatorLastVersion
+	return consts.ClusterOperatorLastVersion
 }
 
 func fetchVersionsOrPanic(url string) []GithubRelease {

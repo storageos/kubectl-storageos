@@ -2,6 +2,7 @@ package consts
 
 const (
 	OperatorOldestSupportedVersion = "v2.2.0"
+	ClusterOperatorLastVersion     = "v2.4.4"
 
 	PortalManagerFirstSupportedVersion = "v2.6.0"
 
@@ -12,6 +13,7 @@ const (
 	OldOperatorNamespace = "storageos-operator"
 	OldClusterNamespace  = "kube-system"
 
+	EtcdOperatorName      = "storageos-etcd-controller-manager"
 	EtcdOperatorNamespace = "storageos-etcd"
 
 	EtcdSecretName = "storageos-etcd-secret"
