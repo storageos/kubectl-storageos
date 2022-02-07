@@ -81,7 +81,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build storageos/operator
 	if o.storageosOperator {
-		stosOpFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.StorageOSOperatorYaml, config.Spec.Uninstall.StorageOSOperatorYaml), pluginversion.OperatorLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSOperatorYaml, config.Spec.Uninstall.StorageOSOperatorYaml), pluginversion.OperatorLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -90,7 +90,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build storageos/cluster
 	if o.storageosCluster {
-		stosClusterFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml), pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml), pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -111,7 +111,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build resource quota
 	if o.resourceQuota {
-		resourceQuotaFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.ResourceQuotaYaml, config.Spec.Uninstall.ResourceQuotaYaml), pluginversion.ResourceQuotaLatestSupportedURL(), "", resourceQuotaFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		resourceQuotaFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.ResourceQuotaYaml, config.Spec.Uninstall.ResourceQuotaYaml), pluginversion.ResourceQuotaLatestSupportedURL(), "", resourceQuotaFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -122,7 +122,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 	if o.portalClient {
 		stosPortalClientFiles := make(map[string][]byte)
 
-		stosPortalClientKust, err := newFileBuilder(getYamlPath(config.Spec.Install.StorageOSPortalClientSecretYaml, config.Spec.Uninstall.StorageOSPortalClientSecretYaml), pluginversion.PortalClientLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalClientFile, "").readOrPullManifest(clientConfig)
+		stosPortalClientKust, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalClientSecretYaml, config.Spec.Uninstall.StorageOSPortalClientSecretYaml), pluginversion.PortalClientLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalClientFile, "").readOrPullManifest(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -132,7 +132,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	if o.portalConfig {
 		// build storageos/portal-config
-		stosPortalConfigFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml), pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosPortalConfigFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml), pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -153,7 +153,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build etcd/operator
 	if o.etcdOperator {
-		etcdOpFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml), "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		etcdOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml), "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -162,7 +162,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	if o.etcdCluster {
 		// build etcd/cluster
-		etcdClusterFiles, err := newFileBuilder(getYamlPath(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml), pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		etcdClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml), pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -257,12 +257,4 @@ func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
 	}
 
 	return string(contents), nil
-}
-
-// getYamlPath returns whichever yamlPath is set (no more than one will ever be set)
-func getYamlPath(installYamlPath, uninstallYamlPath string) string {
-	if installYamlPath != "" {
-		return installYamlPath
-	}
-	return uninstallYamlPath
 }

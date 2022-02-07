@@ -140,7 +140,7 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 
 func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
 	if namespace == "" {
-		namespace = "storageos-etcd"
+		namespace = consts.EtcdOperatorNamespace
 	}
 	config, err := pluginutils.NewClientConfig()
 	if err != nil {
@@ -151,7 +151,7 @@ func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
 	}
-	etcdDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "storageos-etcd-controller-manager", metav1.GetOptions{})
+	etcdDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), consts.EtcdOperatorName, metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to detect StorageOS ETCD Operator version")
 	}

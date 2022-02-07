@@ -13,6 +13,7 @@ const (
 	OldOperatorNamespace = "storageos-operator"
 	OldClusterNamespace  = "kube-system"
 
+	EtcdOperatorName      = "storageos-etcd-contoller-manager"
 	EtcdOperatorNamespace = "storageos-etcd"
 
 	EtcdSecretName = "storageos-etcd-secret"

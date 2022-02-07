@@ -33,6 +33,14 @@ func makeMultiDoc(manifests ...string) string {
 	return strings.Join(manifestsSlice, "\n---\n")
 }
 
+// getStringWithDefault returns primary string if set, secondary string otherwise
+func getStringWithDefault(primaryString, secondaryString string) string {
+	if primaryString != "" {
+		return primaryString
+	}
+	return secondaryString
+}
+
 // createDirAndFiles is a helper function for buildInstallerFileSys, creating the in-memory
 // file system for installer from the fsData provided.
 func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem, error) {

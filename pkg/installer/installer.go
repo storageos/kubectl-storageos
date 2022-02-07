@@ -349,13 +349,14 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		return uninstaller, errors.WithStack(err)
 	}
 
-	uninstallPortal := false
 	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
 			return uninstaller, errors.WithStack(err)
 		}
 	}
+
+	uninstallPortal := false
 	if stosCluster != nil {
 		uninstallPortal = stosCluster.Spec.EnablePortalManager
 	}

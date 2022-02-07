@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
@@ -88,7 +89,7 @@ func (in *Installer) installEtcd() error {
 			Path:  "/spec/template/spec/containers/0/args/1",
 			Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", in.stosConfig.Spec.Install.EtcdNamespace, ".svc"),
 		}
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{proxyUrlPatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", consts.EtcdOperatorName, []pluginutils.KustomizePatch{proxyUrlPatch}); err != nil {
 			return err
 		}
 
