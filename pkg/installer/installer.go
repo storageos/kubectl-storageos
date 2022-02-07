@@ -122,7 +122,8 @@ const (
 	etcdClusterFile      = "etcd-cluster.yaml"
 	kustomizationFile    = "kustomization.yaml"
 	kubeDir              = ".kube"
-	uninstallDirPrefix   = "uninstall-"
+	InstallPrefix        = "install-"
+	UninstallPrefix      = "uninstall-"
 
 	// kustomization template
 	kustTemp = `apiVersion: kustomize.config.k8s.io/v1beta1
@@ -616,5 +617,5 @@ func (in *Installer) getBackupPath() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	return filepath.Join(homeDir, kubeDir, stosDir, fmt.Sprintf("%s%v", uninstallDirPrefix, in.kubeClusterID)), nil
+	return filepath.Join(homeDir, kubeDir, stosDir, fmt.Sprintf("%s%v", UninstallPrefix, in.kubeClusterID)), nil
 }
