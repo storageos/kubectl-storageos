@@ -8,9 +8,7 @@
 [![PR's Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](https://github.com/storageos/kubectl-storageos/pulls)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-This project is under development. Use it at your own risk, please.
-
-The main goal of this project is to seemlessly enable StorageOS related administration tasks in a Kubernetes cluster.
+This plugin is for seamlessly administrating StorageOS clusters.
 
 ## Installation
 
