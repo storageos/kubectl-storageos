@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
-	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,35 +108,29 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 }
 
 func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
-	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
-		}
-	}
 	storageOSClusterNamespace := in.stosConfig.Spec.GetOperatorNamespace()
-	if storageOSCluster.Namespace != "" {
+	if in.storageOSCluster.Namespace != "" {
 		if !in.stosConfig.Spec.SkipNamespaceDeletion {
-			if err := in.checkForProtectedNamespaces(storageOSCluster); err != nil {
+			if err := in.checkForProtectedNamespaces(); err != nil {
 				return errors.Wrap(err, errStosUninstallAborted)
 			}
 		}
 		if !in.stosConfig.Spec.SkipStorageOSCluster {
-			if err := in.uninstallStorageOSCluster(storageOSCluster, upgrade); err != nil {
+			if err := in.uninstallStorageOSCluster(upgrade); err != nil {
 				return errors.WithStack(err)
 			}
 			if err := in.ensureStorageOSClusterRemoved(); err != nil {
 				return errors.WithStack(err)
 			}
 		}
-		if storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		if in.storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 			defer func() {
-				if err := in.gracefullyDeleteNS(storageOSCluster.Namespace); err != nil {
+				if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
 					panic(err)
 				}
 			}()
 		}
-		storageOSClusterNamespace = storageOSCluster.Namespace
+		storageOSClusterNamespace = in.storageOSCluster.Namespace
 	}
 
 	if !upgrade && in.installerOptions.resourceQuota {
@@ -163,7 +156,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 	return in.uninstallStorageOSOperator()
 }
 
-func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.StorageOSCluster, upgrade bool) error {
+func (in *Installer) uninstallStorageOSCluster(upgrade bool) error {
 	// make changes to storageos/cluster/kustomization.yaml based on flags (or cli config file) before
 	// kustomizeAndDelete call
 	fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
@@ -174,7 +167,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	clusterNamePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/name",
-		Value: storageOSCluster.Name,
+		Value: in.storageOSCluster.Name,
 	}
 
 	if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamePatch}); err != nil {
@@ -184,7 +177,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	clusterNamespacePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/namespace",
-		Value: storageOSCluster.Namespace,
+		Value: in.storageOSCluster.Namespace,
 	}
 
 	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsClusterName, []pluginutils.KustomizePatch{clusterNamespacePatch}); err != nil {
@@ -199,7 +192,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	secretNamePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/name",
-		Value: storageOSCluster.Spec.SecretRefName,
+		Value: in.storageOSCluster.Spec.SecretRefName,
 	}
 
 	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamePatch}); err != nil {
@@ -209,7 +202,7 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 	secretNamespacePatch := pluginutils.KustomizePatch{
 		Op:    "replace",
 		Path:  "/metadata/namespace",
-		Value: storageOSCluster.Spec.SecretRefNamespace,
+		Value: in.storageOSCluster.Spec.SecretRefNamespace,
 	}
 
 	if err = in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), "Secret", fsSecretName, []pluginutils.KustomizePatch{secretNamespacePatch}); err != nil {
@@ -218,13 +211,13 @@ func (in *Installer) uninstallStorageOSCluster(storageOSCluster *operatorapi.Sto
 
 	// if this is not an upgrade, write manifests to disk before deletion
 	if !upgrade {
-		if err = in.writeBackupFileSystem(storageOSCluster); err != nil {
+		if err = in.writeBackupFileSystem(in.storageOSCluster); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
 	if !in.stosConfig.Spec.SkipNamespaceDeletion {
-		if storageOSCluster.Namespace == in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
+		if in.storageOSCluster.Namespace == in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
 			// postpone namespace deletion as storageos cluster and operator are in the same namespace
 			// the namespace will be deleted later by storageos operator uninstallation
 			err := in.postponeNamespaceKustomizeAndDelete(filepath.Join(stosDir, clusterDir), stosClusterFile)
@@ -332,21 +325,21 @@ func (in *Installer) uninstallEtcdOperator() error {
 	return err
 }
 
-func (in *Installer) checkForProtectedNamespaces(storageOSCluster *operatorapi.StorageOSCluster) error {
+func (in *Installer) checkForProtectedNamespaces() error {
 	if _, ok := protectedNamespaces[in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace]; ok {
 		return fmt.Errorf(errProtectedNamespace, in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace)
 	}
-	if storageOSCluster == nil {
+	if in.storageOSCluster == nil {
 		return nil
 	}
-	if _, ok := protectedNamespaces[storageOSCluster.Namespace]; ok {
-		return fmt.Errorf(errProtectedNamespace, storageOSCluster.Namespace)
+	if _, ok := protectedNamespaces[in.storageOSCluster.Namespace]; ok {
+		return fmt.Errorf(errProtectedNamespace, in.storageOSCluster.Namespace)
 	}
-	if storageOSCluster.Spec.Namespace == "" {
+	if in.storageOSCluster.Spec.Namespace == "" {
 		return nil
 	}
-	if _, ok := protectedNamespaces[storageOSCluster.Spec.Namespace]; ok {
-		return fmt.Errorf(errProtectedNamespace, storageOSCluster.Spec.Namespace)
+	if _, ok := protectedNamespaces[in.storageOSCluster.Spec.Namespace]; ok {
+		return fmt.Errorf(errProtectedNamespace, in.storageOSCluster.Spec.Namespace)
 	}
 	return nil
 }
