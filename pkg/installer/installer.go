@@ -167,14 +167,15 @@ type fsData map[string]map[string]map[string][]byte
 
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
-	distribution     pluginutils.Distribution
-	kubectlClient    *otkkubectl.DefaultKubectl
-	clientConfig     *rest.Config
-	kubeClusterID    types.UID
-	stosConfig       *apiv1.KubectlStorageOSConfig
-	fileSys          filesys.FileSystem
-	onDiskFileSys    filesys.FileSystem
-	installerOptions *installerOptions
+	distribution      pluginutils.Distribution
+	kubectlClient     *otkkubectl.DefaultKubectl
+	clientConfig      *rest.Config
+	kubeClusterID     types.UID
+	stosConfig        *apiv1.KubectlStorageOSConfig
+	fileSys           filesys.FileSystem
+	onDiskFileSys     filesys.FileSystem
+	installerOptions  *installerOptions
+	dryRunFileCounter int
 }
 
 // NewInstaller returns an Installer used for install command
@@ -318,12 +319,13 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	}
 
 	installer = &Installer{
-		distribution:     distribution,
-		clientConfig:     clientConfig,
-		stosConfig:       config,
-		fileSys:          fileSys,
-		onDiskFileSys:    filesys.MakeFsOnDisk(),
-		installerOptions: installerOptions,
+		distribution:      distribution,
+		clientConfig:      clientConfig,
+		stosConfig:        config,
+		fileSys:           fileSys,
+		onDiskFileSys:     filesys.MakeFsOnDisk(),
+		installerOptions:  installerOptions,
+		dryRunFileCounter: 0,
 	}
 
 	return installer, nil
