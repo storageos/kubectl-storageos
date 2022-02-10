@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/storageos/kubectl-storageos/pkg/consts"
@@ -387,9 +388,10 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 	}
 
 	if in.stosConfig.Spec.Install.DryRun {
-		if err := pluginutils.WriteDryRunManifests(file, resYaml); err != nil {
+		if err := pluginutils.WriteDryRunManifests(fmt.Sprintf("%s%s%s", strconv.Itoa(in.dryRunFileCounter), "-", file), resYaml); err != nil {
 			return err
 		}
+		in.dryRunFileCounter++
 		// return early for dry-run without applying manifest
 		return nil
 	}
