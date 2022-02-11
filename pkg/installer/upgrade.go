@@ -10,7 +10,6 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
-	operatorapi "github.com/storageos/operator/api/v1"
 )
 
 const (
@@ -66,7 +65,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	if err = uninstaller.prepareForUpgrade(installConfig, storageOSCluster, versionToUninstall, installer); err != nil {
+	if err = uninstaller.prepareForUpgrade(installConfig, versionToUninstall, installer); err != nil {
 		return err
 	}
 
@@ -86,9 +85,9 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
-func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, storageOSCluster *operatorapi.StorageOSCluster, versionToUninstall string, installer *Installer) error {
+func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string, installer *Installer) error {
 	// write storageoscluster, secret and storageclass manifests to disk
-	if err := in.writeBackupFileSystem(storageOSCluster); err != nil {
+	if err := in.writeBackupFileSystem(in.storageOSCluster); err != nil {
 		return errors.WithStack(err)
 	}
 

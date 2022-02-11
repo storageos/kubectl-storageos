@@ -176,6 +176,7 @@ type Installer struct {
 	onDiskFileSys     filesys.FileSystem
 	installerOptions  *installerOptions
 	dryRunFileCounter int
+	storageOSCluster  *operatorapi.StorageOSCluster
 }
 
 // NewInstaller returns an Installer used for install command
@@ -198,7 +199,7 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
 	if err != nil {
-		return in, err
+		return in, errors.WithStack(err)
 	}
 
 	in.fileSys = fileSys
@@ -226,10 +227,17 @@ func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRe
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
 	if err != nil {
-		return in, err
+		return in, errors.WithStack(err)
 	}
 
 	in.fileSys = fileSys
+
+	stosCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
+	if err != nil {
+		return in, errors.WithStack(err)
+	}
+
+	in.storageOSCluster = stosCluster
 
 	return in, nil
 }
@@ -239,17 +247,17 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	installer := &Installer{}
 	clientConfig, err := pluginutils.NewClientConfig()
 	if err != nil {
-		return installer, err
+		return installer, errors.WithStack(err)
 	}
 
 	if err := pluginutils.EnsureNamespace(clientConfig, config.Spec.GetOperatorNamespace()); err != nil {
-		return installer, err
+		return installer, errors.WithStack(err)
 	}
 
 	if etcdNS := config.Spec.GetETCDValidationNamespace(); etcdNS != "" && etcdNS != config.Spec.GetOperatorNamespace() {
 		err = pluginutils.EnsureNamespace(clientConfig, etcdNS)
 		if err != nil {
-			return installer, err
+			return installer, errors.WithStack(err)
 		}
 	}
 
@@ -257,7 +265,7 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	if currentVersionStr == "" {
 		currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
 		if err != nil {
-			return installer, err
+			return installer, errors.WithStack(err)
 		}
 		currentVersionStr = currentVersion.String()
 	}
@@ -269,9 +277,9 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	if err == nil && minVersion != "" {
 		supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
 		if err != nil {
-			return installer, err
+			return installer, errors.WithStack(err)
 		} else if !supported {
-			return installer, fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion)
+			return installer, errors.WithStack(fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion))
 		}
 	}
 
@@ -298,7 +306,7 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 
 	clientConfig, err := pluginutils.NewClientConfig()
 	if err != nil {
-		return installer, err
+		return installer, errors.WithStack(err)
 	}
 
 	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
@@ -315,7 +323,7 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
-		return installer, err
+		return installer, errors.WithStack(err)
 	}
 
 	installer = &Installer{
@@ -337,12 +345,12 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 
 	clientConfig, err := pluginutils.NewClientConfig()
 	if err != nil {
-		return uninstaller, err
+		return uninstaller, errors.WithStack(err)
 	}
 
 	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
 	if err != nil {
-		return uninstaller, err
+		return uninstaller, errors.WithStack(err)
 	}
 
 	distribution := pluginutils.DetermineDistribution(currentVersion.String())
@@ -377,7 +385,7 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 
 	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
 	if err != nil {
-		return uninstaller, err
+		return uninstaller, errors.WithStack(err)
 	}
 
 	uninstaller = &Installer{
@@ -389,6 +397,7 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		fileSys:          fileSys,
 		onDiskFileSys:    filesys.MakeFsOnDisk(),
 		installerOptions: uninstallerOptions,
+		storageOSCluster: stosCluster,
 	}
 
 	return uninstaller, nil
