@@ -108,29 +108,28 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 }
 
 func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
-	storageOSClusterNamespace := in.stosConfig.Spec.GetOperatorNamespace()
-	if in.storageOSCluster.Namespace != "" {
-		if !in.stosConfig.Spec.SkipNamespaceDeletion {
-			if err := in.checkForProtectedNamespaces(); err != nil {
-				return errors.Wrap(err, errStosUninstallAborted)
-			}
+	storageOSClusterNamespace := in.storageOSCluster.Namespace
+	if storageOSClusterNamespace == "" {
+		storageOSClusterNamespace = in.stosConfig.Spec.GetOperatorNamespace()
+	}
+
+	if !in.stosConfig.Spec.SkipNamespaceDeletion && storageOSClusterNamespace != in.stosConfig.Spec.GetOperatorNamespace() {
+		if err := in.checkForProtectedNamespaces(); err != nil {
+			return errors.Wrap(err, errStosUninstallAborted)
 		}
-		if !in.stosConfig.Spec.SkipStorageOSCluster {
-			if err := in.uninstallStorageOSCluster(upgrade); err != nil {
-				return errors.WithStack(err)
+		defer func() {
+			if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
+				panic(err)
 			}
-			if err := in.ensureStorageOSClusterRemoved(); err != nil {
-				return errors.WithStack(err)
-			}
+		}()
+	}
+	if !in.stosConfig.Spec.SkipStorageOSCluster {
+		if err := in.uninstallStorageOSCluster(upgrade); err != nil {
+			return errors.WithStack(err)
 		}
-		if in.storageOSCluster.Namespace != in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace {
-			defer func() {
-				if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
-					panic(err)
-				}
-			}()
+		if err := in.ensureStorageOSClusterRemoved(); err != nil {
+			return errors.WithStack(err)
 		}
-		storageOSClusterNamespace = in.storageOSCluster.Namespace
 	}
 
 	if !upgrade && in.installerOptions.resourceQuota {
@@ -428,6 +427,10 @@ func (in *Installer) kustomizeAndDelete(dir, file string) error {
 		namespace, err := pluginutils.GetFieldInManifest(removedNamespace, "metadata", "name")
 		if err != nil {
 			return err
+		}
+
+		if in.stosConfig.Spec.SkipStorageOSCluster && in.storageOSCluster != nil && in.storageOSCluster.Namespace == namespace {
+			continue
 		}
 
 		if err = in.gracefullyDeleteNS(namespace); err != nil {

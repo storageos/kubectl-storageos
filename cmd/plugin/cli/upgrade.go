@@ -2,10 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
-	"github.com/mattn/go-isatty"
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -65,7 +62,7 @@ func UpgradeCmd() *cobra.Command {
 
 			traceError = installConfig.Spec.StackTrace
 
-			err = upgradeCmd(uninstallConfig, installConfig)
+			err = upgradeCmd(uninstallConfig, installConfig, pluginutils.HasFlagSet(installer.SkipNamespaceDeletionFlag))
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
 			return pluginutils.HandleError("upgrade", err, traceError)
@@ -110,7 +107,7 @@ func UpgradeCmd() *cobra.Command {
 	return cmd
 }
 
-func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig) error {
+func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool) error {
 	if installConfig.Spec.Install.StorageOSVersion == "" {
 		installConfig.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
@@ -123,7 +120,7 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
 
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
-	if !uninstallConfig.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
+	if !uninstallConfig.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
 		uninstallConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
 		if err != nil {
@@ -171,31 +168,31 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		}
 		// Config file not found; set fields in new config object directly
 		config.Spec.IncludeEtcd = false
-		config.Spec.StackTrace, err = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
+		config.Spec.StackTrace, err = cmd.Flags().GetBool(installer.StackTraceFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.Wait, err = strconv.ParseBool(cmd.Flags().Lookup(installer.WaitFlag).Value.String())
+		config.Spec.Install.Wait, err = cmd.Flags().GetBool(installer.WaitFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EnablePortalManager, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EnablePortalManagerFlag).Value.String())
+		config.Spec.Install.EnablePortalManager, err = cmd.Flags().GetBool(installer.EnablePortalManagerFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipExistingWorkloadCheck, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipExistingWorkloadCheckFlag).Value.String())
+		config.Spec.SkipExistingWorkloadCheck, err = cmd.Flags().GetBool(installer.SkipExistingWorkloadCheckFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = cmd.Flags().GetBool(installer.SkipStosClusterFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.SkipEtcdEndpointsValidation, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
+		config.Spec.Install.SkipEtcdEndpointsValidation, err = cmd.Flags().GetBool(installer.SkipEtcdEndpointsValFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EtcdTLSEnabled, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
+		config.Spec.Install.EtcdTLSEnabled, err = cmd.Flags().GetBool(installer.EtcdTLSEnabledFlag)
 		if err != nil {
 			return err
 		}
@@ -260,11 +257,11 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		}
 
 		// Config file not found; set fields in new config object directly
-		config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
+		config.Spec.SkipNamespaceDeletion, err = cmd.Flags().GetBool(installer.SkipNamespaceDeletionFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = cmd.Flags().GetBool(installer.SkipStosClusterFlag)
 		if err != nil {
 			return err
 		}

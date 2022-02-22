@@ -2,10 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
-	"github.com/mattn/go-isatty"
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +40,7 @@ func UninstallCmd() *cobra.Command {
 
 			traceError = config.Spec.StackTrace
 
-			err = uninstallCmd(config)
+			err = uninstallCmd(config, pluginutils.HasFlagSet(installer.SkipNamespaceDeletionFlag))
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
 			return pluginutils.HandleError("uninstall", err, traceError)
@@ -70,9 +67,9 @@ func UninstallCmd() *cobra.Command {
 	return cmd
 }
 
-func uninstallCmd(config *apiv1.KubectlStorageOSConfig) error {
+func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool) error {
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
-	if !config.Spec.SkipNamespaceDeletion && isatty.IsTerminal(os.Stdout.Fd()) {
+	if !config.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
 		config.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
 		if err != nil {
@@ -123,23 +120,23 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 			return fmt.Errorf("error discovered in config file: %v", err)
 		}
 		// Config file not found; set fields in new config object directly
-		config.Spec.StackTrace, err = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
+		config.Spec.StackTrace, err = cmd.Flags().GetBool(installer.StackTraceFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipNamespaceDeletion, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipNamespaceDeletionFlag).Value.String())
+		config.Spec.SkipNamespaceDeletion, err = cmd.Flags().GetBool(installer.SkipNamespaceDeletionFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipExistingWorkloadCheck, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipExistingWorkloadCheckFlag).Value.String())
+		config.Spec.SkipExistingWorkloadCheck, err = cmd.Flags().GetBool(installer.SkipExistingWorkloadCheckFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.IncludeEtcd, err = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
+		config.Spec.IncludeEtcd, err = cmd.Flags().GetBool(installer.IncludeEtcdFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = cmd.Flags().GetBool(installer.SkipStosClusterFlag)
 		if err != nil {
 			return err
 		}
