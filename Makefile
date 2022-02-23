@@ -69,8 +69,8 @@ test: fmt vet generate ## Run tests.
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ${BUILDFLAGS} github.com/storageos/kubectl-storageos/...
 
 e2e: ## Run e2e tests against latest supported k8s cluster.  
-	kubectl-kuttl test --config e2e/kuttl/installer-1.22.yaml
-	kubectl-kuttl test --config e2e/kuttl/upgrade-1.22.yaml
+	kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.22.yaml
+	kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.22.yaml
 
 ##@ Build
 
