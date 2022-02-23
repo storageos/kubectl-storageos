@@ -257,12 +257,20 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
 	}
 
 	patchStrings := make([]string, 0)
+	var patchString string
 	for _, patch := range patches {
-		patchString := fmt.Sprintf("%s%s%s%s%s%s", `
+		if patch.Op == "remove" {
+			patchString = fmt.Sprintf("%s%s%s%s", `
+    - op: `, patch.Op, `
+      path: `, patch.Path)
+		} else {
+			patchString = fmt.Sprintf("%s%s%s%s%s%s", `
     - op: `, patch.Op, `
       path: `, patch.Path, `
       value: `, patch.Value)
+		}
 		patchStrings = append(patchStrings, patchString)
+
 	}
 
 	allPatchesStr := strings.Join(patchStrings, "")

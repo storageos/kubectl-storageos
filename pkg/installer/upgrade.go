@@ -148,8 +148,22 @@ func (in *Installer) copyStorageOSClusterToMemory(installer *Installer) error {
 
 	stosClusterManifest := makeMultiDoc(string(onDiskStosClusterManifest), inMemStosAPISecret)
 
-	// write unistalled manifest to instller filesystem
-	return installer.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest))
+	// write uninstalled manifest to installer filesystem
+	if err = installer.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest)); err != nil {
+		return err
+	}
+
+	// create patch to remove list of existing images from storageos-cluster
+	clusterName, err := pluginutils.GetFieldInMultiDocByKind(stosClusterManifest, stosClusterKind, "metadata", "name")
+	if err != nil {
+		return err
+	}
+	removeImagesPatch := pluginutils.KustomizePatch{
+		Op:   "remove",
+		Path: "/spec/images",
+	}
+
+	return installer.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, clusterName, []pluginutils.KustomizePatch{removeImagesPatch})
 }
 
 // copyStorageOSAPIData uses the (un)installer's on-disk filesystem to read the username and password
