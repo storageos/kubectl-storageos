@@ -270,7 +270,6 @@ func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, pat
       value: `, patch.Value)
 		}
 		patchStrings = append(patchStrings, patchString)
-
 	}
 
 	allPatchesStr := strings.Join(patchStrings, "")
