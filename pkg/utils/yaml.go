@@ -432,7 +432,7 @@ func SpecificPatchForSupportBundle(spec, instruction, value string, fields []str
 		path := filepath.Join("/spec", instruction, strconv.Itoa(count), filepath.Join(fields...))
 		return KustomizePatch{Op: "replace", Value: value, Path: path}, nil
 	}
-	return kPatch, fmt.Errorf("path not found in support bundle")
+	return kPatch, fmt.Errorf(fmt.Sprintf("collector/analyzer %s not found in support bundle", lookUpValue))
 }
 
 // AllInstructionTypesExcept returns [][]string of all instructino types for instruction, except for those provided
