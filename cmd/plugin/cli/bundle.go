@@ -19,7 +19,7 @@ const (
 
 func BundleCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "bundle [url]",
+		Use:   "bundle [url/path]",
 		Args:  cobra.MinimumNArgs(0),
 		Short: "Generate a support bundle",
 		Long: `A support bundle is an archive of files, output, metrics and state
