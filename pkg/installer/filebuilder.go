@@ -15,13 +15,15 @@ import (
 )
 
 type installerOptions struct {
-	storageosOperator bool
-	storageosCluster  bool
-	portalClient      bool
-	portalConfig      bool
-	resourceQuota     bool
-	etcdOperator      bool
-	etcdCluster       bool
+	storageosOperator      bool
+	storageosCluster       bool
+	portalClient           bool
+	portalConfig           bool
+	resourceQuota          bool
+	etcdOperator           bool
+	etcdCluster            bool
+	installPrometheusCRD   bool
+	uninstallPrometheusCRD bool
 }
 
 // fileBuilder is used to hold data required to build a file in the in-memory fs
@@ -66,6 +68,12 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 //   - resource-quota
 //     - resource-quota.yaml
 //     - kustomization.yaml
+//   - metrics
+//     - storageos-metrics-exporter.yaml
+// 	   - kustomization.yaml
+//   - prometheus
+//     - prometheus-crd.yaml
+//     - kustomization.yaml
 // - etcd
 //   - operator
 //     - etcd-operator.yaml
@@ -88,7 +96,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		stosSubDirs[operatorDir] = stosOpFiles
 	}
 
-	// build storageos/cluster
+	// build storageos/cluster manifest
 	if o.storageosCluster {
 		stosClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml), pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
@@ -130,14 +138,38 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		stosSubDirs[portalClientDir] = stosPortalClientFiles
 	}
 
+	// build storageos/portal-config manifest
 	if o.portalConfig {
-		// build storageos/portal-config
 		stosPortalConfigFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml), pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
 		stosSubDirs[portalConfigDir] = stosPortalConfigFiles
 	}
+
+	// install prometheus CRDs manifests
+	if o.installPrometheusCRD || o.uninstallPrometheusCRD {
+		prometheusCRDFiles, err := newFileBuilder(config.Spec.Install.PrometheusCRDYaml, pluginversion.PrometheusCRDLatestSupportedURL(), "", prometheusCRDFile, "").createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+		stosSubDirs[prometheusDir] = prometheusCRDFiles
+	}
+
+	metricsExporterLatestVersion := ""
+	// TODO remove
+	// preventing to fetch from the repo while its set as private
+	// for now using the local yaml or hardcoded version
+	if config.Spec.Install.StorageOSMetricsExporterYaml == "" {
+		metricsExporterLatestVersion = "0.0.1"
+		// metricsExporterLatestVersion = pluginversion.MetricsExporterLatestSupportedURL()
+	}
+	metricsExporterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSMetricsExporterYaml, config.Spec.Uninstall.StorageOSMetricsExporterYaml), metricsExporterLatestVersion, "", metricsExporterFile, "").createFileWithKustPair(clientConfig)
+	if err != nil {
+		return fs, err
+	}
+	stosSubDirs[metricsDir] = metricsExporterFiles
+
 	fsData[stosDir] = stosSubDirs
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
@@ -149,9 +181,11 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		return fs, nil
 	}
 
+	// continue to etcd related manifests
+
 	etcdSubDirs := make(map[string]map[string][]byte)
 
-	// build etcd/operator
+	// build etcd/operator manifest
 	if o.etcdOperator {
 		etcdOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml), "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
@@ -160,8 +194,8 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		etcdSubDirs[operatorDir] = etcdOpFiles
 	}
 
+	// build etcd/cluster manifest
 	if o.etcdCluster {
-		// build etcd/cluster
 		etcdClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml), pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err

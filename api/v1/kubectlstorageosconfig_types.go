@@ -74,9 +74,11 @@ type Install struct {
 	StorageOSClusterYaml            string `json:"storageOSClusterYaml,omitempty"`
 	StorageOSPortalConfigYaml       string `json:"storageOSPortalConfigYaml,omitempty"`
 	StorageOSPortalClientSecretYaml string `json:"storageOSPortalClientSecretYaml,omitempty"`
+	StorageOSMetricsExporterYaml    string `json:"metricsExporterYaml,omitempty"`
 	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
+	PrometheusCRDYaml               string `json:"prometheusCRDYaml,omitempty"`
 	EtcdEndpoints                   string `json:"etcdEndpoints,omitempty"`
 	EtcdTLSEnabled                  bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName                  string `json:"etcdSecretName,omitempty"`
@@ -89,6 +91,7 @@ type Install struct {
 	PortalSecret                    string `json:"portalSecret,omitempty"`
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
+	InstallPrometheusCRD            bool   `json:"installPrometheusCRD,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
@@ -99,9 +102,11 @@ type Uninstall struct {
 	StorageOSClusterYaml            string `json:"storageOSClusterYaml,omitempty"`
 	StorageOSPortalConfigYaml       string `json:"storageOSPortalConfigYaml,omitempty"`
 	StorageOSPortalClientSecretYaml string `json:"storageOSPortalClientSecretYaml,omitempty"`
+	StorageOSMetricsExporterYaml    string `json:"storageOSMetricsExporterYaml,omitempty"`
 	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
+	UninstallPrometheusCRD          bool   `json:"uninstallPrometheusCRD"`
 }
 
 type InstallerMeta struct {

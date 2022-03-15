@@ -104,6 +104,8 @@ spec:
                     type: string
                   storageOSVersion:
                     type: string
+                  storageOSMetricsExporterYaml:
+                    type: string
                   wait:
                     type: boolean
                 type: object
@@ -135,6 +137,8 @@ spec:
                   storageOSPortalClientSecretYaml:
                     type: string
                   storageOSPortalConfigYaml:
+                    type: string
+                  storageOSMetricsExporterYaml:
                     type: string
                 type: object
             type: object

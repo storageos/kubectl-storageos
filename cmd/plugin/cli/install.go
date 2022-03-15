@@ -46,7 +46,7 @@ func InstallCmd() *cobra.Command {
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storageos cluster to enter running phase")
-	cmd.Flags().Bool(installer.DryRunFlag, false, "no installation performed, installation manifests stored locally at \"./storageos-dry-run\"")
+	cmd.Flags().Bool(installer.DryRunFlag, false, "no installation performed, manifests stored locally at \"./storageos-dry-run\"")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
 	cmd.Flags().String(installer.EtcdOperatorVersionFlag, "", "version of etcd operator")
 	cmd.Flags().String(installer.K8sVersionFlag, "", "version of kubernetes cluster")
@@ -54,6 +54,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
 	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url")
+	cmd.Flags().String(installer.StosMetricsExporterYamlFlag, "", "metrics-exporter install yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().String(installer.ResourceQuotaYamlFlag, "", "resource-quota.yaml path or url")
@@ -62,6 +63,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SkipEtcdEndpointsValFlag, false, "skip validation of etcd endpoints")
 	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster installation")
 	cmd.Flags().Bool(installer.EnablePortalManagerFlag, false, "enable storageos portal manager during installation")
+	cmd.Flags().Bool(installer.InstallPrometheusCRDFlag, false, "install latest Prometheus CRDs (needed for metrics-exporter)")
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
@@ -92,6 +94,15 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
 		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
+	}
+
+	if config.Spec.Install.InstallPrometheusCRD {
+		version.SetPrometheusCRDLatestSupportedVersion(version.PrometheusCRDLatestSupportedVersion())
+	}
+
+	if config.Spec.Install.StorageOSMetricsExporterYaml == "" {
+		config.Spec.Install.StorageOSMetricsExporterYaml = version.MetricsExporterLatestSupportedVersion()
+		version.SetMetricsExporterLatestSupportedVersion(config.Spec.Install.StorageOSMetricsExporterYaml)
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -193,6 +204,10 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.InstallPrometheusCRD, err = strconv.ParseBool(cmd.Flags().Lookup(installer.InstallPrometheusCRDFlag).Value.String())
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
 		config.Spec.Install.KubernetesVersion = cmd.Flags().Lookup(installer.K8sVersionFlag).Value.String()
@@ -200,6 +215,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installer.StosClusterYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
+		config.Spec.Install.StorageOSMetricsExporterYaml = cmd.Flags().Lookup(installer.StosMetricsExporterYamlFlag).Value.String()
 		config.Spec.Install.EtcdOperatorYaml = cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag).Value.String()
 		config.Spec.Install.EtcdClusterYaml = cmd.Flags().Lookup(installer.EtcdClusterYamlFlag).Value.String()
 		config.Spec.Install.ResourceQuotaYaml = cmd.Flags().Lookup(installer.ResourceQuotaYamlFlag).Value.String()
@@ -232,11 +248,12 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.InstallStosClusterYamlConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
 	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
+	config.Spec.Install.StorageOSMetricsExporterYaml = viper.GetString(installer.InstallStosMetricsExporterYamlConfig)
+	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
+	config.Spec.Install.StorageOSClusterNamespace = valueOrDefault(viper.GetString(installer.StosClusterNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.EtcdOperatorYaml = viper.GetString(installer.InstallEtcdOperatorYamlConfig)
 	config.Spec.Install.EtcdClusterYaml = viper.GetString(installer.InstallEtcdClusterYamlConfig)
 	config.Spec.Install.ResourceQuotaYaml = viper.GetString(installer.InstallResourceQuotaYamlConfig)
-	config.Spec.Install.StorageOSOperatorNamespace = valueOrDefault(viper.GetString(installer.InstallStosOperatorNSConfig), consts.NewOperatorNamespace)
-	config.Spec.Install.StorageOSClusterNamespace = valueOrDefault(viper.GetString(installer.StosClusterNSConfig), consts.NewOperatorNamespace)
 	config.Spec.Install.EtcdNamespace = valueOrDefault(viper.GetString(installer.InstallEtcdNamespaceConfig), consts.EtcdOperatorNamespace)
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
 	config.Spec.Install.SkipEtcdEndpointsValidation = viper.GetBool(installer.SkipEtcdEndpointsValConfig)
@@ -249,6 +266,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
+	config.Spec.Install.InstallPrometheusCRD = viper.GetBool(installer.InstallPrometheusCRD)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

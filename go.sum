@@ -974,6 +974,8 @@ github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:v
 github.com/olekukonko/tablewriter v0.0.4/go.mod h1:zq6QwlOf5SlnkVbMSr5EoBv3636FWnp+qbPhuoO21uA=
 github.com/ondat/operator-toolkit v0.0.0-20220321135237-66ebd559df4e h1:/4HhRpgusuRbZGlke0VENUuLMIY1On5RAiLFdwSSrSc=
 github.com/ondat/operator-toolkit v0.0.0-20220321135237-66ebd559df4e/go.mod h1:uB4vtqBG1OcSl08zabuY+1XbCiKdM9B12rUb8W0BqpI=
+github.com/ondat/operator-toolkit v0.0.0-20220322101854-06c4e99cd595 h1:yETsabMSAfZuX2fdOjHR/JmM6LXvlEx+GPVKAeuX2gg=
+github.com/ondat/operator-toolkit v0.0.0-20220322101854-06c4e99cd595/go.mod h1:uB4vtqBG1OcSl08zabuY+1XbCiKdM9B12rUb8W0BqpI=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

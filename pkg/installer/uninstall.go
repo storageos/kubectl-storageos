@@ -75,7 +75,14 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	}
 
 	wg := sync.WaitGroup{}
-	errChan := make(chan error, 2)
+	errChan := make(chan error, 3)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		errChan <- in.uninstallMetricsExporter(upgrade, currentVersion)
+	}()
 
 	wg.Add(1)
 	go func() {
@@ -107,6 +114,32 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	return collectErrors(errChan)
 }
 
+func (in *Installer) uninstallMetricsExporter(upgrade bool, currentVersion string) error {
+	manifest, err := in.fileSys.ReadFile(filepath.Join(stosDir, metricsDir, metricsExporterFile))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if !in.stosConfig.Spec.Uninstall.UninstallPrometheusCRD {
+		return nil
+	}
+
+	manifest, err = in.fileSys.ReadFile(filepath.Join(stosDir, prometheusDir, prometheusCRDFile))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err = in.kubectlClient.Delete(context.TODO(), "", string(manifest), true); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
 	storageOSClusterNamespace := in.storageOSCluster.Namespace
 	if storageOSClusterNamespace == "" {
@@ -133,7 +166,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 	}
 
 	if !upgrade && in.installerOptions.resourceQuota {
-		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
+		lessThanOrEqual, err := version.VersionIsLowerThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
 		if err != nil {
 			return err
 		}
