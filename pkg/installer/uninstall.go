@@ -119,7 +119,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 		}
 		defer func() {
 			if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
-				panic(err)
+				println(err.Error())
 			}
 		}()
 	}
