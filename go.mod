@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/darkowlzz/operator-toolkit v0.0.0-20210721205719-05b03cd74f02
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.13.0 // indirect
@@ -18,6 +17,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/ondat/operator-toolkit v0.0.0-20220321135237-66ebd559df4e
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851

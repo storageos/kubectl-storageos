@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	otkkubectl "github.com/darkowlzz/operator-toolkit/declarative/kubectl"
+	otkkubectl "github.com/ondat/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
