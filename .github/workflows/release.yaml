@@ -6,6 +6,7 @@ on:
 
 jobs:
   auto-release:
+    if: startsWith(github.event.base_ref, 'refs/heads/release/v')
     runs-on: ubuntu-18.04
     steps:
       - name: Cancel Previous Runs
