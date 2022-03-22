@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
@@ -162,35 +161,35 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			return fmt.Errorf("error discovered in config file: %v", err)
 		}
 		// Config file not found; set fields in new config object directly
-		config.Spec.StackTrace, err = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
+		config.Spec.StackTrace, err = cmd.Flags().GetBool(installer.StackTraceFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.IncludeEtcd, err = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeEtcdFlag).Value.String())
+		config.Spec.IncludeEtcd, err = cmd.Flags().GetBool(installer.IncludeEtcdFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.SkipStorageOSCluster, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipStosClusterFlag).Value.String())
+		config.Spec.SkipStorageOSCluster, err = cmd.Flags().GetBool(installer.SkipStosClusterFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EnablePortalManager, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EnablePortalManagerFlag).Value.String())
+		config.Spec.Install.EnablePortalManager, err = cmd.Flags().GetBool(installer.EnablePortalManagerFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.Wait, err = strconv.ParseBool(cmd.Flags().Lookup(installer.WaitFlag).Value.String())
+		config.Spec.Install.Wait, err = cmd.Flags().GetBool(installer.WaitFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.DryRun, err = strconv.ParseBool(cmd.Flags().Lookup(installer.DryRunFlag).Value.String())
+		config.Spec.Install.DryRun, err = cmd.Flags().GetBool(installer.DryRunFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.SkipEtcdEndpointsValidation, err = strconv.ParseBool(cmd.Flags().Lookup(installer.SkipEtcdEndpointsValFlag).Value.String())
+		config.Spec.Install.SkipEtcdEndpointsValidation, err = cmd.Flags().GetBool(installer.SkipEtcdEndpointsValFlag)
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EtcdTLSEnabled, err = strconv.ParseBool(cmd.Flags().Lookup(installer.EtcdTLSEnabledFlag).Value.String())
+		config.Spec.Install.EtcdTLSEnabled, err = cmd.Flags().GetBool(installer.EtcdTLSEnabledFlag)
 		if err != nil {
 			return err
 		}

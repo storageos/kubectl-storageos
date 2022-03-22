@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
@@ -89,7 +88,7 @@ func setUninstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOS
 			return fmt.Errorf("error discovered in config file: %v", err)
 		}
 		// Config file not found; set fields in new config object directly
-		config.Spec.StackTrace, err = strconv.ParseBool(cmd.Flags().Lookup(installer.StackTraceFlag).Value.String())
+		config.Spec.StackTrace, err = cmd.Flags().GetBool(installer.StackTraceFlag)
 		if err != nil {
 			return err
 		}

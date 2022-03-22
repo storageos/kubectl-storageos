@@ -4,10 +4,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -22,6 +25,23 @@ import (
 )
 
 const promptTimeout = time.Minute
+
+var parseFlagsOnce = sync.Once{}
+
+// HasFlagSet detects user given flag
+func HasFlagSet(name string) bool {
+	parseFlagsOnce.Do(func() {
+		flag.Parse()
+	})
+
+	for _, arg := range flag.Args() {
+		if strings.HasPrefix(arg, "--"+name) {
+			return true
+		}
+	}
+
+	return false
+}
 
 // AskUser creates an interactive prompt and waits for user input with timeout
 func AskUser(prompt promptui.Prompt) (string, error) {
