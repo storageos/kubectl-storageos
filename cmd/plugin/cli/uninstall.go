@@ -142,7 +142,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
-		config.Spec.Uninstall.UninstallPrometheusCRD, err = strconv.ParseBool(cmd.Flags().Lookup(installer.UninstallPrometheusCRDFlag).Value.String())
+		config.Spec.Uninstall.UninstallPrometheusCRD, err = cmd.Flags().GetBool(installer.UninstallPrometheusCRDFlag)
 		if err != nil {
 			return err
 		}

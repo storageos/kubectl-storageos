@@ -204,7 +204,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.InstallPrometheusCRD, err = strconv.ParseBool(cmd.Flags().Lookup(installer.InstallPrometheusCRDFlag).Value.String())
+		config.Spec.Install.InstallPrometheusCRD, err = cmd.Flags().GetBool(installer.InstallPrometheusCRDFlag)
 		if err != nil {
 			return err
 		}
