@@ -84,7 +84,7 @@ EOF
 ${HEADER}
 name: kuttl e2e test ${major}
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   test:
