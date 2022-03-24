@@ -62,6 +62,7 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().String(installer.ResourceQuotaYamlFlag, "", "resource-quota.yaml path or url")
+	cmd.Flags().String(installer.StosMetricsExporterYamlFlag, "", "metrics-exporter install yaml path or url")
 	cmd.Flags().Bool(installer.UninstallPrometheusCRDFlag, false, "uninstall prometheus CRD")
 
 	viper.BindPFlags(cmd.Flags())
