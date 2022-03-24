@@ -156,15 +156,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		stosSubDirs[prometheusDir] = prometheusCRDFiles
 	}
 
-	metricsExporterLatestVersion := ""
-	// TODO remove
-	// preventing to fetch from the repo while its set as private
-	// for now using the local yaml or hardcoded version
-	if config.Spec.Install.StorageOSMetricsExporterYaml == "" {
-		metricsExporterLatestVersion = "0.0.1"
-		// metricsExporterLatestVersion = pluginversion.MetricsExporterLatestSupportedURL()
-	}
-	metricsExporterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSMetricsExporterYaml, config.Spec.Uninstall.StorageOSMetricsExporterYaml), metricsExporterLatestVersion, "", metricsExporterFile, "").createFileWithKustPair(clientConfig)
+	metricsExporterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSMetricsExporterYaml, config.Spec.Uninstall.StorageOSMetricsExporterYaml), pluginversion.MetricsExporterLatestSupportedURL(), "", metricsExporterFile, "").createFileWithKustPair(clientConfig)
 	if err != nil {
 		return fs, err
 	}
