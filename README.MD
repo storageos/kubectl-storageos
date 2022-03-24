@@ -40,20 +40,20 @@ cp ./bin/kubectl-storageos /usr/local/bin # directory on your $PATH
 
 ### Install the latest version of StorageOS on your kubernetes cluster
 
-```
+```bash
 kubectl-storageos install
 ```
 
 ### Install an [ETCD Cluster](https://github.com/storageos/etcd-cluster-operator) and the latest version of StorageOS
 **Warning**: This installation of ETCD is *not* production ready.
 
-```
+```bash
 kubectl-storageos install --include-etcd
 ```
 
 ### Uninstall StorageOS from your kubernetes cluster
 
-```
+```bash
 kubectl-storageos uninstall
 ```
 
@@ -64,7 +64,7 @@ kubectl-storageos uninstall
 > cluster is kept intact, the volumes and their data will be available after a
 > reinstall.
 
-```
+```bash
 kubectl-storageos uninstall --include-etcd
 ```
 
@@ -74,7 +74,7 @@ The ETCD uninstall process refers only to an ETCD cluster installed by the Stora
 
 ### Upgrade StorageOS to the latest version
 
-```
+```bash
 kubectl-storageos upgrade
 ```
 
@@ -82,7 +82,7 @@ The **upgrade** commands uninstalls your existing StorageOS cluster and installs
 
 ### Preflight checks
 
-```
+```bash
 kubectl-storageos preflight
 ```
 
@@ -92,7 +92,7 @@ A preflight check is a set of validations that can be run to ensure that a clust
 
 Flags can also be passed to the **install**, **uninstall** and **upgrade** commands via the kubectl storageos config file like so:
 
-```
+```bash
 kubectl-storageos install --config-path=/path/to/config
 ```
 
@@ -120,13 +120,13 @@ For an example config file, see `config/samples/_v1_kubectlstorageosconfig.yaml`
 
 ### Install ETCD and StorageOS with TLS enabled
 
-```
+```bash
 kubectl-storageos install --include-etcd --etcd-tls-enabled
 ```
 
 ### Install StorageOS and connect to an existing TLS enabled ETCD cluster
 
-```
+```bash
 kubectl-storageos install --etcd-tls-enabled
 ```
 

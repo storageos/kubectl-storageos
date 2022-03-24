@@ -14,7 +14,7 @@ name: Lint Full Codebase
 #############################
 # Start the job on all push #
 #############################
-on: [ push, pull_request ]
+on: [ push ]
 
 ###############
 # Set the Job #
