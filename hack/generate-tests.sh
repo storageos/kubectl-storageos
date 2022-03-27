@@ -116,7 +116,7 @@ jobs:
         run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
 
       - uses: actions/upload-artifact@v3
-        if: ${{ always() }} 
+        if: \${{ always() }} 
         with:
           name: kind-logs
           path: kind-logs-*
