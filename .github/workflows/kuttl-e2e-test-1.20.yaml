@@ -31,3 +31,9 @@ jobs:
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.20.yaml
       - name: Run kuttl upgrade 1.20
         run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.20.yaml
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }} 
+        with:
+          name: kind-logs
+          path: kind-logs-*
