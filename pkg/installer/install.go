@@ -30,7 +30,7 @@ func (in *Installer) Install(upgrade bool) error {
 		}
 	}
 
-	if serialInstall {
+	if serialInstall || in.stosConfig.Spec.Install.DryRun {
 		wg.Wait()
 	}
 
