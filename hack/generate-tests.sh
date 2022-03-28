@@ -111,9 +111,9 @@ jobs:
           make _build
           sudo cp bin/kubectl-storageos \$KUBECTL_STORAGEOS
       - name: Run kuttl installer ${major}
-        run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
+        run: kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
       - name: Run kuttl upgrade ${major}
-        run: sudo kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
+        run: kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
 
       - uses: actions/upload-artifact@v3
         if: \${{ always() }} 
