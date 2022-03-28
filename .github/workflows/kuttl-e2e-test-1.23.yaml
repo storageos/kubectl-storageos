@@ -28,6 +28,12 @@ jobs:
           make _build
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
       - name: Run kuttl installer 1.23
-        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.23.yaml
+        run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.23.yaml
       - name: Run kuttl upgrade 1.23
-        run: sudo kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.23.yaml
+        run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.23.yaml
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }} 
+        with:
+          name: kind-logs
+          path: kind-logs-*
