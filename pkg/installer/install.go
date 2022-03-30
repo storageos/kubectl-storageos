@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -38,13 +37,8 @@ func (in *Installer) Install(upgrade bool) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		errChan <- in.installStorageOS()
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		errChan <- in.installMetricsExporter()
+		errChan <- in.installStorageOS()
 	}()
 
 	wg.Wait()
@@ -225,32 +219,6 @@ func (in *Installer) installStorageOS() error {
 	}
 
 	return in.installStorageOSCluster()
-}
-
-func (in *Installer) installMetricsExporter() error {
-	if in.stosConfig.Spec.Install.InstallPrometheusCRD {
-		manifest, err := in.fileSys.ReadFile(filepath.Join(stosDir, prometheusDir, prometheusCRDFile))
-		if err != nil {
-			return err
-		}
-
-		// needs to be applied server-side due to size of manifest and limitation of
-		// how much can be stored within a resource's attribute:
-		// kubectl.kubernetes.io/last-applied-configuration
-		err = in.kubectlClient.Apply(context.TODO(), "", string(manifest), true, "server-side")
-		if err != nil {
-			log.Printf("failed to apply prometheus CRD server-side\n")
-			return err
-		}
-	}
-
-	manifest, err := in.fileSys.ReadFile(filepath.Join(stosDir, metricsDir, metricsExporterFile))
-	if err != nil {
-		log.Printf("failed to apply metrics-exporter manifests\n")
-		return err
-	}
-
-	return in.kubectlClient.Apply(context.TODO(), "", string(manifest), true)
 }
 
 func (in *Installer) installStorageOSOperator() error {

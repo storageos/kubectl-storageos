@@ -36,7 +36,6 @@ const (
 	StosClusterYamlFlag            = "stos-cluster-yaml"
 	StosPortalConfigYamlFlag       = "stos-portal-config-yaml"
 	StosPortalClientSecretYamlFlag = "stos-portal-client-secret-yaml"
-	StosMetricsExporterYamlFlag    = "stos-metrics-exporter-yaml"
 	EtcdOperatorYamlFlag           = "etcd-operator-yaml"
 	EtcdClusterYamlFlag            = "etcd-cluster-yaml"
 	ResourceQuotaYamlFlag          = "resource-quota-yaml"
@@ -58,8 +57,6 @@ const (
 	PortalTenantIDFlag             = "portal-tenant-id"
 	PortalAPIURLFlag               = "portal-api-url"
 	EnablePortalManagerFlag        = "enable-portal-manager"
-	InstallPrometheusCRDFlag       = "install-prometheus-crd"
-	UninstallPrometheusCRDFlag     = "uninstall-prometheus-crd"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -67,7 +64,6 @@ const (
 	SkipExistingWorkloadCheckConfig           = "spec.skipExistingWorkloadCheck"
 	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
 	IncludeEtcdConfig                         = "spec.includeEtcd"
-	InstallPrometheusCRD                      = "spec.install.installPrometheusCRD"
 	WaitConfig                                = "spec.install.wait"
 	DryRunConfig                              = "spec.install.dryRun"
 	StosVersionConfig                         = "spec.install.storageOSVersion"
@@ -80,7 +76,6 @@ const (
 	InstallStosClusterYamlConfig              = "spec.install.storageOSClusterYaml"
 	InstallStosPortalConfigYamlConfig         = "spec.install.storageOSPortalConfigYaml"
 	InstallStosPortalClientSecretYamlConfig   = "spec.install.storageOSPortalClientSecretYaml"
-	InstallStosMetricsExporterYamlConfig      = "spec.install.storageOSMetricsExporterYaml"
 	InstallEtcdOperatorYamlConfig             = "spec.install.etcdOperatorYaml"
 	InstallEtcdClusterYamlConfig              = "spec.install.etcdClusterYaml"
 	InstallResourceQuotaYamlConfig            = "spec.install.resourceQuotaYaml"
@@ -102,25 +97,18 @@ const (
 	UninstallStosClusterYamlConfig            = "spec.uninstall.storageOSClusterYaml"
 	UninstallStosPortalConfigYamlConfig       = "spec.uninstall.storageOSPortalConfigYaml"
 	UninstallStosPortalClientSecretYamlConfig = "spec.uninstall.storageOSPortalClientSecretYaml"
-	UninstallStosMetricsExporterYamlConfig    = "spec.uninstall.storageOSMetricsExporterYaml"
 	UninstallEtcdOperatorYamlConfig           = "spec.uninstall.etcdOperatorYaml"
 	UninstallEtcdClusterYamlConfig            = "spec.uninstall.etcdClusterYaml"
 	UninstallResourceQuotaYamlConfig          = "spec.uninstall.resourceQuotaYaml"
-	UninstallPrometheusCRD                    = "spec.uninstall.uninstallPrometheusCRD"
 
-	// dir and file names for in-memory fs
-	// root directories
-	etcdDir = "etcd"
-	stosDir = "storageos"
-	// subdirectories for kustomize
-	operatorDir      = "operator"
-	clusterDir       = "cluster"
-	resourceQuotaDir = "resource-quota"
-	portalClientDir  = "portal-client"
-	portalConfigDir  = "portal-config"
-	metricsDir       = "metrics"
-	prometheusDir    = "prometheus"
-	// file names
+	// dir and file names for in memory fs
+	etcdDir              = "etcd"
+	stosDir              = "storageos"
+	operatorDir          = "operator"
+	clusterDir           = "cluster"
+	resourceQuotaDir     = "resource-quota"
+	portalClientDir      = "portal-client"
+	portalConfigDir      = "portal-config"
 	stosOperatorFile     = "storageos-operator.yaml"
 	stosClusterFile      = "storageos-cluster.yaml"
 	resourceQuotaFile    = "resource-quota.yaml"
@@ -132,8 +120,6 @@ const (
 	stosConfigMapsFile   = "storageos-configmaps.yaml"
 	etcdOperatorFile     = "etcd-operator.yaml"
 	etcdClusterFile      = "etcd-cluster.yaml"
-	prometheusCRDFile    = "prometheus-crd.yaml"
-	metricsExporterFile  = "storageos-metrics-exporter.yaml"
 	kustomizationFile    = "kustomization.yaml"
 	kubeDir              = ".kube"
 	InstallPrefix        = "install-"
@@ -201,14 +187,13 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	}
 
 	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (in.distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		installPrometheusCRD: config.Spec.Install.InstallPrometheusCRD,
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      config.Spec.Install.EnablePortalManager,
+		portalConfig:      config.Spec.Install.EnablePortalManager,
+		resourceQuota:     (in.distribution == pluginutils.DistributionGKE),
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
 	}
 	in.installerOptions = installerOptions
 
@@ -230,14 +215,13 @@ func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRe
 	}
 
 	installerOptions := &installerOptions{
-		storageosOperator:    false,
-		storageosCluster:     false,
-		portalClient:         manifestsRequired, // manifests are required for install-portal, and uninstall-portal
-		portalConfig:         manifestsRequired, // but not for enable-portal and disable-portal
-		resourceQuota:        false,
-		etcdOperator:         false,
-		etcdCluster:          false,
-		installPrometheusCRD: false,
+		storageosOperator: false,
+		storageosCluster:  false,
+		portalClient:      manifestsRequired, // manifests are required for install-portal, and uninstall-portal
+		portalConfig:      manifestsRequired, // but not for enable-portal and disable-portal
+		resourceQuota:     false,
+		etcdOperator:      false,
+		etcdCluster:       false,
 	}
 	in.installerOptions = installerOptions
 
@@ -328,14 +312,13 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
 
 	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		installPrometheusCRD: false,
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      config.Spec.Install.EnablePortalManager,
+		portalConfig:      config.Spec.Install.EnablePortalManager,
+		resourceQuota:     (distribution == pluginutils.DistributionGKE),
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
 	}
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
@@ -390,14 +373,13 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	}
 
 	uninstallerOptions := &installerOptions{
-		storageosOperator:      true,
-		storageosCluster:       !config.Spec.SkipStorageOSCluster,
-		portalClient:           uninstallPortal,
-		portalConfig:           uninstallPortal,
-		resourceQuota:          distribution == pluginutils.DistributionGKE,
-		etcdOperator:           config.Spec.IncludeEtcd,
-		etcdCluster:            config.Spec.IncludeEtcd,
-		uninstallPrometheusCRD: config.Spec.Uninstall.UninstallPrometheusCRD,
+		storageosOperator: true,
+		storageosCluster:  !config.Spec.SkipStorageOSCluster,
+		portalClient:      uninstallPortal,
+		portalConfig:      uninstallPortal,
+		resourceQuota:     distribution == pluginutils.DistributionGKE,
+		etcdOperator:      config.Spec.IncludeEtcd,
+		etcdCluster:       config.Spec.IncludeEtcd,
 	}
 	uninstaller.installerOptions = uninstallerOptions
 

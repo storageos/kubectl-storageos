@@ -23,7 +23,6 @@ spec:
     etcdNamespace: "<etcd-namespace>"  
     storageOSOperatorYaml: "/path/to/storageos-operator.yaml"
     storageOSClusterYaml: "/path/to/storageos-cluster.yaml"
-    storageOSMetricsExporterYaml: "/path/to/metrics-exporter.yaml"
     etcdOperatorYaml: "/path/to/etcd-operator.yaml"
     etcdClusterYaml: "/path/to/etcd-cluster.yaml"
     etcdEndpoints: "<etcd-endpoints>"

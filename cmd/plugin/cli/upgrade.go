@@ -24,17 +24,13 @@ const (
 	installStosClusterYamlFlag            = installer.InstallPrefix + installer.StosClusterYamlFlag
 	installStosPortalConfigYamlFlag       = installer.InstallPrefix + installer.StosPortalConfigYamlFlag
 	installStosPortalClientSecretYamlFlag = installer.InstallPrefix + installer.StosPortalClientSecretYamlFlag
-	installStosMetricsExporterYamlFlag    = installer.InstallPrefix + installer.StosMetricsExporterYamlFlag
 	installResourceQuotaYamlFlag          = installer.InstallPrefix + installer.ResourceQuotaYamlFlag
-	installPrometheusCRDFlag              = installer.InstallPrometheusCRDFlag
 
 	uninstallStosOperatorYamlFlag           = installer.UninstallPrefix + installer.StosOperatorYamlFlag
 	uninstallStosClusterYamlFlag            = installer.UninstallPrefix + installer.StosClusterYamlFlag
 	uninstallStosPortalConfigYamlFlag       = installer.UninstallPrefix + installer.StosPortalConfigYamlFlag
 	uninstallStosPortalClientSecretYamlFlag = installer.UninstallPrefix + installer.StosPortalClientSecretYamlFlag
-	uninstallStosMetricsExporterYamlFlag    = installer.UninstallPrefix + installer.StosMetricsExporterYamlFlag
 	uninstallResourceQuotaYamlFlag          = installer.UninstallPrefix + installer.ResourceQuotaYamlFlag
-	uninstallPrometheusCRDFlag              = installer.UninstallPrometheusCRDFlag
 )
 
 func UpgradeCmd() *cobra.Command {
@@ -87,17 +83,12 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installStosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be installed")
 	cmd.Flags().String(installStosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url to be installer")
 	cmd.Flags().String(installStosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url to be installed")
-	cmd.Flags().String(installStosMetricsExporterYamlFlag, "", "storageos-metrics-exporter.yaml path or url to be installed")
 	cmd.Flags().String(installResourceQuotaYamlFlag, "", "resource-quota.yaml path or url to be installed")
-	cmd.Flags().Bool(installPrometheusCRDFlag, false, "install prometheus CRDs (needed for metrics-exporter)")
-
 	cmd.Flags().String(uninstallStosOperatorYamlFlag, "", "storageos-operator.yaml path or url to be uninstalled")
 	cmd.Flags().String(uninstallStosClusterYamlFlag, "", "storageos-cluster.yaml path or url to be uninstalled")
-	cmd.Flags().String(uninstallStosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url to be uninstalled")
+	cmd.Flags().String(uninstallStosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url to be uninstaller")
 	cmd.Flags().String(uninstallStosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url to be uninstalled")
-	cmd.Flags().String(uninstallStosMetricsExporterYamlFlag, "", "storageos-metrics-exporter.yaml path or url to be uninstalled")
 	cmd.Flags().String(uninstallResourceQuotaYamlFlag, "", "resource-quota.yaml path or url to be uninstalled")
-	cmd.Flags().Bool(uninstallPrometheusCRDFlag, false, "uninstall prometheus CRDs")
 
 	cmd.Flags().String(installer.EtcdEndpointsFlag, "", "endpoints of pre-existing etcd backend for storageos (implies not --include-etcd)")
 	cmd.Flags().String(installer.EtcdSecretNameFlag, consts.EtcdSecretName, "name of etcd secret in storageos cluster namespace")
@@ -205,10 +196,6 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.InstallPrometheusCRD, err = cmd.Flags().GetBool(installer.InstallPrometheusCRDFlag)
-		if err != nil {
-			return err
-		}
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installStosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installStosClusterYamlFlag).Value.String()
@@ -225,7 +212,6 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
-		config.Spec.Install.StorageOSMetricsExporterYaml = cmd.Flags().Lookup(installStosMetricsExporterYamlFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -241,7 +227,6 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.InstallStosClusterYamlConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
 	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
-	config.Spec.Install.StorageOSMetricsExporterYaml = viper.GetString(installer.InstallStosMetricsExporterYamlConfig)
 	config.Spec.Install.ResourceQuotaYaml = viper.GetString(installer.InstallResourceQuotaYamlConfig)
 	config.Spec.Install.EtcdEndpoints = viper.GetString(installer.EtcdEndpointsConfig)
 	config.Spec.Install.SkipEtcdEndpointsValidation = viper.GetBool(installer.SkipEtcdEndpointsValConfig)
@@ -255,7 +240,6 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
-	config.Spec.Install.InstallPrometheusCRD = viper.GetBool(installer.InstallPrometheusCRD)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }
@@ -281,10 +265,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		if err != nil {
 			return err
 		}
-		config.Spec.Uninstall.UninstallPrometheusCRD, err = cmd.Flags().GetBool(installer.UninstallPrometheusCRDFlag)
-		if err != nil {
-			return err
-		}
+
 		config.Spec.IncludeEtcd = false
 		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(uninstallStosOperatorNSFlag).Value.String()
 		config.Spec.Uninstall.StorageOSOperatorYaml = cmd.Flags().Lookup(uninstallStosOperatorYamlFlag).Value.String()
@@ -292,7 +273,6 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		config.Spec.Uninstall.StorageOSPortalConfigYaml = cmd.Flags().Lookup(uninstallStosPortalConfigYamlFlag).Value.String()
 		config.Spec.Uninstall.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(uninstallStosPortalClientSecretYamlFlag).Value.String()
 		config.Spec.Uninstall.ResourceQuotaYaml = cmd.Flags().Lookup(uninstallResourceQuotaYamlFlag).Value.String()
-		config.Spec.Uninstall.StorageOSMetricsExporterYaml = cmd.Flags().Lookup(uninstallStosMetricsExporterYamlFlag).Value.String()
 
 		return nil
 	}
@@ -306,8 +286,6 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	config.Spec.Uninstall.StorageOSPortalConfigYaml = viper.GetString(installer.UninstallStosPortalConfigYamlConfig)
 	config.Spec.Uninstall.StorageOSPortalClientSecretYaml = viper.GetString(installer.UninstallStosPortalClientSecretYamlConfig)
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
-	config.Spec.Uninstall.StorageOSMetricsExporterYaml = viper.GetString(installer.UninstallStosMetricsExporterYamlConfig)
-	config.Spec.Uninstall.UninstallPrometheusCRD = viper.GetBool(installer.UninstallPrometheusCRD)
 
 	return nil
 }

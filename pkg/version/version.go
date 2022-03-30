@@ -39,9 +39,6 @@ const (
 	etcdOperatorManifestsImageUrl = "docker.io/storageos/etcd-cluster-operator-manifests"
 
 	etcdClusterYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
-
-	prometheusCRDManifestsUrl   = "https://github.com/prometheus-operator/prometheus-operator/releases/download/%s/bundle.yaml"
-	metricsExporterManifestsUrl = "https://github.com/ondat/metrics-exporter/releases/download/%s/bundle.yaml"
 )
 
 var (
@@ -166,7 +163,7 @@ func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
 }
 
 func OperatorImageUrlByVersion(operatorVersion string) (string, error) {
-	lessThanOrEqual, err := VersionIsLowerThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
@@ -178,7 +175,7 @@ func OperatorImageUrlByVersion(operatorVersion string) (string, error) {
 }
 
 func ClusterUrlByVersion(operatorVersion string) (string, error) {
-	lessThanOrEqual, err := VersionIsLowerThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
@@ -192,7 +189,7 @@ func ClusterUrlByVersion(operatorVersion string) (string, error) {
 }
 
 func ResourceQuotaUrlByVersion(operatorVersion string) (string, error) {
-	lessThanOrEqual, err := VersionIsLowerThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
@@ -206,7 +203,7 @@ func ResourceQuotaUrlByVersion(operatorVersion string) (string, error) {
 }
 
 func SecretUrlByVersion(operatorVersion string) (string, error) {
-	lessThanOrEqual, err := VersionIsLowerThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
+	lessThanOrEqual, err := VersionIsLessThanOrEqual(operatorVersion, ClusterOperatorLastVersion())
 	if err != nil {
 		return "", err
 	}
@@ -222,7 +219,7 @@ func cleanupVersion(version string) string {
 	return versionRegexp.FindString(version)
 }
 
-func VersionIsLowerThanOrEqual(version, marker string) (bool, error) {
+func VersionIsLessThanOrEqual(version, marker string) (bool, error) {
 	if IsDevelop(version) {
 		return true, nil
 	}
@@ -320,14 +317,6 @@ func EtcdOperatorLatestSupportedImageURL() string {
 
 func EtcdClusterLatestSupportedURL() string {
 	return etcdClusterYamlUrl
-}
-
-func PrometheusCRDLatestSupportedURL() string {
-	return fmt.Sprintf(prometheusCRDManifestsUrl, PrometheusCRDLatestSupportedVersion())
-}
-
-func MetricsExporterLatestSupportedURL() string {
-	return fmt.Sprintf(metricsExporterManifestsUrl, MetricsExporterLatestSupportedVersion())
 }
 
 // IsSupported takes two versions, current version (haveVersion) and a

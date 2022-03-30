@@ -17,7 +17,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.1.0 // indirect
-	github.com/ondat/operator-toolkit v0.0.0-20220322101854-06c4e99cd595
+	github.com/ondat/operator-toolkit v0.0.0-20220321135237-66ebd559df4e
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851

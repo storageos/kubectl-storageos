@@ -58,11 +58,9 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosClusterYamlFlag, "", "storageos-cluster.yaml path or url")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
 	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url")
-	cmd.Flags().String(installer.StosMetricsExporterYamlFlag, "", "storageos-metrics-exporter.yaml path or url")
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().String(installer.ResourceQuotaYamlFlag, "", "resource-quota.yaml path or url")
-	cmd.Flags().Bool(installer.UninstallPrometheusCRDFlag, false, "uninstall prometheus CRD")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -142,10 +140,6 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
-		config.Spec.Uninstall.UninstallPrometheusCRD, err = cmd.Flags().GetBool(installer.UninstallPrometheusCRDFlag)
-		if err != nil {
-			return err
-		}
 		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
 		config.Spec.Uninstall.StorageOSOperatorYaml = cmd.Flags().Lookup(installer.StosOperatorYamlFlag).Value.String()
@@ -155,7 +149,6 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		config.Spec.Uninstall.EtcdOperatorYaml = cmd.Flags().Lookup(installer.EtcdOperatorYamlFlag).Value.String()
 		config.Spec.Uninstall.EtcdClusterYaml = cmd.Flags().Lookup(installer.EtcdClusterYamlFlag).Value.String()
 		config.Spec.Uninstall.ResourceQuotaYaml = cmd.Flags().Lookup(installer.ResourceQuotaYamlFlag).Value.String()
-		config.Spec.Uninstall.StorageOSMetricsExporterYaml = cmd.Flags().Lookup(installer.StosMetricsExporterYamlFlag).Value.String()
 
 		return nil
 	}
@@ -174,8 +167,6 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.EtcdOperatorYaml = viper.GetString(installer.UninstallEtcdOperatorYamlConfig)
 	config.Spec.Uninstall.EtcdClusterYaml = viper.GetString(installer.UninstallEtcdClusterYamlConfig)
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
-	config.Spec.Uninstall.StorageOSMetricsExporterYaml = viper.GetString(installer.UninstallStosMetricsExporterYamlConfig)
-	config.Spec.Uninstall.UninstallPrometheusCRD = viper.GetBool(installer.UninstallPrometheusCRD)
 
 	return nil
 }

@@ -11,26 +11,20 @@ import (
 )
 
 const (
-	operatorReleasesUrl        = "https://api.github.com/repos/storageos/operator/releases"
-	etcdOperatorReleasesUrl    = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
-	prometheusCRDReleasesUrl   = "https://api.github.com/repos/prometheus-operator/prometheus-operator/releases"
-	metricsExporterReleasesUrl = "https://api.github.com/repos/ondat/metrics-exporter/releases"
-	// TODO when there's a release for portal-manager
+	operatorReleasesUrl     = "https://api.github.com/repos/storageos/operator/releases"
+	etcdOperatorReleasesUrl = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
+	// TODO: No release exists for portal-manager yet
 	// portalManagerReleasesUrl   = "https://api.github.com/repos/storageos/portal-manager/releases"
 )
 
 var (
-	operatorLatestVersion        string
-	etcdOperatorLatestVersion    string
-	portalManagerLatestVersion   string
-	prometheusCRDLatestVersion   string
-	metricsExporterLatestVersion string
+	operatorLatestVersion      string
+	etcdOperatorLatestVersion  string
+	portalManagerLatestVersion string
 
-	fetchOperatorVersionOnce        = sync.Once{}
-	fetchEtcdOperatorVersionOnce    = sync.Once{}
-	fetchPrometheusCRDVersionOnce   = sync.Once{}
-	fetchMetricsExporterVersionOnce = sync.Once{}
-	// TODO when there's a release for portal-manager
+	fetchOperatorVersionOnce     = sync.Once{}
+	fetchEtcdOperatorVersionOnce = sync.Once{}
+	// TODO: No release exists for portal-manager yet
 	// fetchPortalManagerVersionOnce   = sync.Once{}
 )
 
@@ -98,32 +92,8 @@ func EtcdOperatorLatestSupportedVersion() string {
 	return etcdOperatorLatestVersion
 }
 
-func PrometheusCRDLatestSupportedVersion() string {
-	fetchPrometheusCRDVersionOnce.Do(func() {
-		if prometheusCRDLatestVersion != "" {
-			return
-		}
-		releases := fetchVersionsOrPanic(prometheusCRDReleasesUrl)
-		prometheusCRDLatestVersion = selectLatestVersionOrPanic(releases)
-	})
-
-	return prometheusCRDLatestVersion
-}
-
-func MetricsExporterLatestSupportedVersion() string {
-	fetchMetricsExporterVersionOnce.Do(func() {
-		if metricsExporterLatestVersion != "" {
-			return
-		}
-		releases := fetchVersionsOrPanic(metricsExporterReleasesUrl)
-		metricsExporterLatestVersion = selectLatestVersionOrPanic(releases)
-	})
-
-	return metricsExporterLatestVersion
-}
-
 func PortalManagerLatestSupportedVersion() string {
-	// TODO when there's a release for portal-manager
+	// TODO: No release exists for portal-manager yet
 	/*
 		fetchPortalManagerVersionOnce.Do(func() {
 			if portalManagerLatestVersion != "" {
@@ -148,14 +118,6 @@ func SetEtcdOperatorLatestSupportedVersion(version string) {
 
 func SetPortalManagerLatestSupportedVersion(version string) {
 	portalManagerLatestVersion = version
-}
-
-func SetPrometheusCRDLatestSupportedVersion(version string) {
-	prometheusCRDLatestVersion = version
-}
-
-func SetMetricsExporterLatestSupportedVersion(version string) {
-	metricsExporterLatestVersion = version
 }
 
 func ClusterOperatorLastVersion() string {
