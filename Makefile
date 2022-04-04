@@ -84,7 +84,7 @@ _build-pre: ## Build manager binary.
 	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION) -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 run: fmt vet generate ## Run a controller from your host.
-	go run ./main.go
+	go run ${BUILDFLAGS} ./main.go
 
 update-kind-nodes: 
 	LATEST_KIND_NODE=$(LATEST_KIND_NODE) ./hack/update-kind-nodes.sh
