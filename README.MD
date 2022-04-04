@@ -41,20 +41,20 @@ cp ./bin/kubectl-storageos /usr/local/bin # directory on your $PATH
 ### Install the latest version of StorageOS on your kubernetes cluster
 
 ```bash
-kubectl-storageos install
+kubectl storageos install
 ```
 
 ### Install an [ETCD Cluster](https://github.com/storageos/etcd-cluster-operator) and the latest version of StorageOS
 **Warning**: This installation of ETCD is *not* production ready.
 
 ```bash
-kubectl-storageos install --include-etcd
+kubectl storageos install --include-etcd
 ```
 
 ### Uninstall StorageOS from your kubernetes cluster
 
 ```bash
-kubectl-storageos uninstall
+kubectl storageos uninstall
 ```
 
 ### Uninstall both StorageOS and ETCD from your kubernetes cluster
@@ -65,7 +65,7 @@ kubectl-storageos uninstall
 > reinstall.
 
 ```bash
-kubectl-storageos uninstall --include-etcd
+kubectl storageos uninstall --include-etcd
 ```
 
 The ETCD uninstall process refers only to an ETCD cluster installed by the StorageOS ETCD Cluster Operator.
@@ -75,7 +75,7 @@ The ETCD uninstall process refers only to an ETCD cluster installed by the Stora
 ### Upgrade StorageOS to the latest version
 
 ```bash
-kubectl-storageos upgrade
+kubectl storageos upgrade
 ```
 
 The **upgrade** commands uninstalls your existing StorageOS cluster and installs the latest StorageOS cluster.
@@ -83,7 +83,7 @@ The **upgrade** commands uninstalls your existing StorageOS cluster and installs
 ### Preflight checks
 
 ```bash
-kubectl-storageos preflight
+kubectl storageos preflight
 ```
 
 A preflight check is a set of validations that can be run to ensure that a cluster meets the requirements to run StorageOS.
@@ -93,7 +93,7 @@ A preflight check is a set of validations that can be run to ensure that a clust
 Flags can also be passed to the **install**, **uninstall** and **upgrade** commands via the kubectl storageos config file like so:
 
 ```bash
-kubectl-storageos install --config-path=/path/to/config
+kubectl storageos install --config-path=/path/to/config
 ```
 
 This command expects to find a config file named "**kubectl-storageos-config.yaml**"
@@ -121,20 +121,20 @@ For an example config file, see `config/samples/_v1_kubectlstorageosconfig.yaml`
 ### Install ETCD and StorageOS with TLS enabled
 
 ```bash
-kubectl-storageos install --include-etcd --etcd-tls-enabled
+kubectl storageos install --include-etcd --etcd-tls-enabled
 ```
 
 ### Install StorageOS and connect to an existing TLS enabled ETCD cluster
 
 ```bash
-kubectl-storageos install --etcd-tls-enabled
+kubectl storageos install --etcd-tls-enabled
 ```
 
 In order for StorageOS to connect to ETCD over HTTPS, a k8s secret must exist in the `storageos-cluster-namespace` with valid ETCD credentials.
 This secret can be created like so:
 
 ```lang-none
-kubectl-create secret generic <etcd-secret-name> -n <storageos-cluster-namespace> \
+kubectl create secret generic <etcd-secret-name> -n <storageos-cluster-namespace> \
     --from-file=etcd-client-ca.crt=path/to/ca.crt \
     --from-file=etcd-client.crt=path/to/tls.crt \
     --from-file=etcd-client.key=path/to/tls.key
