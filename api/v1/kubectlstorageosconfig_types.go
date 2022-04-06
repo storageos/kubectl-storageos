@@ -91,6 +91,8 @@ type Install struct {
 	PortalSecret                    string `json:"portalSecret,omitempty"`
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
+	InstallLocalPathProvisioner     bool   `json:"includeLocalPathProvisioner,omitempty"`
+	LocalPathProvisionerVersion     string `json:"localPathProvisionerVersion,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
@@ -104,6 +106,7 @@ type Uninstall struct {
 	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
+	UninstallLocalPathProvisioner   bool   `json:"includeLocalPathProvisioner,omitempty"`
 }
 
 type InstallerMeta struct {

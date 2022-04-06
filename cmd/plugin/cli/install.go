@@ -78,6 +78,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
+	cmd.Flags().Bool(installer.InstallLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
+	cmd.Flags().String(installer.LocalPathProvisionerVersionFlag, "", "version of the local path provisioner storage class to use")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -95,6 +97,10 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
 		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
+	}
+
+	if config.Spec.Install.LocalPathProvisionerVersion == "" {
+		config.Spec.Install.LocalPathProvisionerVersion = version.LocalPathProvisionerLatestSupportVersion()
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -196,6 +202,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.InstallLocalPathProvisioner, err = cmd.Flags().GetBool(installer.InstallLocalPathProvisionerFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
 		config.Spec.Install.KubernetesVersion = cmd.Flags().Lookup(installer.K8sVersionFlag).Value.String()
@@ -219,6 +230,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
+		config.Spec.Install.LocalPathProvisionerVersion = cmd.Flags().Lookup(installer.LocalPathProvisionerVersionFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()

@@ -108,6 +108,11 @@ func PortalManagerLatestSupportedVersion() string {
 	return portalManagerLatestVersion
 }
 
+func LocalPathProvisionerLatestSupportVersion() string {
+	// FIXME: implement this
+	return "v0.0.22"
+}
+
 func SetOperatorLatestSupportedVersion(version string) {
 	operatorLatestVersion = version
 }
