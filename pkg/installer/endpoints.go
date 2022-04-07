@@ -38,6 +38,10 @@ const (
 
 	Please ensure this endpoint is TLS-enabled.
 
+	Please note that, due to a known limitation, if your kubernetes cluster was provisioned using Google Anthos,
+
+	kubectl storageos is unable to perform ETCD endpoint validation.
+
 	To skip ETCD endpoints validation during installation, set install flag --%s
 
 `
@@ -46,6 +50,10 @@ const (
 	Unable to validate ETCD endpoint %s 
 
 	If ETCD endpoints are TLS-enabled, please set install flag --%s
+
+	Please note that, due to a known limitation, if your kubernetes cluster was provisioned using Google Anthos,
+
+	kubectl storageos is unable to perform ETCD endpoint validation.
 
 	To skip ETCD endpoints validation during installation, set install flag --%s
 	
