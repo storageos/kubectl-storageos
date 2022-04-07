@@ -50,6 +50,7 @@ const (
 	StosOperatorNSFlag             = "stos-operator-namespace"
 	StosClusterNSFlag              = "stos-cluster-namespace"
 	EtcdStorageClassFlag           = "etcd-storage-class"
+	EtcdDockerRepositoryFlag       = "etcd-docker-repository"
 	AdminUsernameFlag              = "admin-username"
 	AdminPasswordFlag              = "admin-password"
 	PortalClientIDFlag             = "portal-client-id"

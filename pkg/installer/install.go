@@ -113,6 +113,19 @@ func (in *Installer) installEtcd() error {
 			return err
 		}
 	}
+
+	if in.stosConfig.Spec.Install.EtcdDockerRepository != "" {
+
+		dockerImagePatch := pluginutils.KustomizePatch{
+			Op:    "add",
+			Path:  "/spec/template/spec/containers/0/args/-",
+			Value: fmt.Sprintf("--etcd-repository=%s", in.stosConfig.Spec.Install.EtcdDockerRepository),
+		}
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{dockerImagePatch}); err != nil {
+			return err
+		}
+	}
+
 	// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
 	// with desired storage class name to kustomization for etcd cluster
 	if in.stosConfig.Spec.Install.EtcdStorageClassName == "" {
