@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
+	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +99,13 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 			defer wg.Done()
 
 			errChan <- in.uninstallEtcd()
+		}()
+	}
+	if in.stosConfig.Spec.Uninstall.UninstallLocalPathProvisioner {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errChan <- in.uninstallLocalPathProvisioner()
 		}()
 	}
 
@@ -324,7 +332,11 @@ func (in *Installer) uninstallEtcdOperator() error {
 	return err
 }
 
-func (in *Installer) checkForProtectedNamespaces() error {
+func (in *Installer) uninstallLocalPathProvisioner() error {
+	return in.kustomizeAndDelete(filepath.Join(localPathProvisionerDir, storageclassDir), localPathProvisionerFile)
+}
+
+func (in *Installer) checkForProtectedNamespaces(storageOSCluster *operatorapi.StorageOSCluster) error {
 	if _, ok := protectedNamespaces[in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace]; ok {
 		return fmt.Errorf(errProtectedNamespace, in.stosConfig.Spec.Uninstall.StorageOSOperatorNamespace)
 	}

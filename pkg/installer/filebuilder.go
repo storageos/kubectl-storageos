@@ -144,7 +144,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 	}
 	fsData[stosDir] = stosSubDirs
 
-	if config.Spec.Install.InstallLocalPathProvisioner {
+	if config.Spec.Install.InstallLocalPathProvisioner || config.Spec.Uninstall.UninstallLocalPathProvisioner {
 		// FIXME: allow yaml file to be provided
 		localPathProvisionerFiles, err := newFileBuilder("", pluginversion.LocalPathProvisionerLatestSupportVersion(),
 			"", localPathProvisionerFile, "").createFileWithKustPair(clientConfig)
