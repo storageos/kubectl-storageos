@@ -114,6 +114,18 @@ func (in *Installer) installEtcd() error {
 		}
 	}
 
+	if in.stosConfig.Spec.Install.EtcdVersionTag != "" {
+		versionPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/version",
+			Value: in.stosConfig.Spec.Install.EtcdVersionTag,
+		}
+
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{versionPatch}); err != nil {
+			return err
+		}
+	}
+
 	if in.stosConfig.Spec.Install.EtcdDockerRepository != "" {
 
 		dockerImagePatch := pluginutils.KustomizePatch{

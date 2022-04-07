@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -70,6 +71,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosClusterNSFlag, consts.NewOperatorNamespace, "namespace of storageos cluster to be installed")
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
 	cmd.Flags().String(installer.EtcdDockerRepositoryFlag, "", "the docker repository to use for the etcd docker image")
+	cmd.Flags().String(installer.EtcdVersionTag, "", "the docker tag for the version of etcd to use - must be in the format 1.2.3")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
@@ -218,6 +220,13 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
+
+		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
+		// Perform the same validation as the etcd operator does, to ensure the install we succeed
+		_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
+		if err != nil {
+			return fmt.Errorf("etcd version provided is not valid: %w", err)
+		}
 		return nil
 	}
 	// config file read without error, set fields in new config object
@@ -246,6 +255,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.EtcdStorageClassName = viper.GetString(installer.EtcdStorageClassConfig)
 	config.Spec.Install.EtcdDockerRepository = viper.GetString(installer.EtcdDockerRepositoryFlag)
+	config.Spec.Install.EtcdVersionTag = viper.GetString(installer.EtcdVersionTag)
 	config.Spec.Install.AdminUsername = viper.GetString(installer.AdminUsernameConfig)
 	config.Spec.Install.AdminPassword = viper.GetString(installer.AdminPasswordConfig)
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)

@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/coreos/go-semver v0.3.0
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.13.0
 	github.com/frankban/quicktest v1.13.0 // indirect
