@@ -22,6 +22,7 @@ func (in *Installer) Install(upgrade bool) error {
 		go func() {
 			defer wg.Done()
 
+			errChan <- in.installLocalPathStorageClass()
 			errChan <- in.installEtcd()
 		}()
 	} else if !upgrade {
@@ -66,6 +67,10 @@ func (in *Installer) Install(upgrade bool) error {
 	go close(errChan)
 
 	return collectErrors(errChan)
+}
+
+func (in *Installer) installLocalPathStorageClass() error {
+	return in.kustomizeAndApply(filepath.Join(localPathProvisionerDir, storageclassDir), localPathProvisionerFile)
 }
 
 func (in *Installer) installEtcd() error {

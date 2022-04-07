@@ -110,7 +110,7 @@ func PortalManagerLatestSupportedVersion() string {
 
 func LocalPathProvisionerLatestSupportVersion() string {
 	// FIXME: implement this
-	return "v0.0.22"
+	return "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.22/deploy/local-path-storage.yaml"
 }
 
 func SetOperatorLatestSupportedVersion(version string) {

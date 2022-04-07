@@ -114,6 +114,7 @@ const (
 	stosDir                  = "storageos"
 	operatorDir              = "operator"
 	clusterDir               = "cluster"
+	storageclassDir          = "storage-class"
 	resourceQuotaDir         = "resource-quota"
 	portalClientDir          = "portal-client"
 	portalConfigDir          = "portal-config"
