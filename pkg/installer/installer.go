@@ -110,7 +110,6 @@ const (
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
-	localPathStorageClassDir = "local-path"
 	stosDir                  = "storageos"
 	operatorDir              = "operator"
 	clusterDir               = "cluster"
