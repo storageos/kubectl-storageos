@@ -111,6 +111,7 @@ const (
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
 	stosDir                  = "storageos"
+	localPathProvisionerDir  = "local-path-provisioner"
 	operatorDir              = "operator"
 	clusterDir               = "cluster"
 	storageclassDir          = "storage-class"
@@ -129,6 +130,7 @@ const (
 	etcdOperatorFile         = "etcd-operator.yaml"
 	etcdClusterFile          = "etcd-cluster.yaml"
 	kustomizationFile        = "kustomization.yaml"
+	localPathProvisionerFile = "local-path-provisioner-storage-class.yaml"
 	kubeDir                  = ".kube"
 	InstallPrefix            = "install-"
 	UninstallPrefix          = "uninstall-"
