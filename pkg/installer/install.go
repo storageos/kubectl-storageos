@@ -127,7 +127,6 @@ func (in *Installer) installEtcd() error {
 	}
 
 	if in.stosConfig.Spec.Install.EtcdDockerRepository != "" {
-
 		dockerImagePatch := pluginutils.KustomizePatch{
 			Op:    "add",
 			Path:  "/spec/template/spec/containers/0/args/-",
