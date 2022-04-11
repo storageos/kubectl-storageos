@@ -229,8 +229,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			if err != nil {
 				return fmt.Errorf("etcd version provided is not valid: %w", err)
 			}
-			return nil
 		}
+		return nil
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
