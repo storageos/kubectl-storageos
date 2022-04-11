@@ -15,13 +15,14 @@ import (
 )
 
 type installerOptions struct {
-	storageosOperator bool
-	storageosCluster  bool
-	portalClient      bool
-	portalConfig      bool
-	resourceQuota     bool
-	etcdOperator      bool
-	etcdCluster       bool
+	storageosOperator    bool
+	storageosCluster     bool
+	portalClient         bool
+	portalConfig         bool
+	resourceQuota        bool
+	etcdOperator         bool
+	etcdCluster          bool
+	localPathProvisioner bool
 }
 
 // fileBuilder is used to hold data required to build a file in the in-memory fs
@@ -144,9 +145,9 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 	}
 	fsData[stosDir] = stosSubDirs
 
-	if config.Spec.Install.InstallLocalPathProvisioner || config.Spec.Uninstall.UninstallLocalPathProvisioner {
-		// FIXME: allow yaml file to be provided
-		localPathProvisionerFiles, err := newFileBuilder("", pluginversion.LocalPathProvisionerLatestSupportVersion(),
+	if o.localPathProvisioner {
+		localPathProvisionerFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.LocalPathProvisionerYaml, config.Spec.Uninstall.LocalPathProvisionerYaml),
+			pluginversion.LocalPathProvisionerLatestSupportVersion(),
 			"", localPathProvisionerFile, "").createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err

@@ -22,11 +22,12 @@ import (
 
 // KubectlStorageOSConfigSpec defines the desired state of KubectlStorageOSConfig
 type KubectlStorageOSConfigSpec struct {
-	StackTrace                bool `json:"stackTrace,omitempty"`
-	SkipNamespaceDeletion     bool `json:"skipNamespaceDeletion,omitempty"`
-	SkipExistingWorkloadCheck bool `json:"skipExistingWorkloadCheck,omitempty"`
-	SkipStorageOSCluster      bool `json:"skipStorageOSCluster,omitempty"`
-	IncludeEtcd               bool `json:"includeEtcd,omitempty"`
+	StackTrace                  bool `json:"stackTrace,omitempty"`
+	SkipNamespaceDeletion       bool `json:"skipNamespaceDeletion,omitempty"`
+	SkipExistingWorkloadCheck   bool `json:"skipExistingWorkloadCheck,omitempty"`
+	SkipStorageOSCluster        bool `json:"skipStorageOSCluster,omitempty"`
+	IncludeEtcd                 bool `json:"includeEtcd,omitempty"`
+	IncludeLocalPathProvisioner bool `json:"includeLocalPathProvisioner,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -91,8 +92,8 @@ type Install struct {
 	PortalSecret                    string `json:"portalSecret,omitempty"`
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
-	InstallLocalPathProvisioner     bool   `json:"includeLocalPathProvisioner,omitempty"`
 	LocalPathProvisionerVersion     string `json:"localPathProvisionerVersion,omitempty"`
+	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
@@ -106,7 +107,7 @@ type Uninstall struct {
 	ResourceQuotaYaml               string `json:"resourceQuotaYaml,omitempty"`
 	EtcdOperatorYaml                string `json:"etcdOperatorYaml,omitempty"`
 	EtcdClusterYaml                 string `json:"etcdClusterYaml,omitempty"`
-	UninstallLocalPathProvisioner   bool   `json:"includeLocalPathProvisioner,omitempty"`
+	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 }
 
 type InstallerMeta struct {

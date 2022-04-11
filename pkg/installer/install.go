@@ -18,7 +18,7 @@ func (in *Installer) Install(upgrade bool) error {
 	wg := sync.WaitGroup{}
 	errChan := make(chan error, 4)
 
-	if in.stosConfig.Spec.Install.InstallLocalPathProvisioner {
+	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
 		// This must be done before installing etcd
 		errChan <- in.installLocalPathStorageClass()
 	}

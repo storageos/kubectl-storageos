@@ -62,6 +62,7 @@ const (
 	InstallLocalPathProvisionerFlag   = "install-local-path-storage-class"
 	UninstallLocalPathProvisionerFlag = "uninstall-local-path-storage-class"
 	LocalPathProvisionerVersionFlag   = "local-path-provisioner-version"
+	LocalPathProvisionerYamlFlag      = "local-path-provisioner-yaml"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -197,13 +198,14 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	}
 
 	installerOptions := &installerOptions{
-		storageosOperator: true,
-		storageosCluster:  !config.Spec.SkipStorageOSCluster,
-		portalClient:      config.Spec.Install.EnablePortalManager,
-		portalConfig:      config.Spec.Install.EnablePortalManager,
-		resourceQuota:     (in.distribution == pluginutils.DistributionGKE),
-		etcdOperator:      config.Spec.IncludeEtcd,
-		etcdCluster:       config.Spec.IncludeEtcd,
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         config.Spec.Install.EnablePortalManager,
+		portalConfig:         config.Spec.Install.EnablePortalManager,
+		resourceQuota:        (in.distribution == pluginutils.DistributionGKE),
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
 	}
 	in.installerOptions = installerOptions
 
@@ -322,13 +324,14 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
 
 	installerOptions := &installerOptions{
-		storageosOperator: true,
-		storageosCluster:  !config.Spec.SkipStorageOSCluster,
-		portalClient:      config.Spec.Install.EnablePortalManager,
-		portalConfig:      config.Spec.Install.EnablePortalManager,
-		resourceQuota:     (distribution == pluginutils.DistributionGKE),
-		etcdOperator:      config.Spec.IncludeEtcd,
-		etcdCluster:       config.Spec.IncludeEtcd,
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         config.Spec.Install.EnablePortalManager,
+		portalConfig:         config.Spec.Install.EnablePortalManager,
+		resourceQuota:        (distribution == pluginutils.DistributionGKE),
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
 	}
 
 	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
@@ -383,13 +386,14 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 	}
 
 	uninstallerOptions := &installerOptions{
-		storageosOperator: true,
-		storageosCluster:  !config.Spec.SkipStorageOSCluster,
-		portalClient:      uninstallPortal,
-		portalConfig:      uninstallPortal,
-		resourceQuota:     distribution == pluginutils.DistributionGKE,
-		etcdOperator:      config.Spec.IncludeEtcd,
-		etcdCluster:       config.Spec.IncludeEtcd,
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         uninstallPortal,
+		portalConfig:         uninstallPortal,
+		resourceQuota:        distribution == pluginutils.DistributionGKE,
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
 	}
 	uninstaller.installerOptions = uninstallerOptions
 

@@ -100,7 +100,7 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 			errChan <- in.uninstallEtcd()
 		}()
 	}
-	if in.stosConfig.Spec.Uninstall.UninstallLocalPathProvisioner {
+	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
