@@ -222,12 +222,15 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
-		// Perform the same validation as the etcd operator does, to ensure the install will succeed
-		_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
-		if err != nil {
-			return fmt.Errorf("etcd version provided is not valid: %w", err)
+
+		if config.Spec.Install.EtcdVersionTag != "" {
+			// Perform the same validation as the etcd operator does, to ensure the install will succeed
+			_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
+			if err != nil {
+				return fmt.Errorf("etcd version provided is not valid: %w", err)
+			}
+			return nil
 		}
-		return nil
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
