@@ -109,7 +109,7 @@ func PortalManagerLatestSupportedVersion() string {
 }
 
 func LocalPathProvisionerLatestSupportVersion() string {
-	// FIXME: implement this
+	// Pin this version and only update when we've checked the latest version works with storageos
 	return "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.22/deploy/local-path-storage.yaml"
 }
 
