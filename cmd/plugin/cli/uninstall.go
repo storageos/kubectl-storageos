@@ -62,7 +62,7 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdClusterYamlFlag, "", "etcd-cluster.yaml path or url")
 	cmd.Flags().String(installer.EtcdOperatorYamlFlag, "", "etcd-operator.yaml path or url")
 	cmd.Flags().String(installer.ResourceQuotaYamlFlag, "", "resource-quota.yaml path or url")
-	cmd.Flags().Bool(installer.UninstallLocalPathProvisionerFlag, false, "uninstall local path provisioner storage class")
+	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "uninstall local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 
 	viper.BindPFlags(cmd.Flags())
@@ -143,7 +143,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
-		config.Spec.IncludeLocalPathProvisioner, err = strconv.ParseBool(cmd.Flags().Lookup(installer.UninstallLocalPathProvisionerFlag).Value.String())
+		config.Spec.IncludeLocalPathProvisioner, err = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeLocalPathProvisionerFlag).Value.String())
 		if err != nil {
 			return err
 		}
@@ -176,7 +176,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.EtcdOperatorYaml = viper.GetString(installer.UninstallEtcdOperatorYamlConfig)
 	config.Spec.Uninstall.EtcdClusterYaml = viper.GetString(installer.UninstallEtcdClusterYamlConfig)
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
-	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.UninstallLocalPathProvisionerFlag)
+	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerFlag)
 	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.LocalPathProvisionerYamlFlag)
 
 	return nil

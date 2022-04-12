@@ -78,7 +78,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
-	cmd.Flags().Bool(installer.InstallLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
+	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerVersionFlag, "", "version of the local path provisioner storage class to use")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 
@@ -203,7 +203,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
-		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.InstallLocalPathProvisionerFlag)
+		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
 		}
@@ -281,7 +281,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
-	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.InstallLocalPathProvisionerFlag)
+	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerFlag)
 	config.Spec.Install.LocalPathProvisionerVersion = viper.GetString(installer.LocalPathProvisionerVersionFlag)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.LocalPathProvisionerYamlFlag)
 
