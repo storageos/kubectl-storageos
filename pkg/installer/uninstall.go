@@ -75,7 +75,7 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	}
 
 	wg := sync.WaitGroup{}
-	errChan := make(chan error, 2)
+	errChan := make(chan error, 3)
 
 	wg.Add(1)
 	go func() {
