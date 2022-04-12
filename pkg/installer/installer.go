@@ -60,7 +60,6 @@ const (
 	PortalAPIURLFlag                = "portal-api-url"
 	EnablePortalManagerFlag         = "enable-portal-manager"
 	IncludeLocalPathProvisionerFlag = "include-local-path-storage-class"
-	LocalPathProvisionerVersionFlag = "local-path-provisioner-version"
 	LocalPathProvisionerYamlFlag    = "local-path-provisioner-yaml"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest

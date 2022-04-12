@@ -79,7 +79,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
-	cmd.Flags().String(installer.LocalPathProvisionerVersionFlag, "", "version of the local path provisioner storage class to use")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 
 	viper.BindPFlags(cmd.Flags())
@@ -98,10 +97,6 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
 		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
-	}
-
-	if config.Spec.Install.LocalPathProvisionerVersion == "" {
-		config.Spec.Install.LocalPathProvisionerVersion = version.LocalPathProvisionerLatestSupportVersion()
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -231,7 +226,6 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
-		config.Spec.Install.LocalPathProvisionerVersion = cmd.Flags().Lookup(installer.LocalPathProvisionerVersionFlag).Value.String()
 		config.Spec.Install.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
 
 		config.InstallerMeta.StorageOSSecretYaml = ""
@@ -282,7 +276,6 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerFlag)
-	config.Spec.Install.LocalPathProvisionerVersion = viper.GetString(installer.LocalPathProvisionerVersionFlag)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.LocalPathProvisionerYamlFlag)
 
 	return nil

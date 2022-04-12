@@ -92,7 +92,6 @@ type Install struct {
 	PortalSecret                    string `json:"portalSecret,omitempty"`
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
-	LocalPathProvisionerVersion     string `json:"localPathProvisionerVersion,omitempty"`
 	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 }
 
