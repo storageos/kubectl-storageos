@@ -104,8 +104,9 @@ const (
 	UninstallEtcdOperatorYamlConfig           = "spec.uninstall.etcdOperatorYaml"
 	UninstallEtcdClusterYamlConfig            = "spec.uninstall.etcdClusterYaml"
 	UninstallResourceQuotaYamlConfig          = "spec.uninstall.resourceQuotaYaml"
-	InstallLocalPathProvisionerConfig         = "spec.installLocalPathProvisioner"
-	UinstallLocalPathProvisionerConfig        = "spec.uninstallLocalPathProvisioner"
+	IncludeLocalPathProvisionerConfig         = "spec.includeLocalPathProvisioner"
+	InstallLocalPathProvisionerYamlConfig     = "spec.install.localPathProvisionerYamlConfig"
+	UninstallLocalPathProvisionerYamlConfig   = "spec.uninstall.localPathProvisionerYamlConfig"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"

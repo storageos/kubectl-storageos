@@ -176,8 +176,8 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.EtcdOperatorYaml = viper.GetString(installer.UninstallEtcdOperatorYamlConfig)
 	config.Spec.Uninstall.EtcdClusterYaml = viper.GetString(installer.UninstallEtcdClusterYamlConfig)
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
-	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerFlag)
-	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.LocalPathProvisionerYamlFlag)
+	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
+	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.UninstallLocalPathProvisionerYamlConfig)
 
 	return nil
 }

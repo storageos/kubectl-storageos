@@ -275,8 +275,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
-	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerFlag)
-	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.LocalPathProvisionerYamlFlag)
+	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
+	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
 
 	return nil
 }
