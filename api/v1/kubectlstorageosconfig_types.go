@@ -80,6 +80,8 @@ type Install struct {
 	EtcdEndpoints                   string `json:"etcdEndpoints,omitempty"`
 	EtcdTLSEnabled                  bool   `json:"etcdTLSEnabled,omitempty"`
 	EtcdSecretName                  string `json:"etcdSecretName,omitempty"`
+	EtcdDockerRepository            string `json:"etcdDockerRepository,omitempty"`
+	EtcdVersionTag                  string `json:"etcdVersionTag,omitempty"`
 	SkipEtcdEndpointsValidation     bool   `json:"skipEtcdEndpointsValidation,omitempty"`
 	EnablePortalManager             bool   `json:"enablePortalManager,omitempty"`
 	EtcdStorageClassName            string `json:"etcdStorageClassName,omitempty"`
