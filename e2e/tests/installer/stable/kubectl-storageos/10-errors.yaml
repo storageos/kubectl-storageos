@@ -13,11 +13,3 @@ metadata:
   namespace: etcd-install-full
 status:
   replicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: local-path-provisioner
-  namespace: local-path-storage
-status:
-  replicas: 1
