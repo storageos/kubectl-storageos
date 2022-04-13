@@ -28,4 +28,4 @@ metadata:
   name: storageos-etcd-0
   namespace: storageos-etcd
 status:
-  ready: 1
+  readyReplicas: 1
