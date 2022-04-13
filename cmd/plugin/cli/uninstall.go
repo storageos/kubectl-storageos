@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
