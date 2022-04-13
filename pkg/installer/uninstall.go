@@ -101,10 +101,12 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 		}()
 	}
 	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
+		fmt.Printf("uninstalling local path provisioner")
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			errChan <- in.uninstallLocalPathProvisioner()
+			fmt.Printf("done local path provisioner")
 		}()
 	}
 
