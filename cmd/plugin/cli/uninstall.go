@@ -143,7 +143,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
-		config.Spec.IncludeLocalPathProvisioner, err = strconv.ParseBool(cmd.Flags().Lookup(installer.IncludeLocalPathProvisionerFlag).Value.String())
+		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
 		}

@@ -226,13 +226,14 @@ func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRe
 	}
 
 	installerOptions := &installerOptions{
-		storageosOperator: false,
-		storageosCluster:  false,
-		portalClient:      manifestsRequired, // manifests are required for install-portal, and uninstall-portal
-		portalConfig:      manifestsRequired, // but not for enable-portal and disable-portal
-		resourceQuota:     false,
-		etcdOperator:      false,
-		etcdCluster:       false,
+		storageosOperator:    false,
+		storageosCluster:     false,
+		portalClient:         manifestsRequired, // manifests are required for install-portal, and uninstall-portal
+		portalConfig:         manifestsRequired, // but not for enable-portal and disable-portal
+		resourceQuota:        false,
+		etcdOperator:         false,
+		etcdCluster:          false,
+		localPathProvisioner: false,
 	}
 	in.installerOptions = installerOptions
 
