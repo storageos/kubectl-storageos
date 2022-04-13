@@ -21,3 +21,11 @@ metadata:
   namespace: storageos-etcd
 status:
   replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: storageos-etcd-0
+  namespace: storageos-etcd
+status:
+  ready: 1
