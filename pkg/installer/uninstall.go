@@ -368,6 +368,7 @@ func (in *Installer) storageOSPVCs() (*corev1.PersistentVolumeClaimList, error) 
 		return nil, err
 	}
 	for _, pvc := range pvcList.Items {
+		fmt.Printf("Checking pvc %+v\n %+v\n %+v", pvc, pvc.Spec, pvc.Status)
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
