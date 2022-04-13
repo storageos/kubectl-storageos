@@ -67,11 +67,11 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
 		stosPVCs, err = in.storageOSPVCs()
 		if err != nil {
-			return fmt.Errorf("failed to get pvcs - %w - %w ", errStosUninstallAborted, err)
+			return fmt.Errorf("failed to get pvcs - %s - %w ", errStosUninstallAborted, err)
 			// errors.Wrap(err, errStosUninstallAborted)
 		}
 		if err := in.storageOSWorkloadsExist(stosPVCs); err != nil {
-			return fmt.Errorf("PVC is in use - %w - %w ", errStosUninstallAborted, err)
+			return fmt.Errorf("PVC is in use - %s - %w ", errStosUninstallAborted, err)
 			// return errors.Wrap(err, errStosUninstallAborted)
 		}
 	}
@@ -126,7 +126,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 
 	if !in.stosConfig.Spec.SkipNamespaceDeletion && storageOSClusterNamespace != in.stosConfig.Spec.GetOperatorNamespace() {
 		if err := in.checkForProtectedNamespaces(); err != nil {
-			return fmt.Errorf("namespace is protected - %w - %w ", errStosUninstallAborted, err)
+			return fmt.Errorf("namespace is protected - %s - %w ", errStosUninstallAborted, err)
 
 			// return errors.Wrap(err, errStosUninstallAborted)
 		}
