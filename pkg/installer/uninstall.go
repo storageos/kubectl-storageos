@@ -68,11 +68,9 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 		stosPVCs, err = in.storageOSPVCs()
 		if err != nil {
 			return fmt.Errorf("failed to get pvcs - %s - %w ", errStosUninstallAborted, err)
-			// errors.Wrap(err, errStosUninstallAborted)
 		}
 		if err := in.storageOSWorkloadsExist(stosPVCs); err != nil {
 			return fmt.Errorf("PVC is in use - %s - %w ", errStosUninstallAborted, err)
-			// return errors.Wrap(err, errStosUninstallAborted)
 		}
 	}
 
@@ -103,12 +101,10 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 		}()
 	}
 	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
-		fmt.Printf("uninstalling local path provisione\r\n")
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			errChan <- in.uninstallLocalPathProvisioner()
-			fmt.Printf("done local path provisioner\n")
 		}()
 	}
 
@@ -127,8 +123,6 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 	if !in.stosConfig.Spec.SkipNamespaceDeletion && storageOSClusterNamespace != in.stosConfig.Spec.GetOperatorNamespace() {
 		if err := in.checkForProtectedNamespaces(); err != nil {
 			return fmt.Errorf("namespace is protected - %s - %w ", errStosUninstallAborted, err)
-
-			// return errors.Wrap(err, errStosUninstallAborted)
 		}
 		defer func() {
 			if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
@@ -368,11 +362,6 @@ func (in *Installer) storageOSPVCs() (*corev1.PersistentVolumeClaimList, error) 
 		return nil, err
 	}
 	for _, pvc := range pvcList.Items {
-		if pvc.Spec.StorageClassName != nil {
-			fmt.Printf("Checking pvc %+v\n %+v\n %+v\n%v\n", pvc, pvc.Spec, pvc.Status, *pvc.Spec.StorageClassName)
-		} else {
-			fmt.Printf("Checking pvc %+v\n %+v\n %+v\n", pvc, pvc.Spec, pvc.Status)
-		}
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}

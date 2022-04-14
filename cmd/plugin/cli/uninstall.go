@@ -146,7 +146,6 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
-		fmt.Printf("include local path provisioner flag val %v\n", config.Spec.IncludeLocalPathProvisioner)
 
 		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
@@ -178,7 +177,6 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.UninstallLocalPathProvisionerYamlConfig)
-	fmt.Printf("include local path provisioner config val %v\n", config.Spec.IncludeLocalPathProvisioner)
 
 	return nil
 }
