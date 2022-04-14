@@ -67,15 +67,15 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
 		stosPVCs, err = in.storageOSPVCs()
 		if err != nil {
-			return errors.Wrap(err, errStosUninstallAborted)
+			return fmt.Errorf("failed to get pvcs - %s - %w ", errStosUninstallAborted, err)
 		}
 		if err := in.storageOSWorkloadsExist(stosPVCs); err != nil {
-			return errors.Wrap(err, errStosUninstallAborted)
+			return fmt.Errorf("PVC is in use - %s - %w ", errStosUninstallAborted, err)
 		}
 	}
 
 	wg := sync.WaitGroup{}
-	errChan := make(chan error, 2)
+	errChan := make(chan error, 3)
 
 	wg.Add(1)
 	go func() {
@@ -100,6 +100,13 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 			errChan <- in.uninstallEtcd()
 		}()
 	}
+	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errChan <- in.uninstallLocalPathProvisioner()
+		}()
+	}
 
 	wg.Wait()
 	go close(errChan)
@@ -115,7 +122,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 
 	if !in.stosConfig.Spec.SkipNamespaceDeletion && storageOSClusterNamespace != in.stosConfig.Spec.GetOperatorNamespace() {
 		if err := in.checkForProtectedNamespaces(); err != nil {
-			return errors.Wrap(err, errStosUninstallAborted)
+			return fmt.Errorf("namespace is protected - %s - %w ", errStosUninstallAborted, err)
 		}
 		defer func() {
 			if err := in.gracefullyDeleteNS(in.storageOSCluster.Namespace); err != nil {
@@ -322,6 +329,10 @@ func (in *Installer) uninstallEtcdOperator() error {
 	err := in.kustomizeAndDelete(filepath.Join(etcdDir, operatorDir), etcdOperatorFile)
 
 	return err
+}
+
+func (in *Installer) uninstallLocalPathProvisioner() error {
+	return in.kustomizeAndDelete(filepath.Join(localPathProvisionerDir, storageclassDir), localPathProvisionerFile)
 }
 
 func (in *Installer) checkForProtectedNamespaces() error {

@@ -15,13 +15,14 @@ import (
 )
 
 type installerOptions struct {
-	storageosOperator bool
-	storageosCluster  bool
-	portalClient      bool
-	portalConfig      bool
-	resourceQuota     bool
-	etcdOperator      bool
-	etcdCluster       bool
+	storageosOperator    bool
+	storageosCluster     bool
+	portalClient         bool
+	portalConfig         bool
+	resourceQuota        bool
+	etcdOperator         bool
+	etcdCluster          bool
+	localPathProvisioner bool
 }
 
 // fileBuilder is used to hold data required to build a file in the in-memory fs
@@ -72,6 +73,10 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 //     - kustomization.yaml
 //   - cluster
 //     - etcd-cluster.yaml
+//     - kustomization.yaml
+// - local-path-provisioner
+//   - storageclass
+//     - local-path-provisioner.yaml
 //     - kustomization.yaml
 func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *rest.Config) (filesys.FileSystem, error) {
 	fs := filesys.MakeFsInMemory()
@@ -139,6 +144,19 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 		stosSubDirs[portalConfigDir] = stosPortalConfigFiles
 	}
 	fsData[stosDir] = stosSubDirs
+
+	if o.localPathProvisioner {
+		localPathProvisionerFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.LocalPathProvisionerYaml, config.Spec.Uninstall.LocalPathProvisionerYaml),
+			pluginversion.LocalPathProvisionerLatestSupportVersion(),
+			"", localPathProvisionerFile, "").createFileWithKustPair(clientConfig)
+		if err != nil {
+			return fs, err
+		}
+
+		localPathProvisionerSubDirs := make(map[string]map[string][]byte)
+		localPathProvisionerSubDirs[storageclassDir] = localPathProvisionerFiles
+		fsData[localPathProvisionerDir] = localPathProvisionerSubDirs
+	}
 
 	// if include-etcd flag is not set, create fs with storageos files and return early
 	if !config.Spec.IncludeEtcd {

@@ -16,7 +16,13 @@ import (
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(upgrade bool) error {
 	wg := sync.WaitGroup{}
-	errChan := make(chan error, 3)
+	errChan := make(chan error, 4)
+
+	if in.stosConfig.Spec.IncludeLocalPathProvisioner {
+		// This must be done before installing etcd
+		errChan <- in.installLocalPathStorageClass()
+	}
+
 	if in.stosConfig.Spec.IncludeEtcd {
 		wg.Add(1)
 		go func() {
@@ -66,6 +72,10 @@ func (in *Installer) Install(upgrade bool) error {
 	go close(errChan)
 
 	return collectErrors(errChan)
+}
+
+func (in *Installer) installLocalPathStorageClass() error {
+	return in.kustomizeAndApply(filepath.Join(localPathProvisionerDir, storageclassDir), localPathProvisionerFile)
 }
 
 func (in *Installer) installEtcd() error {

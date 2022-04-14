@@ -78,6 +78,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
+	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
+	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -196,6 +198,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
 		config.Spec.Install.KubernetesVersion = cmd.Flags().Lookup(installer.K8sVersionFlag).Value.String()
@@ -219,6 +226,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
+		config.Spec.Install.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
+
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
@@ -266,5 +275,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
+	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
+	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
+
 	return nil
 }
