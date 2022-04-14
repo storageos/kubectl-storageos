@@ -2,4 +2,4 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
         - command: sleep 2m
-        - command: kubectl storageos install --etcd-endpoints=storageos-etcd.storageos-etcd:2379 --etcd-tls-enabled --etcd-secret-name=test-secret --stos-version=develop --stack-trace
+        - command: kubectl storageos install --etcd-endpoints=storageos-etcd.etcd-install-full-tls:2379 --etcd-tls-enabled --etcd-secret-name=test-secret --stos-version=develop --stack-trace
