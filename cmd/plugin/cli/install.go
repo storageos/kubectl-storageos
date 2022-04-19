@@ -72,6 +72,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
 	cmd.Flags().String(installer.EtcdDockerRepositoryFlag, "", "the docker repository to use for the etcd docker image")
 	cmd.Flags().String(installer.EtcdVersionTag, "", "the docker tag for the version of etcd to use - must be in the format 1.2.3")
+	cmd.Flags().String(installer.EtcdTopologyKeyFlag, "kubernetes.io/hostname", "the topology key to use for anti-affinity for the etcd pods")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
@@ -227,6 +228,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
+		config.Spec.Install.EtcdTopologyKey = cmd.Flags().Lookup(installer.EtcdTopologyKeyFlag).Value.String()
 
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
@@ -277,6 +279,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
+	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKey)
 
 	if config.Spec.Install.EtcdVersionTag != "" {
 		// Perform the same validation as the etcd operator does, to ensure the install will succeed

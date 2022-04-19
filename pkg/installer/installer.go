@@ -61,6 +61,7 @@ const (
 	EnablePortalManagerFlag         = "enable-portal-manager"
 	IncludeLocalPathProvisionerFlag = "include-local-path-storage-class"
 	LocalPathProvisionerYamlFlag    = "local-path-provisioner-yaml"
+	EtcdTopologyKeyFlag             = "etcd-topology-key"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -109,6 +110,7 @@ const (
 	UninstallLocalPathProvisionerYamlConfig   = "spec.uninstall.localPathProvisionerYamlConfig"
 	EtcdVersionTagConfig                      = "spec.install.etcdVersionTag"
 	EtcdDockerRepositoryConfig                = "spec.install.etcdDockerRepository"
+	EtcdTopologyKey                           = "spec.install.etcdTopologyKey"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
