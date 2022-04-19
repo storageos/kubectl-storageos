@@ -107,6 +107,8 @@ const (
 	IncludeLocalPathProvisionerConfig         = "spec.includeLocalPathProvisioner"
 	InstallLocalPathProvisionerYamlConfig     = "spec.install.localPathProvisionerYamlConfig"
 	UninstallLocalPathProvisionerYamlConfig   = "spec.uninstall.localPathProvisionerYamlConfig"
+	EtcdVersionTagConfig                      = "spec.install.etcdVersionTag"
+	EtcdDockerRepositoryConfig                = "spec.install.etcdDockerRepository"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"

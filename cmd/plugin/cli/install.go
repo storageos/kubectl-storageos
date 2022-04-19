@@ -266,8 +266,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdTLSEnabled = viper.GetBool(installer.EtcdTLSEnabledConfig)
 	config.Spec.Install.EtcdSecretName = viper.GetString(installer.EtcdSecretNameConfig)
 	config.Spec.Install.EtcdStorageClassName = viper.GetString(installer.EtcdStorageClassConfig)
-	config.Spec.Install.EtcdDockerRepository = viper.GetString(installer.EtcdDockerRepositoryFlag)
-	config.Spec.Install.EtcdVersionTag = viper.GetString(installer.EtcdVersionTag)
+	config.Spec.Install.EtcdDockerRepository = viper.GetString(installer.EtcdDockerRepositoryConfig)
+	config.Spec.Install.EtcdVersionTag = viper.GetString(installer.EtcdVersionTagConfig)
 	config.Spec.Install.AdminUsername = viper.GetString(installer.AdminUsernameConfig)
 	config.Spec.Install.AdminPassword = viper.GetString(installer.AdminPasswordConfig)
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)
@@ -277,6 +277,14 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
+
+	if config.Spec.Install.EtcdVersionTag != "" {
+		// Perform the same validation as the etcd operator does, to ensure the install will succeed
+		_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
+		if err != nil {
+			return fmt.Errorf("etcd version provided is not valid: %w", err)
+		}
+	}
 
 	return nil
 }
