@@ -3,6 +3,15 @@ kind: ReplicaSet
 metadata:
   name: storageos-etcd-0
   namespace: etcd-install-full
+spec: 
+ template:
+   spec:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
 status:
   replicas: 1
 ---
@@ -11,6 +20,15 @@ kind: ReplicaSet
 metadata:
   name: storageos-etcd-1
   namespace: etcd-install-full
+spec: 
+ template:
+   spec:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
 status:
   replicas: 1
 ---
@@ -19,5 +37,14 @@ kind: ReplicaSet
 metadata:
   name: storageos-etcd-2
   namespace: etcd-install-full
+spec: 
+ template:
+   spec:
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
 status:
   replicas: 1 
