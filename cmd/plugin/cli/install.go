@@ -279,7 +279,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
-	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKey)
+	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
 
 	if config.Spec.Install.EtcdVersionTag != "" {
 		// Perform the same validation as the etcd operator does, to ensure the install will succeed

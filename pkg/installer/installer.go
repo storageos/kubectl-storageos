@@ -110,7 +110,7 @@ const (
 	UninstallLocalPathProvisionerYamlConfig   = "spec.uninstall.localPathProvisionerYamlConfig"
 	EtcdVersionTagConfig                      = "spec.install.etcdVersionTag"
 	EtcdDockerRepositoryConfig                = "spec.install.etcdDockerRepository"
-	EtcdTopologyKey                           = "spec.install.etcdTopologyKey"
+	EtcdTopologyKeyConfig                     = "spec.install.etcdTopologyKey"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
