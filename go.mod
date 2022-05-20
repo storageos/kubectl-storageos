@@ -22,7 +22,7 @@ require (
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851
-	github.com/replicatedhq/troubleshoot v0.13.5
+	github.com/replicatedhq/troubleshoot v0.34.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
 	github.com/storageos/operator v0.0.0-20220126155253-f456a9d8b204
