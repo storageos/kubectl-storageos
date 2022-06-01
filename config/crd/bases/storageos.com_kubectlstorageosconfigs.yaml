@@ -48,6 +48,8 @@ spec:
             properties:
               includeEtcd:
                 type: boolean
+              includeLocalPathProvisioner:
+                type: boolean
               install:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
@@ -60,9 +62,15 @@ spec:
                     type: boolean
                   enablePortalManager:
                     type: boolean
+                  etcdCPULimit:
+                    type: string
                   etcdClusterYaml:
                     type: string
+                  etcdDockerRepository:
+                    type: string
                   etcdEndpoints:
+                    type: string
+                  etcdMemoryLimit:
                     type: string
                   etcdNamespace:
                     type: string
@@ -76,7 +84,13 @@ spec:
                     type: string
                   etcdTLSEnabled:
                     type: boolean
+                  etcdTopologyKey:
+                    type: string
+                  etcdVersionTag:
+                    type: string
                   k8sVersion:
+                    type: string
+                  localPathProvisionerYaml:
                     type: string
                   portalAPIURL:
                     type: string
@@ -123,6 +137,8 @@ spec:
                   etcdNamespace:
                     type: string
                   etcdOperatorYaml:
+                    type: string
+                  localPathProvisionerYaml:
                     type: string
                   resourceQuotaYaml:
                     type: string

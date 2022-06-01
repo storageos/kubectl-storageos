@@ -73,6 +73,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdDockerRepositoryFlag, "", "the docker repository to use for the etcd docker image")
 	cmd.Flags().String(installer.EtcdVersionTag, "", "the docker tag for the version of etcd to use - must be in the format 1.2.3")
 	cmd.Flags().String(installer.EtcdTopologyKeyFlag, "kubernetes.io/hostname", "the topology key to use for anti-affinity for the etcd pods")
+	cmd.Flags().String(installer.EtcdCPULimitFlag, "", "cpu resource limit for the etcd pods")
+	cmd.Flags().String(installer.EtcdMemoryLimitFlag, "", "memory resource limit for the etcd pods")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
@@ -92,6 +94,18 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
 	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
+
+	if config.Spec.Install.EtcdCPULimit != "" {
+		if err := validateResourceLimit(config.Spec.Install.EtcdCPULimit); err != nil {
+			return err
+		}
+	}
+
+	if config.Spec.Install.EtcdMemoryLimit != "" {
+		if err := validateResourceLimit(config.Spec.Install.EtcdMemoryLimit); err != nil {
+			return err
+		}
+	}
 
 	if config.Spec.IncludeEtcd {
 		if config.Spec.Install.EtcdOperatorVersion == "" {
@@ -229,7 +243,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
 		config.Spec.Install.EtcdTopologyKey = cmd.Flags().Lookup(installer.EtcdTopologyKeyFlag).Value.String()
-
+		config.Spec.Install.EtcdCPULimit = cmd.Flags().Lookup(installer.EtcdCPULimitFlag).Value.String()
+		config.Spec.Install.EtcdMemoryLimit = cmd.Flags().Lookup(installer.EtcdMemoryLimitFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
@@ -279,6 +294,9 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
+	config.Spec.Install.EtcdCPULimit = viper.GetString(installer.EtcdCPULimitConfig)
+	config.Spec.Install.EtcdMemoryLimit = viper.GetString(installer.EtcdMemoryLimitConfig)
+
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
 
 	if config.Spec.Install.EtcdVersionTag != "" {

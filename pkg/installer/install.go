@@ -147,6 +147,42 @@ func (in *Installer) installEtcd() error {
 		}
 	}
 
+	if in.stosConfig.Spec.Install.EtcdCPULimit != "" {
+		cpuLimitsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/limits/cpu",
+			Value: in.stosConfig.Spec.Install.EtcdCPULimit,
+		}
+		// also change requests to ensure requests = limits and pod is assigned guaranteed qos.
+		cpuRequestsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/requests/cpu",
+			Value: in.stosConfig.Spec.Install.EtcdCPULimit,
+		}
+
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{cpuLimitsPatch, cpuRequestsPatch}); err != nil {
+			return err
+		}
+	}
+
+	if in.stosConfig.Spec.Install.EtcdMemoryLimit != "" {
+		memoryLimitsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/limits/memory",
+			Value: in.stosConfig.Spec.Install.EtcdMemoryLimit,
+		}
+		// also change requests to ensure requests = limits and pod is assigned guaranteed qos.
+		memoryRequestsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/requests/memory",
+			Value: in.stosConfig.Spec.Install.EtcdMemoryLimit,
+		}
+
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{memoryLimitsPatch, memoryRequestsPatch}); err != nil {
+			return err
+		}
+	}
+
 	if in.stosConfig.Spec.Install.EtcdDockerRepository != "" {
 		dockerImagePatch := pluginutils.KustomizePatch{
 			Op:    "add",

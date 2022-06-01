@@ -11,6 +11,7 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
@@ -131,5 +132,13 @@ func versionSupportsPortal(existingOperatorVersion string) error {
 		}
 	}
 
+	return nil
+}
+
+func validateResourceLimit(resourceLimit string) error {
+	_, err := resource.ParseQuantity(resourceLimit)
+	if err != nil {
+		return err
+	}
 	return nil
 }

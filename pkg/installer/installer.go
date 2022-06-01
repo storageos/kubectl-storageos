@@ -62,6 +62,8 @@ const (
 	IncludeLocalPathProvisionerFlag = "include-local-path-storage-class"
 	LocalPathProvisionerYamlFlag    = "local-path-provisioner-yaml"
 	EtcdTopologyKeyFlag             = "etcd-topology-key"
+	EtcdCPULimitFlag                = "etcd-cpu-limit"
+	EtcdMemoryLimitFlag             = "etcd-memory-limit"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -111,6 +113,8 @@ const (
 	EtcdVersionTagConfig                      = "spec.install.etcdVersionTag"
 	EtcdDockerRepositoryConfig                = "spec.install.etcdDockerRepository"
 	EtcdTopologyKeyConfig                     = "spec.install.etcdTopologyKey"
+	EtcdCPULimitConfig                        = "spec.install.etcdCPULimit"
+	EtcdMemoryLimitConfig                     = "spec.install.etcdMemoryLimit"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
