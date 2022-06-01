@@ -150,13 +150,12 @@ kind: Kustomization
 resources:`
 
 	// other defaults
-	stosClusterKind        = "StorageOSCluster"
-	resourceQuotaKind      = "ResourceQuota"
-	etcdClusterKind        = "EtcdCluster"
-	defaultEtcdClusterName = "storageos-etcd"
-	stosFinalizer          = "storageos.com/finalizer"
-	stosSCProvisioner      = "csi.storageos.com"
-	stosAppLabel           = "app=storageos"
+	stosClusterKind   = "StorageOSCluster"
+	resourceQuotaKind = "ResourceQuota"
+	etcdClusterKind   = "EtcdCluster"
+	stosFinalizer     = "storageos.com/finalizer"
+	stosSCProvisioner = "csi.storageos.com"
+	stosAppLabel      = "app=storageos"
 )
 
 var (

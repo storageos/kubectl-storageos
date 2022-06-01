@@ -95,23 +95,28 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	}
 	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 
-	if config.Spec.Install.EtcdCPULimit != "" {
-		if err := validateResourceLimit(config.Spec.Install.EtcdCPULimit); err != nil {
-			return err
-		}
-	}
-
-	if config.Spec.Install.EtcdMemoryLimit != "" {
-		if err := validateResourceLimit(config.Spec.Install.EtcdMemoryLimit); err != nil {
-			return err
-		}
-	}
-
 	if config.Spec.IncludeEtcd {
 		if config.Spec.Install.EtcdOperatorVersion == "" {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
 		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
+		if config.Spec.Install.EtcdMemoryLimit != "" {
+			if err := validateResourceLimit(config.Spec.Install.EtcdMemoryLimit); err != nil {
+				return err
+			}
+		}
+		if config.Spec.Install.EtcdCPULimit != "" {
+			if err := validateResourceLimit(config.Spec.Install.EtcdCPULimit); err != nil {
+				return err
+			}
+		}
+		if config.Spec.Install.EtcdVersionTag != "" {
+			// Perform the same validation as the etcd operator does, to ensure the install will succeed
+			_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
+			if err != nil {
+				return fmt.Errorf("etcd version provided is not valid: %w", err)
+			}
+		}
 	}
 
 	if config.Spec.Install.EnablePortalManager {
@@ -139,6 +144,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			return err
 		}
 	}
+
 	if config.Spec.Install.DryRun {
 		if config.Spec.Install.KubernetesVersion == "" {
 			config.Spec.Install.KubernetesVersion, err = k8sVersionPrompt()
@@ -246,16 +252,9 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.EtcdCPULimit = cmd.Flags().Lookup(installer.EtcdCPULimitFlag).Value.String()
 		config.Spec.Install.EtcdMemoryLimit = cmd.Flags().Lookup(installer.EtcdMemoryLimitFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
-
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
+		config.InstallerMeta.StorageOSSecretYaml = ""
 
-		if config.Spec.Install.EtcdVersionTag != "" {
-			// Perform the same validation as the etcd operator does, to ensure the install will succeed
-			_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
-			if err != nil {
-				return fmt.Errorf("etcd version provided is not valid: %w", err)
-			}
-		}
 		return nil
 	}
 	// config file read without error, set fields in new config object
@@ -296,16 +295,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
 	config.Spec.Install.EtcdCPULimit = viper.GetString(installer.EtcdCPULimitConfig)
 	config.Spec.Install.EtcdMemoryLimit = viper.GetString(installer.EtcdMemoryLimitConfig)
-
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
-
-	if config.Spec.Install.EtcdVersionTag != "" {
-		// Perform the same validation as the etcd operator does, to ensure the install will succeed
-		_, err := semver.NewVersion(config.Spec.Install.EtcdVersionTag)
-		if err != nil {
-			return fmt.Errorf("etcd version provided is not valid: %w", err)
-		}
-	}
 
 	return nil
 }
