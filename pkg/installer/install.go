@@ -139,7 +139,7 @@ func (in *Installer) installEtcd() error {
 	if in.stosConfig.Spec.Install.EtcdTopologyKey != "" {
 		antiAffinityPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
-			Path:  "/spec/podTemplate/affinity/podAntiAffinity/preferredDuringSchedulingIgnoredDuringExecution/0/podAffinityTerm/topologyKey",
+			Path:  "/spec/podTemplate/affinity/podAntiAffinity/requiredDuringSchedulingIgnoredDuringExecution/0/topologyKey",
 			Value: in.stosConfig.Spec.Install.EtcdTopologyKey,
 		}
 		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{antiAffinityPatch}); err != nil {
