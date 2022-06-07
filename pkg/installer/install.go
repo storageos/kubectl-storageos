@@ -149,7 +149,7 @@ func (in *Installer) installEtcd() error {
 		}
 	}
 
-	if in.stosConfig.Spec.Install.EtcdRepliicas != "" {
+	if in.stosConfig.Spec.Install.EtcdReplicas != "" {
 		etcdReplicasPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/spec/replicas",
