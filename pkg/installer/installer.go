@@ -64,6 +64,7 @@ const (
 	EtcdTopologyKeyFlag             = "etcd-topology-key"
 	EtcdCPULimitFlag                = "etcd-cpu-limit"
 	EtcdMemoryLimitFlag             = "etcd-memory-limit"
+	EtcdReplicasFlag                = "etcd-replicas"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -115,6 +116,7 @@ const (
 	EtcdTopologyKeyConfig                     = "spec.install.etcdTopologyKey"
 	EtcdCPULimitConfig                        = "spec.install.etcdCPULimit"
 	EtcdMemoryLimitConfig                     = "spec.install.etcdMemoryLimit"
+	EtcdReplicasConfig                        = "spec.install.etcdReplicas"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
