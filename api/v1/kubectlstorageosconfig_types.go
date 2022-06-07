@@ -84,6 +84,8 @@ type Install struct {
 	EtcdDockerRepository            string `json:"etcdDockerRepository,omitempty"`
 	EtcdVersionTag                  string `json:"etcdVersionTag,omitempty"`
 	EtcdTopologyKey                 string `json:"etcdTopologyKey,omitempty"`
+	EtcdCPULimit                    string `json:"etcdCPULimit,omitempty"`
+	EtcdMemoryLimit                 string `json:"etcdMemoryLimit,omitempty"`
 	SkipEtcdEndpointsValidation     bool   `json:"skipEtcdEndpointsValidation,omitempty"`
 	EnablePortalManager             bool   `json:"enablePortalManager,omitempty"`
 	EtcdStorageClassName            string `json:"etcdStorageClassName,omitempty"`

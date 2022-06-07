@@ -83,6 +83,12 @@ func (in *Installer) installEtcd() error {
 	// add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
 	// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
 	// based on flags (or cli in.stosConfig file)
+
+	fsEtcdClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "name")
+	if err != nil {
+		return err
+	}
+
 	fsEtcdClusterNamespace, err := in.getFieldInFsManifest(filepath.Join(etcdDir, clusterDir, etcdClusterFile), "metadata", "namespace")
 	if err != nil {
 		return err
@@ -104,10 +110,6 @@ func (in *Installer) installEtcd() error {
 			return err
 		}
 
-		fsEtcdClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "name")
-		if err != nil {
-			return err
-		}
 		fsClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
 		if err != nil {
 			return err
@@ -131,7 +133,7 @@ func (in *Installer) installEtcd() error {
 			Value: in.stosConfig.Spec.Install.EtcdVersionTag,
 		}
 
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{versionPatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{versionPatch}); err != nil {
 			return err
 		}
 	}
@@ -142,7 +144,43 @@ func (in *Installer) installEtcd() error {
 			Path:  "/spec/podTemplate/affinity/podAntiAffinity/requiredDuringSchedulingIgnoredDuringExecution/0/topologyKey",
 			Value: in.stosConfig.Spec.Install.EtcdTopologyKey,
 		}
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{antiAffinityPatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{antiAffinityPatch}); err != nil {
+			return err
+		}
+	}
+
+	if in.stosConfig.Spec.Install.EtcdCPULimit != "" {
+		cpuLimitsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/limits/cpu",
+			Value: in.stosConfig.Spec.Install.EtcdCPULimit,
+		}
+		// also change requests to ensure requests = limits and pod is assigned guaranteed qos.
+		cpuRequestsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/requests/cpu",
+			Value: in.stosConfig.Spec.Install.EtcdCPULimit,
+		}
+
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{cpuLimitsPatch, cpuRequestsPatch}); err != nil {
+			return err
+		}
+	}
+
+	if in.stosConfig.Spec.Install.EtcdMemoryLimit != "" {
+		memoryLimitsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/limits/memory",
+			Value: in.stosConfig.Spec.Install.EtcdMemoryLimit,
+		}
+		// also change requests to ensure requests = limits and pod is assigned guaranteed qos.
+		memoryRequestsPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/podTemplate/resources/requests/memory",
+			Value: in.stosConfig.Spec.Install.EtcdMemoryLimit,
+		}
+
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{memoryLimitsPatch, memoryRequestsPatch}); err != nil {
 			return err
 		}
 	}
@@ -153,7 +191,7 @@ func (in *Installer) installEtcd() error {
 			Path:  "/spec/template/spec/containers/0/args/-",
 			Value: fmt.Sprintf("--etcd-repository=%s", in.stosConfig.Spec.Install.EtcdDockerRepository),
 		}
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", "storageos-etcd-controller-manager", []pluginutils.KustomizePatch{dockerImagePatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", consts.EtcdOperatorName, []pluginutils.KustomizePatch{dockerImagePatch}); err != nil {
 			return err
 		}
 	}
@@ -172,7 +210,7 @@ func (in *Installer) installEtcd() error {
 		Path:  "/spec/storage/volumeClaimTemplate/storageClassName",
 		Value: in.stosConfig.Spec.Install.EtcdStorageClassName,
 	}
-	if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{storageClassPatch}); err != nil {
+	if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{storageClassPatch}); err != nil {
 		return err
 	}
 
@@ -193,7 +231,7 @@ func (in *Installer) installEtcd() error {
 			Value: in.stosConfig.Spec.Install.EtcdSecretName,
 		}
 
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, defaultEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch, storageOSEtcdSecretNamePatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{tlsEnabledPatch, storageOSClusterNSSpecPatch, storageOSEtcdSecretNamePatch}); err != nil {
 			return err
 		}
 	}
