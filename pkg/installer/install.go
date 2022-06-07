@@ -149,6 +149,17 @@ func (in *Installer) installEtcd() error {
 		}
 	}
 
+	if in.stosConfig.Spec.Install.EtcdReplicas != "" {
+		etcdReplicasPatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/replicas",
+			Value: in.stosConfig.Spec.Install.EtcdReplicas,
+		}
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{etcdReplicasPatch}); err != nil {
+			return err
+		}
+	}
+
 	if in.stosConfig.Spec.Install.EtcdCPULimit != "" {
 		cpuLimitsPatch := pluginutils.KustomizePatch{
 			Op:    "replace",

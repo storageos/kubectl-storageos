@@ -75,6 +75,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdTopologyKeyFlag, "kubernetes.io/hostname", "the topology key to use for anti-affinity for the etcd pods")
 	cmd.Flags().String(installer.EtcdCPULimitFlag, "", "cpu resource limit for the etcd pods")
 	cmd.Flags().String(installer.EtcdMemoryLimitFlag, "", "memory resource limit for the etcd pods")
+	cmd.Flags().String(installer.EtcdReplicasFlag, "", "desired number of etcd pod replicas")
 	cmd.Flags().String(installer.AdminUsernameFlag, "", "storageos admin username (plaintext)")
 	cmd.Flags().String(installer.AdminPasswordFlag, "", "storageos admin password (plaintext)")
 	cmd.Flags().String(installer.PortalClientIDFlag, "", "storageos portal client id (plaintext)")
@@ -251,7 +252,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		config.Spec.Install.EtcdTopologyKey = cmd.Flags().Lookup(installer.EtcdTopologyKeyFlag).Value.String()
 		config.Spec.Install.EtcdCPULimit = cmd.Flags().Lookup(installer.EtcdCPULimitFlag).Value.String()
 		config.Spec.Install.EtcdMemoryLimit = cmd.Flags().Lookup(installer.EtcdMemoryLimitFlag).Value.String()
-		config.InstallerMeta.StorageOSSecretYaml = ""
+		config.Spec.Install.EtcdReplicas = cmd.Flags().Lookup(installer.EtcdReplicasFlag).Value.String()
 		config.Spec.Install.EtcdVersionTag = cmd.Flags().Lookup(installer.EtcdVersionTag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 
@@ -295,6 +296,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.LocalPathProvisionerYaml = viper.GetString(installer.InstallLocalPathProvisionerYamlConfig)
 	config.Spec.Install.EtcdCPULimit = viper.GetString(installer.EtcdCPULimitConfig)
 	config.Spec.Install.EtcdMemoryLimit = viper.GetString(installer.EtcdMemoryLimitConfig)
+	config.Spec.Install.EtcdReplicas = viper.GetString(installer.EtcdReplicasConfig)
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
 
 	return nil

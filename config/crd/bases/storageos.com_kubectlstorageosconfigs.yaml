@@ -78,6 +78,8 @@ spec:
                     type: string
                   etcdOperatorYaml:
                     type: string
+                  etcdReplicas:
+                    type: string
                   etcdSecretName:
                     type: string
                   etcdStorageClassName:

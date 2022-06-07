@@ -86,6 +86,7 @@ type Install struct {
 	EtcdTopologyKey                 string `json:"etcdTopologyKey,omitempty"`
 	EtcdCPULimit                    string `json:"etcdCPULimit,omitempty"`
 	EtcdMemoryLimit                 string `json:"etcdMemoryLimit,omitempty"`
+	EtcdReplicas                    string `json:"etcdReplicas,omitempty"`
 	SkipEtcdEndpointsValidation     bool   `json:"skipEtcdEndpointsValidation,omitempty"`
 	EnablePortalManager             bool   `json:"enablePortalManager,omitempty"`
 	EtcdStorageClassName            string `json:"etcdStorageClassName,omitempty"`

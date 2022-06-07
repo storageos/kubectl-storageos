@@ -74,4 +74,30 @@ spec:
              topologyKey: topology.kubernetes.io/zone
            weight: 100
 status:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: ReplicaSet 
+metadata:
+  name: storageos-etcd-3
+  namespace: etcd-install-full
+spec: 
+ template:
+   spec:
+     containers:
+     - name: etcd
+       resources:
+         limits:
+           cpu: 100m
+           memory: 100Mi
+         requests:
+           cpu: 100m
+           memory: 100Mi
+     affinity:
+       podAntiAffinity:
+         preferredDuringSchedulingIgnoredDuringExecution:
+         - podAffinityTerm:
+             topologyKey: topology.kubernetes.io/zone
+           weight: 100
+status:
   replicas: 1 
