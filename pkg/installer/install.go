@@ -83,7 +83,17 @@ func (in *Installer) installEtcd() error {
 	// add changes to etcd kustomizations here before kustomizeAndApply calls ie make changes
 	// to etcd/operator/kustomization.yaml and/or etcd/cluster/kustomization.yaml
 	// based on flags (or cli in.stosConfig file)
+	if in.stosConfig.Spec.Install.StorageOSOperatorNamespace != consts.NewOperatorNamespace {
+		leaderElectionCMNamespacePatch := pluginutils.KustomizePatch{
+			Op:    "replace",
+			Path:  "/spec/template/spec/containers/0/args/2",
+			Value: fmt.Sprintf("%s%s", "--leader-election-cm-namespace=", in.stosConfig.Spec.Install.StorageOSOperatorNamespace),
+		}
 
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", consts.EtcdOperatorName, []pluginutils.KustomizePatch{leaderElectionCMNamespacePatch}); err != nil {
+			return err
+		}
+	}
 	fsEtcdClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(etcdDir, clusterDir, etcdClusterFile), etcdClusterKind, "metadata", "name")
 	if err != nil {
 		return err
@@ -106,6 +116,7 @@ func (in *Installer) installEtcd() error {
 			Path:  "/spec/template/spec/containers/0/args/1",
 			Value: fmt.Sprintf("%s%s%s", "--proxy-url=storageos-proxy.", in.stosConfig.Spec.Install.EtcdNamespace, ".svc"),
 		}
+
 		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, operatorDir, kustomizationFile), "Deployment", consts.EtcdOperatorName, []pluginutils.KustomizePatch{proxyUrlPatch}); err != nil {
 			return err
 		}
