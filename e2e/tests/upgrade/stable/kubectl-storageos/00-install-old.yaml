@@ -1,4 +1,4 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl-storageos install --stos-version=develop --include-etcd
+  - command: kubectl-storageos install --stos-version=v2.6.0 --include-etcd --etcd-operator-version=develop --etcd-replicas 1
