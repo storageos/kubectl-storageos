@@ -12,7 +12,7 @@ metadata:
   name: storageos-etcd-controller-manager
   namespace: etcd-install-full
 status:
-  replicas: 1
+  replicas: 2 
 ---
 apiVersion: apps/v1
 kind: Deployment
