@@ -74,6 +74,9 @@ e2e: ## Run e2e tests against latest supported k8s cluster.
 
 ##@ Build
 
+airbuild: air ## runs live build for development.
+	air -c .air.toml
+
 build: test ## test and build manager binary.
 	make _build
 
@@ -118,6 +121,10 @@ controller-gen: ## Download controller-gen locally if necessary.
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+
+AIR = $(shell pwd)/bin/air
+air: ## Download air locally if necessary.
+	$(call go-get-tool,$(AIR),github.com/cosmtrek/air@v1.40.1)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
