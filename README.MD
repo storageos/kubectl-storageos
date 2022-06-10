@@ -14,7 +14,7 @@ Administrating tool for your StorageOS clusters.
 
 ### Pre-Requisites
 
-* Go 1.16+
+* Go 1.18+
 
 ### Download released version
 
