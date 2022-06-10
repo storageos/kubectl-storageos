@@ -122,6 +122,11 @@ KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
+HUSKY = $(shell pwd)/bin/husky
+.PHONY: husky
+husky: ## Download husky locally if necessary.
+	$(call go-get-tool,$(HUSKY),github.com/automation-co/husky@v0.2.5)
+
 AIR = $(shell pwd)/bin/air
 air: ## Download air locally if necessary.
 	$(call go-get-tool,$(AIR),github.com/cosmtrek/air@v1.40.1)
