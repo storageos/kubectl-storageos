@@ -124,7 +124,7 @@ kustomize: ## Download kustomize locally if necessary.
 
 AIR = $(shell pwd)/bin/air
 air: ## Download air locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),github.com/cosmtrek/air@v1.40.1)
+	$(call go-get-tool,$(AIR),github.com/cosmtrek/air@v1.40.1)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
