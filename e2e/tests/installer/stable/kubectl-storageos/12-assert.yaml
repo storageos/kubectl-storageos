@@ -8,43 +8,13 @@ spec:
    spec:
     affinity:
       podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            topologyKey: kubernetes.io/hostname
-          weight: 100
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: etcd.improbable.io/cluster-name
+              operator: In
+              values:
+              - storageos-etcd
+          topologyKey: kubernetes.io/hostname
 status:
   replicas: 1
----
-apiVersion: apps/v1
-kind: ReplicaSet 
-metadata:
-  name: storageos-etcd-1
-  namespace: etcd-install-full-tls
-spec: 
- template:
-   spec:
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            topologyKey: kubernetes.io/hostname
-          weight: 100
-status:
-  replicas: 1
----
-apiVersion: apps/v1
-kind: ReplicaSet 
-metadata:
-  name: storageos-etcd-2
-  namespace: etcd-install-full-tls
-spec: 
- template:
-   spec:
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            topologyKey: kubernetes.io/hostname
-          weight: 100
-status:
-  replicas: 1 

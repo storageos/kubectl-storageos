@@ -17,10 +17,14 @@ spec:
            memory: 100Mi
      affinity:
        podAntiAffinity:
-         preferredDuringSchedulingIgnoredDuringExecution:
-         - podAffinityTerm:
-             topologyKey: topology.kubernetes.io/zone
-           weight: 100
+         requiredDuringSchedulingIgnoredDuringExecution:
+         - labelSelector:
+             matchExpressions:
+             - key: etcd.improbable.io/cluster-name
+               operator: In
+               values:
+               - storageos-etcd
+           topologyKey: topology.kubernetes.io/zone
 status:
   replicas: 1
 ---
@@ -43,10 +47,14 @@ spec:
            memory: 100Mi
      affinity:
        podAntiAffinity:
-         preferredDuringSchedulingIgnoredDuringExecution:
-         - podAffinityTerm:
-             topologyKey: topology.kubernetes.io/zone
-           weight: 100
+         requiredDuringSchedulingIgnoredDuringExecution:
+         - labelSelector:
+             matchExpressions:
+             - key: etcd.improbable.io/cluster-name
+               operator: In
+               values:
+               - storageos-etcd
+           topologyKey: topology.kubernetes.io/zone
 status:
   replicas: 1
 ---
@@ -69,10 +77,14 @@ spec:
            memory: 100Mi
      affinity:
        podAntiAffinity:
-         preferredDuringSchedulingIgnoredDuringExecution:
-         - podAffinityTerm:
-             topologyKey: topology.kubernetes.io/zone
-           weight: 100
+         requiredDuringSchedulingIgnoredDuringExecution:
+         - labelSelector:
+             matchExpressions:
+             - key: etcd.improbable.io/cluster-name
+               operator: In
+               values:
+               - storageos-etcd
+           topologyKey: topology.kubernetes.io/zone
 status:
   replicas: 1
 ---
@@ -95,9 +107,13 @@ spec:
            memory: 100Mi
      affinity:
        podAntiAffinity:
-         preferredDuringSchedulingIgnoredDuringExecution:
-         - podAffinityTerm:
-             topologyKey: topology.kubernetes.io/zone
-           weight: 100
+         requiredDuringSchedulingIgnoredDuringExecution:
+         - labelSelector:
+             matchExpressions:
+             - key: etcd.improbable.io/cluster-name
+               operator: In
+               values:
+               - storageos-etcd
+           topologyKey: topology.kubernetes.io/zone
 status:
   replicas: 1 

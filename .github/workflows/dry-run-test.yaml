@@ -21,12 +21,7 @@ jobs:
         run: |
           make _build
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Determine latest version
-        run: |
-          echo "STOS_VERSION=$(curl -s https://api.github.com/repos/storageos/operator/releases/latest | grep tag_name | head -1 | cut -d'"' -f4 | tr -d v)" >> $GITHUB_ENV
-          echo "ETCD_OPERATOR_VERSION=$(curl -s https://api.github.com/repos/storageos/etcd-cluster-operator/releases/latest | grep tag_name | head -1 | cut -d'"' -f4 | tr -d v)" >> $GITHUB_ENV
-
       - name: Run dry-run-test.sh
         run: |
           cd e2e/tests/dry-run
-          sudo STOS_VERSION=$STOS_VERSION ETCD_OPERATOR_VERSION=$ETCD_OPERATOR_VERSION ./dry-run-test.sh
+          sudo STOS_VERSION=develop ETCD_OPERATOR_VERSION=develop ./dry-run-test.sh

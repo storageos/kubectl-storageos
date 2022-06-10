@@ -33,3 +33,6 @@ support-bundle*.tar.gz
 
 # dry-run directory
 storageos-dry-run*
+
+# air errer logs
+build-errors.log
