@@ -71,6 +71,9 @@ e2e: ## Run e2e tests against latest supported k8s cluster.
 
 ##@ Build
 
+airbuild: air ## runs live build for development.
+	air -c .air.toml
+
 tidy: ## Regenerates Go dependencies.
 	go mod tidy
 
@@ -101,6 +104,15 @@ deps: controller-gen ## Download all dependencies if necessary.
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.0)
+
+HUSKY = $(shell pwd)/bin/husky
+.PHONY: husky
+husky: ## Download husky locally if necessary.
+	$(call go-get-tool,$(HUSKY),github.com/automation-co/husky@v0.2.5)
+
+AIR = $(shell pwd)/bin/air
+air: ## Download air locally if necessary.
+	$(call go-get-tool,$(AIR),github.com/cosmtrek/air@v1.40.1)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
