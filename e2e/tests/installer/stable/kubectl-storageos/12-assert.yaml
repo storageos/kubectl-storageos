@@ -9,12 +9,13 @@ spec:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: etcd.improbable.io/cluster-name
-              operator: In
-              values:
-              - storageos-etcd
-          topologyKey: kubernetes.io/hostname
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: etcd.improbable.io/cluster-name
+                operator: In
+                values:
+                - storageos-etcd
+            topologyKey: kubernetes.io/hostname
 status:
   replicas: 1
