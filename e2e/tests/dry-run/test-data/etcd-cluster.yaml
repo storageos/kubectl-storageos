@@ -8,14 +8,15 @@ spec:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: etcd.improbable.io/cluster-name
-              operator: In
-              values:
-              - storageos-etcd
-          topologyKey: kubernetes.io/hostname
-          weight: 100
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: etcd.improbable.io/cluster-name
+                operator: In
+                values:
+                - storageos-etcd
+            topologyKey: kubernetes.io/hostname
+            weight: 100
     etcdEnv:
     - name: ETCD_HEARTBEAT_INTERVAL
       value: "500"
