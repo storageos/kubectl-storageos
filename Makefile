@@ -101,7 +101,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 deps: controller-gen ## Download all dependencies if necessary.
 
-CONTROLLER_GEN = $(GOBIN)/controller-gen
+CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 
 $(CONTROLLER_GEN):
