@@ -102,16 +102,16 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 deps: controller-gen ## Download all dependencies if necessary.
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-
-$(CONTROLLER_GEN):
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+.PHONY: controller-gen
+controller-gen: ## Download controller-gen locally if necessary.
+	GOBIN="$(shell pwd)/bin" go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.0
 
 HUSKY = $(shell pwd)/bin/husky
 .PHONY: husky
 husky: ## Download husky locally if necessary.
-	$(call go-get-tool,$(HUSKY),github.com/automation-co/husky@v0.2.5)
+	GOBIN="$(shell pwd)/bin" go install github.com/automation-co/husky@v0.2.5
 
 AIR = $(shell pwd)/bin/air
+.PHONY: air
 air: ## Download air locally if necessary.
-	$(call go-get-tool,$(AIR),github.com/cosmtrek/air@v1.40.1)
+	GOBIN="$(shell pwd)/bin" go install github.com/cosmtrek/air@v1.40.1
