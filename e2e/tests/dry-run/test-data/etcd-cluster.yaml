@@ -7,6 +7,16 @@ spec:
   podTemplate:
     affinity:
       podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: etcd.improbable.io/cluster-name
+                operator: In
+                values:
+                - storageos-etcd
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
         requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
             matchExpressions:
@@ -14,8 +24,7 @@ spec:
               operator: In
               values:
               - storageos-etcd
-          topologyKey: kubernetes.io/hostname
-          weight: 100
+          topologyKey: topology.kubernetes.io/zone
     etcdEnv:
     - name: ETCD_HEARTBEAT_INTERVAL
       value: "500"
@@ -28,18 +37,18 @@ spec:
     - name: ETCD_QUOTA_BACKEND_BYTES
       value: "8589934592"
     - name: ETCD_SNAPSHOT_COUNT
-      value: "100000"
+      value: "20000"
     - name: ETCD_AUTO_COMPACTION_RETENTION
       value: "20000"
     - name: ETCD_AUTO_COMPACTION_MODE
       value: revision
     resources:
       limits:
-        cpu: 200m
-        memory: 200Mi
+        cpu: 500m
+        memory: 500Mi
       requests:
-        cpu: 200m
-        memory: 200Mi
+        cpu: 500m
+        memory: 500Mi
   replicas: 5
   storage:
     volumeClaimTemplate:

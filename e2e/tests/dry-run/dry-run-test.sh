@@ -19,7 +19,7 @@ diff ${TMPDIR}/storageos-operator.yaml ${TMPDIR}/storageos-dry-run/*-storageos-o
 diff test-data/storageos-cluster.yaml ${TMPDIR}/storageos-dry-run/*-storageos-cluster.yaml
 
 #  Run install --dry-run command and move output to tmpdir
-kubectl storageos install --include-etcd --dry-run --etcd-storage-class=standard --k8s-version=v1.22.0 --stos-version=develop --etcd-operator-version=develop
+kubectl storageos install --include-etcd --dry-run --etcd-storage-class=standard --k8s-version=v1.22.0 --stos-version=develop --etcd-operator-version=develop --etcd-topology-key=topology.kubernetes.io/zone
 cp -r storageos-dry-run $TMPDIR/ && rm -r storageos-dry-run
 # Fetch etcd-operator manifest
 docker run "storageos/etcd-cluster-operator-manifests:${ETCD_OPERATOR_VERSION}" > ${TMPDIR}/storageos-etcd-cluster-operator.yaml
