@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/util/retry"
@@ -11,15 +10,19 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
+const uninstallPortal = "uninstall-portal"
+
 func UninstallPortalCmd() *cobra.Command {
 	var err error
 	var traceError bool
+	pluginLogger := logger.NewLogger()
 	cmd := &cobra.Command{
-		Use:          "uninstall-portal",
+		Use:          uninstallPortal,
 		Args:         cobra.MinimumNArgs(0),
 		Short:        "Uninstall StorageOS Portal Manager",
 		Long:         `Uninstall StorageOS Portal Manager`,
@@ -30,9 +33,6 @@ func UninstallPortalCmd() *cobra.Command {
 				err = e
 			})
 
-			v := viper.GetViper()
-			logger.SetQuiet(v.GetBool("quiet"))
-
 			config := &apiv1.KubectlStorageOSConfig{}
 			if err = setUninstallPortalValues(cmd, config); err != nil {
 				return
@@ -40,10 +40,16 @@ func UninstallPortalCmd() *cobra.Command {
 
 			traceError = config.Spec.StackTrace
 
-			err = uninstallPortalCmd(config)
+			err = uninstallPortalCmd(config, pluginLogger)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return pluginutils.HandleError("uninstall-portal", err, traceError)
+			if err := pluginutils.HandleError(uninstallPortal, err, traceError); err != nil {
+				pluginLogger.Error(fmt.Sprintf("%s%s", uninstallPortal, " has failed"))
+
+				return err
+			}
+			pluginLogger.Success("Portal Manager uninstalled successfully.")
+			return nil
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
@@ -55,7 +61,7 @@ func UninstallPortalCmd() *cobra.Command {
 	return cmd
 }
 
-func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
+func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -66,7 +72,7 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cliInstaller, err := installer.NewPortalManagerInstaller(config, true)
+		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
 		if err != nil {
 			return err
 		}
@@ -75,6 +81,7 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 			return err
 		}
 
+		log.Commencing(uninstallPortal)
 		return cliInstaller.UninstallPortalManager()
 	})
 }

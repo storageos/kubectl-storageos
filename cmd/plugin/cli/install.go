@@ -4,21 +4,24 @@ import (
 	"fmt"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
+const install = "install"
+
 func InstallCmd() *cobra.Command {
 	var err error
 	var traceError bool
+	pluginLogger := logger.NewLogger()
 	cmd := &cobra.Command{
-		Use:          "install",
+		Use:          install,
 		Args:         cobra.MinimumNArgs(0),
 		Short:        "Install StorageOS and (optionally) ETCD",
 		Long:         `Install StorageOS and (optionally) ETCD`,
@@ -29,9 +32,6 @@ func InstallCmd() *cobra.Command {
 				err = e
 			})
 
-			v := viper.GetViper()
-			logger.SetQuiet(v.GetBool("quiet"))
-
 			config := &apiv1.KubectlStorageOSConfig{}
 			if err = setInstallValues(cmd, config); err != nil {
 				return
@@ -39,10 +39,15 @@ func InstallCmd() *cobra.Command {
 
 			traceError = config.Spec.StackTrace
 
-			err = installCmd(config)
+			err = installCmd(config, pluginLogger)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return pluginutils.HandleError("install", err, traceError)
+			if err := pluginutils.HandleError(install, err, traceError); err != nil {
+				pluginLogger.Error(fmt.Sprintf("%s%s", install, " has failed"))
+				return err
+			}
+			pluginLogger.Success("StorageOS installed successfully.")
+			return nil
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
@@ -93,7 +98,7 @@ func InstallCmd() *cobra.Command {
 	return cmd
 }
 
-func installCmd(config *apiv1.KubectlStorageOSConfig) error {
+func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
@@ -149,7 +154,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	var err error
 	// if etcdEndpoints was not passed via flag or config, prompt user to enter manually
 	if !config.Spec.IncludeEtcd && config.Spec.Install.EtcdEndpoints == "" {
-		config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt()
+		config.Spec.Install.EtcdEndpoints, err = etcdEndpointsPrompt(log)
 		if err != nil {
 			return err
 		}
@@ -157,30 +162,32 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 
 	if config.Spec.Install.DryRun {
 		if config.Spec.Install.KubernetesVersion == "" {
-			config.Spec.Install.KubernetesVersion, err = k8sVersionPrompt()
+			config.Spec.Install.KubernetesVersion, err = k8sVersionPrompt(log)
 			if err != nil {
 				return err
 			}
 		}
 		if config.Spec.IncludeEtcd && config.Spec.Install.EtcdStorageClassName == "" {
-			config.Spec.Install.EtcdStorageClassName, err = storageClassPrompt()
+			config.Spec.Install.EtcdStorageClassName, err = storageClassPrompt(log)
 			if err != nil {
 				return err
 			}
 		}
 		config.Spec.Install.SkipEtcdEndpointsValidation = true
-		cliInstaller, err := installer.NewDryRunInstaller(config)
+		cliInstaller, err := installer.NewDryRunInstaller(config, log)
 		if err != nil {
 			return err
 		}
+		log.Commencing(install)
 		return cliInstaller.Install(false)
 	}
 
-	cliInstaller, err := installer.NewInstaller(config)
+	cliInstaller, err := installer.NewInstaller(config, log)
 	if err != nil {
 		return err
 	}
 
+	log.Commencing(install)
 	return cliInstaller.Install(false)
 }
 

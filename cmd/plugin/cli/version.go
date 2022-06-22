@@ -1,9 +1,8 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -15,7 +14,7 @@ func VersionCmd() *cobra.Command {
 		Long:         `Show kubectl storageos version`,
 		SilenceUsage: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("%s\n", version.PluginVersion)
+			logger.NewLogger().Infof("%s", version.PluginVersion)
 		},
 	}
 

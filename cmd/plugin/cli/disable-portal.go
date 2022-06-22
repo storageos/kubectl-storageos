@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/util/retry"
@@ -11,15 +10,19 @@ import (
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
+const disablePortal = "disable-portal"
+
 func DisablePortalCmd() *cobra.Command {
 	var err error
 	var traceError bool
+	pluginLogger := logger.NewLogger()
 	cmd := &cobra.Command{
-		Use:          "disable-portal",
+		Use:          disablePortal,
 		Args:         cobra.MinimumNArgs(0),
 		Short:        "Disable StorageOS Portal Manager",
 		Long:         `Disable StorageOS Portal Manager`,
@@ -30,9 +33,6 @@ func DisablePortalCmd() *cobra.Command {
 				err = e
 			})
 
-			v := viper.GetViper()
-			logger.SetQuiet(v.GetBool("quiet"))
-
 			config := &apiv1.KubectlStorageOSConfig{}
 			if err = setDisablePortalValues(cmd, config); err != nil {
 				return
@@ -40,10 +40,15 @@ func DisablePortalCmd() *cobra.Command {
 
 			traceError = config.Spec.StackTrace
 
-			err = disablePortalCmd(config)
+			err = disablePortalCmd(config, pluginLogger)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return pluginutils.HandleError("disable-portal", err, traceError)
+			if err := pluginutils.HandleError(disablePortal, err, traceError); err != nil {
+				pluginLogger.Error(fmt.Sprintf("%s%s", disablePortal, " has failed"))
+				return err
+			}
+			pluginLogger.Success("Portal Manager successfully disabled.")
+			return nil
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
@@ -55,7 +60,7 @@ func DisablePortalCmd() *cobra.Command {
 	return cmd
 }
 
-func disablePortalCmd(config *apiv1.KubectlStorageOSConfig) error {
+func disablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -66,11 +71,12 @@ func disablePortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cliInstaller, err := installer.NewPortalManagerInstaller(config, false)
+		cliInstaller, err := installer.NewPortalManagerInstaller(config, false, log)
 		if err != nil {
 			return err
 		}
 
+		log.Commencing(disablePortal)
 		return cliInstaller.EnablePortalManager(false)
 	})
 }

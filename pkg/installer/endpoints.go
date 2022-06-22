@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
-	"github.com/storageos/kubectl-storageos/pkg/logger"
 
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
@@ -42,9 +41,7 @@ const (
 
 	kubectl storageos is unable to perform ETCD endpoint validation.
 
-	To skip ETCD endpoints validation during installation, set install flag --%s
-
-`
+	To skip ETCD endpoints validation during installation, set install flag --%s`
 
 	errFailedToValidateEndpoint = `
 	Unable to validate ETCD endpoint %s 
@@ -55,18 +52,13 @@ const (
 
 	kubectl storageos is unable to perform ETCD endpoint validation.
 
-	To skip ETCD endpoints validation during installation, set install flag --%s
-	
-`
+	To skip ETCD endpoints validation during installation, set install flag --%s`
 
-	endpointsValidatedMessage = `
-	ETCD endpoint(s) %s successfully validated.
+	endpointsValidatedMessage = `ETCD endpoint(s) %s successfully validated.`
 
-`
 	etcdShellPodDeletionFailMessage = `
 	Failed to cleanup etcd shell pod with error %v, 
-	please delete pod manually after installaion is complete.
-`
+	please delete pod manually after installaion is complete.`
 
 	etcdShellPod = `apiVersion: v1
 kind: Pod
@@ -96,7 +88,7 @@ spec:
       # pod completes and is not restarted after 3m, this is in case
       # the plugin crashes and is unable to delete this pod after health check
       command: [ "sleep" ]
-      args: [ "infinity" ]
+      args: [ "3m" ]
       volumeMounts:
       - mountPath: /run/storageos/pki
         name: etcd-certs
@@ -162,7 +154,7 @@ func (in *Installer) validateEtcd(configSpec apiv1.KubectlStorageOSConfigSpec) e
 	defer func() {
 		if err = in.kubectlClient.Delete(context.TODO(), "", string(etcdShell), true); err != nil {
 			// do nothing, etcd shell pod runs to completion even in unlikely event that delete fails
-			logger.Printf(etcdShellPodDeletionFailMessage, err)
+			in.log.Warnf(etcdShellPodDeletionFailMessage, err)
 		}
 	}()
 
@@ -267,7 +259,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 			return errors.WithStack(fmt.Errorf(stderr))
 		}
 	}
-	logger.Printf(endpointsValidatedMessage, strings.Join(endpoints, ","))
+	in.log.Successf(endpointsValidatedMessage, strings.Join(endpoints, ","))
 
 	return nil
 }
