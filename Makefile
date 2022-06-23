@@ -10,7 +10,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-KUBECTL_STOS_VERSION ?= v1.2.0
+KUBECTL_STOS_VERSION ?= v1.2.1
 
 # Generate kuttl e2e tests for the following storageos/kind-node versions
 # TEST_KIND_NODES is not intended to be updated manually.
