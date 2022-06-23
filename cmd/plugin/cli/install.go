@@ -84,6 +84,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
+	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -120,9 +121,15 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}
 	}
 
+	if config.Spec.Install.EnableMetrics {
+		if err := versionSupportsFeature(config.Spec.Install.StorageOSVersion, consts.MetricsExporterFirstSupportedVersion); err != nil {
+			return fmt.Errorf("failed to enable metrics exporter: %w", err)
+		}
+	}
+
 	if config.Spec.Install.EnablePortalManager {
-		if err := versionSupportsPortal(config.Spec.Install.StorageOSVersion); err != nil {
-			return err
+		if err := versionSupportsFeature(config.Spec.Install.StorageOSVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
+			return fmt.Errorf("failed to install portal manager: %w", err)
 		}
 		if err := installer.FlagsAreSet(map[string]string{
 			installer.PortalClientIDFlag: config.Spec.Install.PortalClientID,
@@ -220,6 +227,10 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.EnableMetrics, err = cmd.Flags().GetBool(installer.EnableMetricsFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
@@ -265,6 +276,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.DryRun = viper.GetBool(installer.DryRunConfig)
+	config.Spec.Install.EnableMetrics = viper.GetBool(installer.EnableMetricsConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.EtcdOperatorVersion = viper.GetString(installer.EtcdOperatorVersionConfig)
 	config.Spec.Install.KubernetesVersion = viper.GetString(installer.K8sVersionConfig)

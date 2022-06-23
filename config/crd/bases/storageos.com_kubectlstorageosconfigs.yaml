@@ -59,6 +59,8 @@ spec:
                     type: string
                   dryRun:
                     type: boolean
+                  enableMetrics:
+                    type: boolean
                   enablePortalManager:
                     type: boolean
                   etcdCPULimit:

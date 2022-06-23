@@ -374,6 +374,10 @@ func (in *Installer) installStorageOSCluster() error {
 		return err
 	}
 
+	if err := in.enableMetrics(in.stosConfig.Spec.Install.EnableMetrics); err != nil {
+		return err
+	}
+
 	if in.stosConfig.Spec.Install.EtcdTLSEnabled {
 		tlsEtcdSecretRefNamePatch := pluginutils.KustomizePatch{
 			Op:    "replace",
@@ -548,4 +552,24 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 	}, 120, 5)
 
 	return err
+}
+
+// enableMetrics sets the boolean for metrics in the in-memory storageos cluster
+func (in *Installer) enableMetrics(enable bool) error {
+	stosClusterYaml, err := in.fileSys.ReadFile(filepath.Join(stosDir, clusterDir, stosClusterFile))
+	if err != nil {
+		return err
+	}
+
+	cluster, secrets, err := pluginutils.OmitAndReturnKindFromMultiDoc(string(stosClusterYaml), "Secret")
+	if err != nil {
+		return err
+	}
+
+	cluster, err = pluginutils.SetFieldInManifest(cluster, strconv.FormatBool(enable), "enabled", "spec", "metrics")
+	if err != nil {
+		return err
+	}
+
+	return in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(makeMultiDoc(append(secrets, cluster)...)))
 }

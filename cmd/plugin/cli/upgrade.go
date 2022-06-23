@@ -101,6 +101,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
+	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -113,10 +114,17 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	}
 
 	if installConfig.Spec.Install.EnablePortalManager {
-		if err := versionSupportsPortal(installConfig.Spec.Install.StorageOSVersion); err != nil {
-			return err
+		if err := versionSupportsFeature(installConfig.Spec.Install.StorageOSVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
+			return fmt.Errorf("failed to enable portal manager: %w", err)
 		}
 	}
+
+	if installConfig.Spec.Install.EnableMetrics {
+		if err := versionSupportsFeature(installConfig.Spec.Install.StorageOSVersion, consts.MetricsExporterFirstSupportedVersion); err != nil {
+			return fmt.Errorf("failed to enable metrics exporter: %w", err)
+		}
+	}
+
 	version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
 
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
@@ -196,6 +204,10 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.EnableMetrics, err = cmd.Flags().GetBool(installer.EnableMetricsFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installStosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installStosClusterYamlFlag).Value.String()
@@ -221,6 +233,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
+	config.Spec.Install.EnableMetrics = viper.GetBool(installer.EnableMetricsConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.InstallStosOperatorYamlConfig)

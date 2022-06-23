@@ -65,6 +65,7 @@ const (
 	EtcdCPULimitFlag                = "etcd-cpu-limit"
 	EtcdMemoryLimitFlag             = "etcd-memory-limit"
 	EtcdReplicasFlag                = "etcd-replicas"
+	EnableMetricsFlag               = "enable-metrics"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -117,6 +118,7 @@ const (
 	EtcdCPULimitConfig                        = "spec.install.etcdCPULimit"
 	EtcdMemoryLimitConfig                     = "spec.install.etcdMemoryLimit"
 	EtcdReplicasConfig                        = "spec.install.etcdReplicas"
+	EnableMetricsConfig                       = "spec.install.enableMetrics"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
