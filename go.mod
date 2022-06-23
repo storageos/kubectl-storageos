@@ -14,13 +14,13 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/ondat/operator-toolkit v0.0.0-20220321135237-66ebd559df4e
+	github.com/ondat/operator-toolkit v0.0.0-20220329091754-84ef19f3309b
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851
 	github.com/replicatedhq/troubleshoot v0.13.5
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
-	github.com/storageos/operator v0.0.0-20220126155253-f456a9d8b204
+	github.com/storageos/operator v0.0.0-20220620091939-c98630624350
 	github.com/tj/go-spin v1.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
