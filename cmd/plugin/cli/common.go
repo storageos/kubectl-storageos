@@ -129,7 +129,7 @@ func versionSupportsFeature(existingOperatorVersion, featureFirstSupportedVersio
 		return err
 	}
 	if !supported {
-		return fmt.Errorf("feature is not supported in StorageOS %s, requires minimum version %s. ", existingOperatorVersion, featureFirstSupportedVersion)
+		return fmt.Errorf("feature is not supported in StorageOS %s, requires minimum version %s", existingOperatorVersion, featureFirstSupportedVersion)
 	}
 
 	return nil
