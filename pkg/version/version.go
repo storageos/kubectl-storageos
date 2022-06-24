@@ -328,12 +328,12 @@ func IsSupported(haveVersion, wantVersion string) (bool, error) {
 
 	supportedVersion, err := semver.Parse(wantVersion)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	currentVersion, err := semver.Parse(haveVersion)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	return currentVersion.Compare(supportedVersion) >= 0, nil

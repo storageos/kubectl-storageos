@@ -7,7 +7,6 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
@@ -120,16 +119,17 @@ func valueOrDefault(value string, def string) string {
 	return def
 }
 
-func versionSupportsPortal(existingOperatorVersion string) error {
-	// TODO: remove develop check after 2.6 release
-	if !version.IsDevelop(existingOperatorVersion) {
-		supported, err := version.IsSupported(existingOperatorVersion, consts.PortalManagerFirstSupportedVersion)
-		if err != nil {
-			return err
-		}
-		if !supported {
-			return fmt.Errorf("Portal Manager is not supported in StorageOS %s", existingOperatorVersion)
-		}
+func versionSupportsFeature(existingOperatorVersion, featureFirstSupportedVersion string) error {
+	if version.IsDevelop(existingOperatorVersion) {
+		return nil
+	}
+
+	supported, err := version.IsSupported(existingOperatorVersion, featureFirstSupportedVersion)
+	if err != nil {
+		return err
+	}
+	if !supported {
+		return fmt.Errorf("feature is not supported in StorageOS %s, requires minimum version %s", existingOperatorVersion, featureFirstSupportedVersion)
 	}
 
 	return nil
