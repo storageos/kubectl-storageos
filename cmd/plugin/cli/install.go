@@ -140,8 +140,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 			return err
 		}
 		// TODO: Do we need to add a --portal-manager-version flag?
-		// for now, there is no released version so default to 'develop'
-		version.SetPortalManagerLatestSupportedVersion("develop")
+		version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
 	}
 
 	var err error
