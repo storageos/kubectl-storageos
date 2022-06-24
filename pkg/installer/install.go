@@ -150,11 +150,6 @@ func (in *Installer) installEtcd() error {
 	}
 
 	if in.stosConfig.Spec.Install.EtcdTopologyKey != "" {
-		requiredTopologyKeyPatch := pluginutils.KustomizePatch{
-			Op:    "replace",
-			Path:  "/spec/podTemplate/affinity/podAntiAffinity/requiredDuringSchedulingIgnoredDuringExecution/0/topologyKey",
-			Value: in.stosConfig.Spec.Install.EtcdTopologyKey,
-		}
 		preferredTopologyKeyPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/spec/podTemplate/affinity/podAntiAffinity/preferredDuringSchedulingIgnoredDuringExecution/0/podAffinityTerm/topologyKey",
@@ -166,7 +161,7 @@ func (in *Installer) installEtcd() error {
 			Value: "100",
 		}
 
-		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{requiredTopologyKeyPatch, preferredTopologyKeyPatch, preferredWeightPatch}); err != nil {
+		if err = in.addPatchesToFSKustomize(filepath.Join(etcdDir, clusterDir, kustomizationFile), etcdClusterKind, fsEtcdClusterName, []pluginutils.KustomizePatch{preferredTopologyKeyPatch, preferredWeightPatch}); err != nil {
 			return err
 		}
 	}

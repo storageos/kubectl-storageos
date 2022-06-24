@@ -72,7 +72,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.EtcdStorageClassFlag, "", "name of storage class to be used by etcd cluster")
 	cmd.Flags().String(installer.EtcdDockerRepositoryFlag, "", "the docker repository to use for the etcd docker image")
 	cmd.Flags().String(installer.EtcdVersionTag, "", "the docker tag for the version of etcd to use - must be in the format 1.2.3")
-	cmd.Flags().String(installer.EtcdTopologyKeyFlag, "kubernetes.io/hostname", "the topology key to use for anti-affinity for the etcd pods")
+	cmd.Flags().String(installer.EtcdTopologyKeyFlag, "", "the topology key to use for anti-affinity for the etcd pods")
 	cmd.Flags().String(installer.EtcdCPULimitFlag, "", "cpu resource limit for the etcd pods")
 	cmd.Flags().String(installer.EtcdMemoryLimitFlag, "", "memory resource limit for the etcd pods")
 	cmd.Flags().String(installer.EtcdReplicasFlag, "", "desired number of etcd pod replicas")
