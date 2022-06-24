@@ -24,7 +24,7 @@ spec:
               operator: In
               values:
               - storageos-etcd
-          topologyKey: topology.kubernetes.io/zone
+          topologyKey: kubernetes.io/hostname
     etcdEnv:
     - name: ETCD_HEARTBEAT_INTERVAL
       value: "500"
