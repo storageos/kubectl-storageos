@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	operatorReleasesUrl     = "https://api.github.com/repos/storageos/operator/releases"
-	etcdOperatorReleasesUrl = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
-	// TODO: No release exists for portal-manager yet
-	// portalManagerReleasesUrl   = "https://api.github.com/repos/storageos/portal-manager/releases"
+	operatorReleasesUrl      = "https://api.github.com/repos/storageos/operator/releases"
+	etcdOperatorReleasesUrl  = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
+	portalManagerReleasesUrl = "https://api.github.com/repos/storageos/portal-manager/releases"
 )
 
 var (
@@ -22,10 +21,9 @@ var (
 	etcdOperatorLatestVersion  string
 	portalManagerLatestVersion string
 
-	fetchOperatorVersionOnce     = sync.Once{}
-	fetchEtcdOperatorVersionOnce = sync.Once{}
-	// TODO: No release exists for portal-manager yet
-	// fetchPortalManagerVersionOnce   = sync.Once{}
+	fetchOperatorVersionOnce      = sync.Once{}
+	fetchEtcdOperatorVersionOnce  = sync.Once{}
+	fetchPortalManagerVersionOnce = sync.Once{}
 )
 
 type GithubRelease struct {
@@ -93,18 +91,14 @@ func EtcdOperatorLatestSupportedVersion() string {
 }
 
 func PortalManagerLatestSupportedVersion() string {
-	// TODO: No release exists for portal-manager yet
-	/*
-		fetchPortalManagerVersionOnce.Do(func() {
-			if portalManagerLatestVersion != "" {
-				return
-			}
-			releases := fetchVersionsOrPanic(portalManagerReleasesUrl)
-			portalManagerLatestVersion = selectLatestVersionOrPanic(releases)
-		})
+	fetchPortalManagerVersionOnce.Do(func() {
+		if portalManagerLatestVersion != "" {
+			return
+		}
+		releases := fetchVersionsOrPanic(portalManagerReleasesUrl)
+		portalManagerLatestVersion = selectLatestVersionOrPanic(releases)
+	})
 
-		return portalManagerLatestVersion
-	*/
 	return portalManagerLatestVersion
 }
 
