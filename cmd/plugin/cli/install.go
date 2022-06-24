@@ -157,7 +157,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 		}); err != nil {
 			return err
 		}
-		version.SetPortalManagerLatestSupportedVersion(config.Spec.Install.PortalManagerVersion)
+		version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
 	}
 
 	var err error
