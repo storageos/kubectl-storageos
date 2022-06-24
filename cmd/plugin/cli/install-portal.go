@@ -87,7 +87,7 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 		return err
 	}
 
-	version.SetPortalManagerLatestSupportedVersion(config.Spec.Install.PortalManagerVersion)
+	version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)

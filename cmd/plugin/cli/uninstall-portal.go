@@ -73,6 +73,8 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 		return err
 	}
 
+	version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
+
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
 		if err != nil {
