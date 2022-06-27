@@ -1,4 +1,4 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl storageos install --etcd-namespace=etcd-install-full --stos-cluster-namespace=stos-cluster-install-full  --stos-operator-namespace=stos-operator-install-full --include-etcd --include-local-path-storage-class --etcd-topology-key topology.kubernetes.io/zone --etcd-cpu-limit 100m --etcd-memory-limit 100Mi --etcd-replicas 4 --etcd-operator-version develop
+  - command: kubectl storageos install --etcd-namespace=etcd-install-full --stos-cluster-namespace=stos-cluster-install-full  --stos-operator-namespace=stos-operator-install-full --include-etcd --include-local-path-storage-class --etcd-storage-class=local-path --etcd-topology-key topology.kubernetes.io/zone --etcd-cpu-limit 100m --etcd-memory-limit 100Mi --etcd-replicas 4 --etcd-operator-version develop
