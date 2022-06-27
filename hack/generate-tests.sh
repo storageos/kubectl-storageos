@@ -28,9 +28,17 @@ do
 	cat <<EOF > "${file}"
 ${HEADER}
 kind: Cluster
-apiVersion: kind.sigs.k8s.io/v1alpha3
+apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+  image: storageos/kind-node:v${kind_node}
+- role: worker
+  image: storageos/kind-node:v${kind_node}
+- role: worker
+  image: storageos/kind-node:v${kind_node}
+- role: worker
+  image: storageos/kind-node:v${kind_node}
+- role: worker
   image: storageos/kind-node:v${kind_node}
 EOF
 	# write kuttl config file for version (upgrade)

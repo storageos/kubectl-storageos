@@ -5,10 +5,10 @@ nodes:
 - role: control-plane
   image: storageos/kind-node:v1.22.3
 - role: worker
-  image: storageos/kind-node:v1.23.0
+  image: storageos/kind-node:v1.22.3
 - role: worker
-  image: storageos/kind-node:v1.23.0
+  image: storageos/kind-node:v1.22.3
 - role: worker
-  image: storageos/kind-node:v1.23.0
+  image: storageos/kind-node:v1.22.3
 - role: worker
-  image: storageos/kind-node:v1.23.0
+  image: storageos/kind-node:v1.22.3
