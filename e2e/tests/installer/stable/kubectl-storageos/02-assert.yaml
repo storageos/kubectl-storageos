@@ -67,14 +67,14 @@ spec:
                 - storageos-etcd
             topologyKey: topology.kubernetes.io/zone
           weight: 100
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: etcd.improbable.io/cluster-name
-            operator: In
-            values:
-            - storageos-etcd
-        topologyKey: kubernetes.io/hostname
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: etcd.improbable.io/cluster-name
+              operator: In
+              values:
+              - storageos-etcd
+          topologyKey: kubernetes.io/hostname
 status:
   replicas: 1
 ---
