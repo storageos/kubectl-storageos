@@ -285,6 +285,10 @@ func (in *Installer) installStorageOS() error {
 		return err
 	}
 
+	if in.stosConfig.Spec.Install.MarkTestCluster {
+		fmt.Println("Mark test cluster")
+	}
+
 	if in.installerOptions.resourceQuota {
 		fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
 		if err != nil {
