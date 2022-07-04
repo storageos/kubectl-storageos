@@ -121,7 +121,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 		}
 	}
 
-	if config.Spec.Install.EnableMetrics {
+	if config.Spec.Install.EnableMetrics != nil && *config.Spec.Install.EnableMetrics {
 		if err := versionSupportsFeature(config.Spec.Install.StorageOSVersion, consts.MetricsExporterFirstSupportedVersion); err != nil {
 			return fmt.Errorf("failed to enable metrics exporter: %w", err)
 		}
@@ -227,7 +227,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.EnableMetrics, err = cmd.Flags().GetBool(installer.EnableMetricsFlag)
+		config.Spec.Install.EnableMetrics, err = GetBoolIfFlagSet(cmd.Flags(), installer.EnableMetricsFlag)
 		if err != nil {
 			return err
 		}
@@ -276,7 +276,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.DryRun = viper.GetBool(installer.DryRunConfig)
-	config.Spec.Install.EnableMetrics = viper.GetBool(installer.EnableMetricsConfig)
+	config.Spec.Install.EnableMetrics = GetBoolIfConfigSet(installer.EnableMetricsConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
 	config.Spec.Install.EtcdOperatorVersion = viper.GetString(installer.EtcdOperatorVersionConfig)
 	config.Spec.Install.KubernetesVersion = viper.GetString(installer.K8sVersionConfig)

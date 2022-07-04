@@ -97,7 +97,7 @@ type Install struct {
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
 	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
-	EnableMetrics                   bool   `json:"enableMetrics,omitempty"`
+	EnableMetrics                   *bool  `json:"enableMetrics,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand

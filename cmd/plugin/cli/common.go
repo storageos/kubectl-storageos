@@ -7,6 +7,8 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
@@ -139,6 +141,25 @@ func validateResourceLimit(resourceLimit string) error {
 	_, err := resource.ParseQuantity(resourceLimit)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func GetBoolIfFlagSet(fs *pflag.FlagSet, flagName string) (*bool, error) {
+	if fs.Changed(flagName) {
+		enabled, err := fs.GetBool(flagName)
+		if err != nil {
+			return nil, err
+		}
+		return &enabled, nil
+	}
+	return nil, nil
+}
+
+func GetBoolIfConfigSet(key string) *bool {
+	if viper.IsSet(key) {
+		enabled := viper.GetBool(key)
+		return &enabled
 	}
 	return nil
 }

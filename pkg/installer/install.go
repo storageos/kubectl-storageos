@@ -550,7 +550,11 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 }
 
 // enableMetrics sets the boolean for metrics in the in-memory storageos cluster
-func (in *Installer) enableMetrics(enable bool) error {
+func (in *Installer) enableMetrics(enable *bool) error {
+	if enable == nil {
+		// don't override the configfile / defaults
+		return nil
+	}
 	stosClusterYaml, err := in.fileSys.ReadFile(filepath.Join(stosDir, clusterDir, stosClusterFile))
 	if err != nil {
 		return err
@@ -561,7 +565,7 @@ func (in *Installer) enableMetrics(enable bool) error {
 		return err
 	}
 
-	cluster, err = pluginutils.SetFieldInManifest(cluster, strconv.FormatBool(enable), "enabled", "spec", "metrics")
+	cluster, err = pluginutils.SetFieldInManifest(cluster, strconv.FormatBool(*enable), "enabled", "spec", "metrics")
 	if err != nil {
 		return err
 	}
