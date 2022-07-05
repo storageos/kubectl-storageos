@@ -66,7 +66,7 @@ const (
 	EtcdMemoryLimitFlag             = "etcd-memory-limit"
 	EtcdReplicasFlag                = "etcd-replicas"
 	EnableMetricsFlag               = "enable-metrics"
-	HiddenTestCluster               = "test-cluster"
+	TestClusterFlag                 = "test-cluster"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -120,7 +120,7 @@ const (
 	EtcdMemoryLimitConfig                     = "spec.install.etcdMemoryLimit"
 	EtcdReplicasConfig                        = "spec.install.etcdReplicas"
 	EnableMetricsConfig                       = "spec.install.enableMetrics"
-	MarkTestCluster                           = "spec.install.markTestCluster"
+	TestClusterConfig                         = "spec.install.enableTestClusterTaint"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"

@@ -285,10 +285,6 @@ func (in *Installer) installStorageOS() error {
 		return err
 	}
 
-	if in.stosConfig.Spec.Install.MarkTestCluster {
-		fmt.Println("Mark test cluster")
-	}
-
 	if in.installerOptions.resourceQuota {
 		fsResourceQuotaName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, resourceQuotaDir, resourceQuotaFile), resourceQuotaKind, "metadata", "name")
 		if err != nil {
@@ -371,6 +367,18 @@ func (in *Installer) installStorageOSCluster() error {
 	fsStosClusterName, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "metadata", "name")
 	if err != nil {
 		return err
+	}
+
+	if in.stosConfig.Spec.Install.MarkTestCluster {
+		testClusterPatch := pluginutils.KustomizePatch{
+			Op:    "add", // strategic
+			Path:  "/metadata/annotations/ondatTestCluster",
+			Value: "true",
+		}
+
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{testClusterPatch}); err != nil {
+			return err
+		}
 	}
 
 	if err := in.enableMetrics(in.stosConfig.Spec.Install.EnableMetrics); err != nil {

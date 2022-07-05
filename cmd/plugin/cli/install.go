@@ -85,16 +85,14 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
-	cmd.Flags().Bool(installer.HiddenTestCluster, false, "mark the cluster being created as a test cluster")
-	cmd.Flags().MarkHidden(installer.HiddenTestCluster)
+	cmd.Flags().Bool(installer.TestClusterFlag, false, "mark the cluster being created as a test cluster")
+	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
 	viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
 
-// TODO: do we need to check since when the operator supports the "isTestClusterFlag"? I assume yes, this will be fun.
-// Need to investigate how the operator works.
 func installCmd(config *apiv1.KubectlStorageOSConfig) error {
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
@@ -235,7 +233,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.MarkTestCluster, err = cmd.Flags().GetBool(installer.HiddenTestCluster)
+		config.Spec.Install.MarkTestCluster, err = cmd.Flags().GetBool(installer.TestClusterFlag)
 		if err != nil {
 			return err
 		}
@@ -319,7 +317,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdMemoryLimit = viper.GetString(installer.EtcdMemoryLimitConfig)
 	config.Spec.Install.EtcdReplicas = viper.GetString(installer.EtcdReplicasConfig)
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
-	config.Spec.Install.MarkTestCluster = viper.GetBool(installer.MarkTestCluster)
+	config.Spec.Install.MarkTestCluster = viper.GetBool(installer.TestClusterConfig)
 
 	return nil
 }

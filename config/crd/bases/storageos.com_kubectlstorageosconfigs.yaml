@@ -95,8 +95,6 @@ spec:
                     type: string
                   localPathProvisionerYaml:
                     type: string
-                  markTestCluster:
-                    type: boolean
                   portalAPIURL:
                     type: string
                   portalClientID:
