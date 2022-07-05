@@ -6,6 +6,8 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/util/retry"
+
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
@@ -63,12 +65,14 @@ func disablePortalCmd(config *apiv1.KubectlStorageOSConfig) error {
 		return err
 	}
 
-	cliInstaller, err := installer.NewPortalManagerInstaller(config, false)
-	if err != nil {
-		return err
-	}
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cliInstaller, err := installer.NewPortalManagerInstaller(config, false)
+		if err != nil {
+			return err
+		}
 
-	return cliInstaller.EnablePortalManager(false)
+		return cliInstaller.EnablePortalManager(false)
+	})
 }
 
 func setDisablePortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
