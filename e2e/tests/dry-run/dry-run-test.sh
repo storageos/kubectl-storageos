@@ -76,4 +76,11 @@ kubectl storageos install "${kargs[@]}" --k8s-version=v1.22.0 --etcd-endpoints=s
 grep --no-filename -A 1 '  metrics:$' "$TMPDIR"/storageos-dry-run/*storageos-cluster.yaml | tail -n 1 | diff <(printf '    enabled: false\n') -
 rm -rf storageos-dry-run
 
+
+# check if the --test-cluster parameter sets the annotation correctly
+kubectl storageos install "${kargs[@]}" --k8s-version=v1.22.0 --etcd-endpoints=storageos.etcd:2379 --test-cluster
+# find the metadata section(s), then select the metadata/annotations one.
+grep --no-filename -A 2 'metadata:$' "$TMPDIR"/storageos-dry-run/*storageos-cluster.yaml |  grep -B 1 -A 1 --no-filename 'annotations:$' | tail -n 1 | diff <(printf '    ondatTestCluster: \"true\"\n') -
+rm -rf storageos-dry-run
+
 echo "Dry run test completed succesfully!"
