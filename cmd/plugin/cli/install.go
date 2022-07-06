@@ -85,6 +85,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
+	cmd.Flags().Bool(installer.TestClusterFlag, false, "mark the cluster being created as a test cluster")
+	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -231,6 +233,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.MarkTestCluster, err = cmd.Flags().GetBool(installer.TestClusterFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
@@ -310,6 +317,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdMemoryLimit = viper.GetString(installer.EtcdMemoryLimitConfig)
 	config.Spec.Install.EtcdReplicas = viper.GetString(installer.EtcdReplicasConfig)
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
+	config.Spec.Install.MarkTestCluster = viper.GetBool(installer.TestClusterConfig)
 
 	return nil
 }

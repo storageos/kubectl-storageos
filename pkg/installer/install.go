@@ -369,6 +369,18 @@ func (in *Installer) installStorageOSCluster() error {
 		return err
 	}
 
+	if in.stosConfig.Spec.Install.MarkTestCluster {
+		testClusterPatch := pluginutils.KustomizePatch{
+			Op:    "add", // strategic
+			Path:  "/metadata/annotations/ondatTestCluster",
+			Value: "true",
+		}
+
+		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{testClusterPatch}); err != nil {
+			return err
+		}
+	}
+
 	if err := in.enableMetrics(in.stosConfig.Spec.Install.EnableMetrics); err != nil {
 		return err
 	}

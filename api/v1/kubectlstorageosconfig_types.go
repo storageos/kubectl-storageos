@@ -98,6 +98,7 @@ type Install struct {
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
 	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 	EnableMetrics                   *bool  `json:"enableMetrics,omitempty"`
+	MarkTestCluster                 bool   `json:"markTestCluster,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
