@@ -105,7 +105,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-getter v1.3.1-0.20190627223108-da0323b9545e // indirect
+	github.com/hashicorp/go-getter v1.6.1 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
@@ -180,7 +180,7 @@ require (
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
@@ -210,7 +210,7 @@ replace (
 	github.com/improbable-eng/etcd-cluster-operator => github.com/storageos/etcd-cluster-operator v0.3.0
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc95
-	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20210927120021-b81ef00486cf
+	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20220712083915-79d30ba04eaf
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.1

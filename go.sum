@@ -699,6 +699,8 @@ github.com/hashicorp/go-cleanhttp v0.5.2 h1:035FKYIWjmULyFRBKPs8TBQoi0x6d9G4xc9n
 github.com/hashicorp/go-cleanhttp v0.5.2/go.mod h1:kO/YDlP8L1346E6Sodw+PrpBSV4/SoxCXGY6BqNFT48=
 github.com/hashicorp/go-getter v1.3.1-0.20190627223108-da0323b9545e h1:6krcdHPiS+aIP9XKzJzSahfjD7jG7Z+4+opm0z39V1M=
 github.com/hashicorp/go-getter v1.3.1-0.20190627223108-da0323b9545e/go.mod h1:/O1k/AizTN0QmfEKknCYGvICeyKUDqCYA8vvWtGWDeQ=
+github.com/hashicorp/go-getter v1.6.1 h1:NASsgP4q6tL94WH6nJxKWj8As2H/2kop/bB1d8JMyRY=
+github.com/hashicorp/go-getter v1.6.1/go.mod h1:IZCrswsZPeWv9IkVnLElzRU/gz/QPi6pZHn4tv6vbwA=
 github.com/hashicorp/go-hclog v0.12.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-hclog v1.0.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-immutable-radix v1.0.0/go.mod h1:0y9vanUI8NX6FsYoO3zeMjhV/C5i9g4Q3DwcSNZ4P60=
@@ -795,6 +797,7 @@ github.com/kisielk/gotool v0.0.0-20161130080628-0de1eaf82fa3/go.mod h1:jxZFDH7IL
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.4.0/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
 github.com/klauspost/compress v1.4.1/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
+github.com/klauspost/compress v1.11.2/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/klauspost/compress v1.11.5/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/klauspost/compress v1.11.7/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQxcgc=
@@ -1225,6 +1228,8 @@ github.com/storageos/operator v0.0.0-20220620091939-c98630624350 h1:uclVTYQEVH49
 github.com/storageos/operator v0.0.0-20220620091939-c98630624350/go.mod h1:oSB2cRdjHklzd/sgQb4V/KK/xXAfTriDC95+8SLsOpc=
 github.com/storageos/troubleshoot v0.9.48-0.20210927120021-b81ef00486cf h1:RnA8cMu/5UMKXGlHKXrSKBWSLhN3ZkpYoOK9M29Bzt0=
 github.com/storageos/troubleshoot v0.9.48-0.20210927120021-b81ef00486cf/go.mod h1:ZUcCPh18HiR8mXf65jRkZDpbLT5GCJO3oshjVPi8MSM=
+github.com/storageos/troubleshoot v0.9.48-0.20220712083915-79d30ba04eaf h1:DD/14hUNf3A8bDzeWyL8ywjcWKH2wDVlVmdiuJ16pOU=
+github.com/storageos/troubleshoot v0.9.48-0.20220712083915-79d30ba04eaf/go.mod h1:K4zxOs63RKmqvl4lCJW5L3NHJh4BO4avAqlFIoSn800=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=
@@ -1654,6 +1659,8 @@ golang.org/x/sys v0.0.0-20211124211545-fe61309f8881/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20211205182925-97ca703d548d/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e h1:fLOSk5Q00efkSvAm+4xcoXD+RRmLmmulPn5I3Y9F2EM=
 golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e h1:w36l2Uw3dRan1K3TyXriXvY+6T56GNmlKGcqiQUJDfM=
+golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d h1:SZxvLBoTP5yHO3Frd4z4vrF+DBX9vMVanchswa69toE=
