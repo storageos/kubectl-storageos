@@ -32,10 +32,14 @@ jobs:
         run: |
           make _build
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Run kind
+      - name: Create kind cluster
         run: kind create cluster --image=storageos/kind-node:v1.24.2
       - name: Run kuttl installer 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.24.yaml
+      - name: Delete kind cluster
+        run: kind delete cluster
+      - name: Create fresh kind cluster
+        run: kind create cluster --image=storageos/kind-node:v1.24.2
       - name: Run kuttl upgrade 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.24.yaml
 
