@@ -51,6 +51,7 @@ func UninstallCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
+	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
 	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during uninstall")
 	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster uninstallation")
@@ -74,6 +75,7 @@ func UninstallCmd() *cobra.Command {
 }
 
 func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
+	log.Verbose = config.Spec.Verbose
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !config.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
@@ -129,6 +131,10 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.SkipNamespaceDeletion, err = cmd.Flags().GetBool(installer.SkipNamespaceDeletionFlag)
 		if err != nil {
 			return err
@@ -165,6 +171,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)

@@ -11,15 +11,17 @@ import (
 
 // Logger is the cli's logger.Logger implementation
 type Logger struct {
-	writer        io.Writer
+	Writer        io.Writer
 	writerMu      sync.Mutex
 	smartTerminal bool
+	Verbose       bool
 }
 
 func NewLogger() *Logger {
 	return &Logger{
-		writer:        os.Stdout,
+		Writer:        os.Stdout,
 		smartTerminal: IsSmartTerminal(os.Stdout),
+		Verbose:       false,
 	}
 }
 
@@ -28,11 +30,15 @@ func (l *Logger) Prompt(message string) {
 }
 
 func (l *Logger) Info(message string) {
-	l.println(message)
+	if l.Verbose {
+		l.println(message)
+	}
 }
 
 func (l *Logger) Infof(message string, args ...interface{}) {
-	l.println(message, args...)
+	if l.Verbose {
+		l.println(message, args...)
+	}
 }
 
 func (l *Logger) Warn(message string) {
@@ -62,7 +68,7 @@ func (l *Logger) Successf(message string, args ...interface{}) {
 func (l *Logger) println(message string, args ...interface{}) {
 	l.writerMu.Lock()
 	defer l.writerMu.Unlock()
-	fmt.Fprintln(l.writer, fmt.Sprintf(message, args...))
+	fmt.Fprintln(l.Writer, fmt.Sprintf(message, args...))
 }
 
 func (l *Logger) formatPrompt(message string) string {

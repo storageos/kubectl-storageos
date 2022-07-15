@@ -51,6 +51,7 @@ func InstallCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
+	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storageos cluster to enter running phase")
 	cmd.Flags().Bool(installer.DryRunFlag, false, "no installation performed, installation manifests stored locally at \"./storageos-dry-run\"")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
@@ -99,6 +100,7 @@ func InstallCmd() *cobra.Command {
 }
 
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+	log.Verbose = config.Spec.Verbose
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
@@ -208,6 +210,10 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 		if err != nil {
 			return err
 		}
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.IncludeEtcd, err = cmd.Flags().GetBool(installer.IncludeEtcdFlag)
 		if err != nil {
 			return err
@@ -285,6 +291,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)

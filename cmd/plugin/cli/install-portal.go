@@ -52,6 +52,7 @@ func InstallPortalCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
+	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-configmap.yaml path or url")
 	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-client-secret.yaml path or url")
@@ -67,6 +68,7 @@ func InstallPortalCmd() *cobra.Command {
 }
 
 func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+	log.Verbose = config.Spec.Verbose
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -116,6 +118,10 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		if err != nil {
 			return err
 		}
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
@@ -127,6 +133,7 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
 	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)

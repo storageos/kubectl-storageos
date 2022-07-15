@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ondat/operator-toolkit/declarative/applier"
+	"github.com/ondat/operator-toolkit/declarative/deleter"
 	otkkubectl "github.com/ondat/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
@@ -19,6 +21,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/api/filesys"
 )
@@ -26,6 +29,7 @@ import (
 const (
 	// CLI flags
 	StackTraceFlag                  = "stack-trace"
+	VerboseFlag                     = "verbose"
 	SkipNamespaceDeletionFlag       = "skip-namespace-deletion"
 	SkipExistingWorkloadCheckFlag   = "skip-existing-workload-check"
 	StosVersionFlag                 = "stos-version"
@@ -71,6 +75,7 @@ const (
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
+	VerboseConfig                             = "spec.verbose"
 	SkipNamespaceDeletionConfig               = "spec.skipNamespaceDeletion"
 	SkipExistingWorkloadCheckConfig           = "spec.skipExistingWorkloadCheck"
 	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
@@ -317,7 +322,7 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 
 	installer = &Installer{
 		distribution:  distribution,
-		kubectlClient: otkkubectl.New(),
+		kubectlClient: kubectlNew(log),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
 		stosConfig:    config,
@@ -421,7 +426,7 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*
 
 	uninstaller = &Installer{
 		distribution:     distribution,
-		kubectlClient:    otkkubectl.New(),
+		kubectlClient:    kubectlNew(log),
 		clientConfig:     clientConfig,
 		kubeClusterID:    kubesystemNS.GetUID(),
 		stosConfig:       config,
@@ -433,6 +438,28 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*
 	}
 
 	return uninstaller, nil
+}
+
+// kubectlNew returns a new KubectlClient. The client is based on silent direct applier and deleter if verbose
+// flag has not been set.
+func kubectlNew(log *logger.Logger) *otkkubectl.DefaultKubectl {
+	if !log.Verbose {
+		return &otkkubectl.DefaultKubectl{
+			DirectApplier: applier.NewDirectApplier().IOStreams(genericclioptions.NewTestIOStreamsDiscard()),
+			DirectDeleter: deleter.NewDirectDeleter().IOStreams(genericclioptions.NewTestIOStreamsDiscard()),
+		}
+	}
+
+	ioStreams := genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    log.Writer,
+		ErrOut: log.Writer,
+	}
+
+	return &otkkubectl.DefaultKubectl{
+		DirectApplier: applier.NewDirectApplier().IOStreams(ioStreams),
+		DirectDeleter: deleter.NewDirectDeleter().IOStreams(ioStreams),
+	}
 }
 
 // addPatchesToFSKustomize uses AddPatchesToKustomize internally to add a list of patches to a kustomization file

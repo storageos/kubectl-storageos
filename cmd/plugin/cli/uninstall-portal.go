@@ -53,6 +53,7 @@ func UninstallPortalCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
+	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
 
@@ -62,6 +63,7 @@ func UninstallPortalCmd() *cobra.Command {
 }
 
 func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+	log.Verbose = config.Spec.Verbose
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -103,11 +105,16 @@ func setUninstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOS
 		if err != nil {
 			return err
 		}
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		return nil
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
 	return nil
 }
