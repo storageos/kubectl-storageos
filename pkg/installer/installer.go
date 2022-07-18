@@ -6,9 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ondat/operator-toolkit/declarative/applier"
+	"github.com/ondat/operator-toolkit/declarative/deleter"
 	otkkubectl "github.com/ondat/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 	operatorapi "github.com/storageos/operator/api/v1"
@@ -18,6 +21,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/api/filesys"
 )
@@ -25,6 +29,7 @@ import (
 const (
 	// CLI flags
 	StackTraceFlag                  = "stack-trace"
+	VerboseFlag                     = "verbose"
 	SkipNamespaceDeletionFlag       = "skip-namespace-deletion"
 	SkipExistingWorkloadCheckFlag   = "skip-existing-workload-check"
 	StosVersionFlag                 = "stos-version"
@@ -70,6 +75,7 @@ const (
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
+	VerboseConfig                             = "spec.verbose"
 	SkipNamespaceDeletionConfig               = "spec.skipNamespaceDeletion"
 	SkipExistingWorkloadCheckConfig           = "spec.skipExistingWorkloadCheck"
 	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
@@ -200,11 +206,12 @@ type Installer struct {
 	installerOptions  *installerOptions
 	dryRunFileCounter int
 	storageOSCluster  *operatorapi.StorageOSCluster
+	log               *logger.Logger
 }
 
 // NewInstaller returns an Installer used for install command
-func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
-	in, err := newCommonInstaller(config)
+func NewInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
+	in, err := newCommonInstaller(config, log)
 	if err != nil {
 		return in, errors.WithStack(err)
 	}
@@ -232,8 +239,8 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 }
 
 // NewPortalManagerInstaller returns an Installer used for all portal manager commands
-func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool) (*Installer, error) {
-	in, err := newCommonInstaller(config)
+func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool, log *logger.Logger) (*Installer, error) {
+	in, err := newCommonInstaller(config, log)
 	if err != nil {
 		return in, errors.WithStack(err)
 	}
@@ -268,7 +275,7 @@ func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRe
 }
 
 // newCommonInstaller contains logic that is common to NewInstaller and NewPortalManagerInstaller
-func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
 	installer := &Installer{}
 	clientConfig, err := pluginutils.NewClientConfig()
 	if err != nil {
@@ -315,18 +322,19 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 
 	installer = &Installer{
 		distribution:  distribution,
-		kubectlClient: otkkubectl.New(),
+		kubectlClient: kubectlNew(log),
 		clientConfig:  clientConfig,
 		kubeClusterID: kubesystemNS.GetUID(),
 		stosConfig:    config,
 		onDiskFileSys: filesys.MakeFsOnDisk(),
+		log:           log,
 	}
 
 	return installer, nil
 }
 
 // NewDryRunInstaller returns a lightweight Installer object for '--dry-run' enabled commands
-func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
 	installer := &Installer{}
 
 	clientConfig, err := pluginutils.NewClientConfig()
@@ -360,13 +368,14 @@ func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error
 		onDiskFileSys:     filesys.MakeFsOnDisk(),
 		installerOptions:  installerOptions,
 		dryRunFileCounter: 0,
+		log:               log,
 	}
 
 	return installer, nil
 }
 
 // NewUninstaller returns an Installer used for uninstall command
-func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
+func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
 	uninstaller := &Installer{}
 
 	clientConfig, err := pluginutils.NewClientConfig()
@@ -417,7 +426,7 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 
 	uninstaller = &Installer{
 		distribution:     distribution,
-		kubectlClient:    otkkubectl.New(),
+		kubectlClient:    kubectlNew(log),
 		clientConfig:     clientConfig,
 		kubeClusterID:    kubesystemNS.GetUID(),
 		stosConfig:       config,
@@ -425,9 +434,32 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig) (*Installer, error) {
 		onDiskFileSys:    filesys.MakeFsOnDisk(),
 		installerOptions: uninstallerOptions,
 		storageOSCluster: stosCluster,
+		log:              log,
 	}
 
 	return uninstaller, nil
+}
+
+// kubectlNew returns a new KubectlClient. The client is based on silent direct applier and deleter if verbose
+// flag has not been set.
+func kubectlNew(log *logger.Logger) *otkkubectl.DefaultKubectl {
+	if !log.Verbose {
+		return &otkkubectl.DefaultKubectl{
+			DirectApplier: applier.NewDirectApplier().IOStreams(genericclioptions.NewTestIOStreamsDiscard()),
+			DirectDeleter: deleter.NewDirectDeleter().IOStreams(genericclioptions.NewTestIOStreamsDiscard()),
+		}
+	}
+
+	ioStreams := genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    log.Writer,
+		ErrOut: log.Writer,
+	}
+
+	return &otkkubectl.DefaultKubectl{
+		DirectApplier: applier.NewDirectApplier().IOStreams(ioStreams),
+		DirectDeleter: deleter.NewDirectDeleter().IOStreams(ioStreams),
+	}
 }
 
 // addPatchesToFSKustomize uses AddPatchesToKustomize internally to add a list of patches to a kustomization file

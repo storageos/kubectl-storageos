@@ -37,6 +37,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 	"github.com/spf13/viper"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -419,7 +420,7 @@ func canTryInsecure(v *viper.Viper) bool {
 		IsConfirm: true,
 	}
 
-	_, err := pluginutils.AskUser(prompt)
+	_, err := pluginutils.AskUser(prompt, logger.NewLogger())
 
 	return err == nil
 }

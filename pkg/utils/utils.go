@@ -44,7 +44,7 @@ func HasFlagSet(name string) bool {
 }
 
 // AskUser creates an interactive prompt and waits for user input with timeout
-func AskUser(prompt promptui.Prompt) (string, error) {
+func AskUser(prompt promptui.Prompt, log *logger.Logger) (string, error) {
 	ticker := time.NewTicker(promptTimeout)
 	defer ticker.Stop()
 
@@ -54,7 +54,7 @@ func AskUser(prompt promptui.Prompt) (string, error) {
 	go func() {
 		result, err := prompt.Run()
 		if err != nil {
-			logger.Printf("Prompt failed %s\n", err.Error())
+			log.Errorf("Prompt failed %s", err.Error())
 			errorChan <- err
 		}
 

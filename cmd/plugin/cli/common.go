@@ -18,8 +18,9 @@ import (
 // etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
 // func is run on each character as it is entered as per the regexp - it does not refer to actual
 // endpoint validation which is handled later.
-func etcdEndpointsPrompt() (string, error) {
-	logger.Printf("   Please enter ETCD endpoints. If more than one endpoint exists, enter endpoints as a comma-delimited list of machine addresses in the cluster.\n\n   Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379\n\n")
+func etcdEndpointsPrompt(log *logger.Logger) (string, error) {
+	log.Prompt("Please enter ETCD endpoints. If more than one endpoint exists, enter endpoints as a comma-delimited list of machine addresses in the cluster.")
+	log.Prompt("Example: 10.42.15.23:2379,10.42.12.22:2379,10.42.13.16:2379")
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("^[a-z0-9,.:-]+$", input)
 		if !match {
@@ -33,12 +34,14 @@ func etcdEndpointsPrompt() (string, error) {
 		Validate: validate,
 	}
 
-	return pluginutils.AskUser(prompt)
+	return pluginutils.AskUser(prompt, log)
 }
 
 // skipNamespaceDeletionPrompt uses promptui to prompt the user to enter decision of skipping namespace deletion
-func skipNamespaceDeletionPrompt() (bool, error) {
-	logger.Printf("   Please confirm namespace deletion.\n   Warning: protected namespaces (default, kube-system, kube-node-lease, kube-public) cannot be deleted by kubectl-storageos.")
+func skipNamespaceDeletionPrompt(log *logger.Logger) (bool, error) {
+	log.Warn("Protected namespaces (default, kube-system, kube-node-lease, kube-public) cannot be deleted by kubectl-storageos.")
+	log.Prompt("Please confirm namespace deletion.")
+
 	yesValues := map[string]bool{
 		"y":   true,
 		"yes": true,
@@ -65,7 +68,7 @@ func skipNamespaceDeletionPrompt() (bool, error) {
 		Validate: validate,
 	}
 
-	input, err := pluginutils.AskUser(prompt)
+	input, err := pluginutils.AskUser(prompt, log)
 	if err != nil {
 		return false, err
 	}
@@ -77,8 +80,8 @@ func skipNamespaceDeletionPrompt() (bool, error) {
 }
 
 // storageClassPrompt uses promptui the user to enter the etcd storage class name
-func storageClassPrompt() (string, error) {
-	logger.Printf("   Please enter the name of the storage class used by the ETCD cluster\n\n")
+func storageClassPrompt(log *logger.Logger) (string, error) {
+	log.Prompt("Please enter the name of the storage class used by the ETCD cluster.")
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("^[a-z0-9.-]+$", input)
 		if !match {
@@ -92,12 +95,12 @@ func storageClassPrompt() (string, error) {
 		Validate: validate,
 	}
 
-	return pluginutils.AskUser(prompt)
+	return pluginutils.AskUser(prompt, log)
 }
 
 // k8sVersionPrompt uses promptui the user to enter the kubernetes version of the target cluster
-func k8sVersionPrompt() (string, error) {
-	logger.Printf("   Please enter the version of the target Kubernetes cluster\n\n")
+func k8sVersionPrompt(log *logger.Logger) (string, error) {
+	log.Prompt("Please enter the version of the target Kubernetes cluster.")
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("v[0-9]+.[0-9]+.[0-9]+", input)
 		if !match {
@@ -111,7 +114,7 @@ func k8sVersionPrompt() (string, error) {
 		Validate: validate,
 	}
 
-	return pluginutils.AskUser(prompt)
+	return pluginutils.AskUser(prompt, log)
 }
 
 func valueOrDefault(value string, def string) string {

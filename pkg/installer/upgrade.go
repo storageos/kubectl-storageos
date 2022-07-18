@@ -2,18 +2,18 @@ package installer
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const (
-	outputCopyingPortalData  = "Attempting to copy portal manager data from existing storageos-portal-client secret..."
+	outputCopyingPortalData  = "Attempting to copy portal manager data from existing storageos-portal-client secret."
 	errPortalManagerNotFound = `
 	Portal manager data necessary to perform upgrade was not found locally.
 
@@ -26,10 +26,10 @@ const (
 	`
 )
 
-func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string) error {
+func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string, log *logger.Logger) error {
 	// create new installer with in-mem fs of operator and cluster to be installed
 	// use installer to validate etcd-endpoints before going any further
-	installer, err := NewInstaller(installConfig)
+	installer, err := NewInstaller(installConfig, log)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	}
 
 	// create uninstaller with in-mem fs of operator and cluster to be uninstalled
-	uninstaller, err := NewUninstaller(uninstallConfig)
+	uninstaller, err := NewUninstaller(uninstallConfig, log)
 	if err != nil {
 		return err
 	}
@@ -289,8 +289,12 @@ func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorage
 		return nil
 	}
 
-	fmt.Println("Warning: " + err.Error())
-	fmt.Println(outputCopyingPortalData)
+	// log this error as a warning only, as the user may have intentionally
+	// not set portal flags so that existing data is used instead.
+	in.log.Warn(err.Error())
+
+	// warn user that existing portal data will be copied.
+	in.log.Warn(outputCopyingPortalData)
 
 	return in.copyStorageOSPortalClientData(installConfig, string(stosSecrets))
 }

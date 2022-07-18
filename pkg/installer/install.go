@@ -58,7 +58,7 @@ func (in *Installer) Install(upgrade bool) error {
 			}
 
 			once.Do(func() {
-				fmt.Printf("waiting for %s to be ready\n", cluster.Name)
+				in.log.Warnf("Waiting for StorageOS cluster '%s' to enter running phase.", cluster.Name)
 			})
 
 			if cluster.Status.Phase != "Running" {

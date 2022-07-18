@@ -3,18 +3,20 @@ package cli
 import (
 	"fmt"
 
-	"github.com/replicatedhq/troubleshoot/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const (
+	upgrade = "upgrade"
+
 	uninstallStosOperatorNSFlag = installer.UninstallPrefix + installer.StosOperatorNSFlag
 
 	installStosOperatorNSFlag = installer.InstallPrefix + installer.StosOperatorNSFlag
@@ -36,8 +38,9 @@ const (
 func UpgradeCmd() *cobra.Command {
 	var err error
 	var traceError bool
+	pluginLogger := logger.NewLogger()
 	cmd := &cobra.Command{
-		Use:          "upgrade",
+		Use:          upgrade,
 		Args:         cobra.MinimumNArgs(0),
 		Short:        "Ugrade StorageOS",
 		Long:         `Upgrade StorageOS operator and cluster version`,
@@ -46,9 +49,6 @@ func UpgradeCmd() *cobra.Command {
 			defer pluginutils.ConvertPanicToError(func(e error) {
 				err = e
 			})
-
-			v := viper.GetViper()
-			logger.SetQuiet(v.GetBool("quiet"))
 
 			uninstallConfig := &apiv1.KubectlStorageOSConfig{}
 			if err = setUpgradeUninstallValues(cmd, uninstallConfig); err != nil {
@@ -62,13 +62,19 @@ func UpgradeCmd() *cobra.Command {
 
 			traceError = installConfig.Spec.StackTrace
 
-			err = upgradeCmd(uninstallConfig, installConfig, pluginutils.HasFlagSet(installer.SkipNamespaceDeletionFlag))
+			err = upgradeCmd(uninstallConfig, installConfig, pluginutils.HasFlagSet(installer.SkipNamespaceDeletionFlag), pluginLogger)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			return pluginutils.HandleError("upgrade", err, traceError)
+			if err := pluginutils.HandleError(upgrade, err, traceError); err != nil {
+				pluginLogger.Error(fmt.Sprintf("%s%s", upgrade, " has failed"))
+				return err
+			}
+			pluginLogger.Success("StorageOS upgraded successfully.")
+			return nil
 		},
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
+	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().Bool(installer.WaitFlag, false, "wait for storageos cluster to enter running phase")
 	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during upgrade")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator")
@@ -108,7 +114,8 @@ func UpgradeCmd() *cobra.Command {
 	return cmd
 }
 
-func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool) error {
+func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
+	log.Verbose = uninstallConfig.Spec.Verbose
 	if installConfig.Spec.Install.StorageOSVersion == "" {
 		installConfig.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
@@ -130,7 +137,7 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !uninstallConfig.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
-		uninstallConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt()
+		uninstallConfig.Spec.SkipNamespaceDeletion, err = skipNamespaceDeletionPrompt(log)
 		if err != nil {
 			return err
 		}
@@ -146,20 +153,18 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 		return err
 	}
 	if noUpgrade {
-		fmt.Println("Latest version of StorageOS cluster and operator are already installed...")
+		log.Successf("StorageOS cluster and operator %s are already installed. No action required.", existingVersion)
 		return nil
 	}
-	fmt.Printf("Discovered StorageOS cluster and operator version %s...\n", existingVersion)
+	log.Warnf("Discovered StorageOS cluster and operator version %s.", existingVersion)
 
 	err = setVersionSpecificValues(uninstallConfig, existingVersion)
 	if err != nil {
 		return err
 	}
 
-	// Let's start install
-	err = installer.Upgrade(uninstallConfig, installConfig, existingVersion)
-
-	return err
+	log.Commencing(upgrade)
+	return installer.Upgrade(uninstallConfig, installConfig, existingVersion, log)
 }
 
 func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
@@ -177,6 +182,10 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		// Config file not found; set fields in new config object directly
 		config.Spec.IncludeEtcd = false
 		config.Spec.StackTrace, err = cmd.Flags().GetBool(installer.StackTraceFlag)
+		if err != nil {
+			return err
+		}
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
 		if err != nil {
 			return err
 		}
@@ -229,6 +238,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.IncludeEtcd = false
 	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
@@ -270,6 +280,10 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		}
 
 		// Config file not found; set fields in new config object directly
+		config.Spec.Verbose, err = cmd.Flags().GetBool(installer.VerboseFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.SkipNamespaceDeletion, err = cmd.Flags().GetBool(installer.SkipNamespaceDeletionFlag)
 		if err != nil {
 			return err
@@ -290,6 +304,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		return nil
 	}
 	// config file read without error, set fields in new config object
+	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
 	config.Spec.SkipNamespaceDeletion = viper.GetBool(installer.SkipNamespaceDeletionConfig)
 	config.Spec.IncludeEtcd = false
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)

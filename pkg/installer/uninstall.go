@@ -511,7 +511,7 @@ func (in *Installer) ensureStorageOSClusterRemoved() error {
 		}
 		return errors.Wrap(errors.WithStack(err), errDuringStosUninstall)
 	}
-	fmt.Println(fmt.Sprintf(removingFinalizersMessage, storageOSCluster.Name))
+	in.log.Warnf(removingFinalizersMessage, storageOSCluster.Name)
 	if err := pluginutils.UpdateStorageOSClusterWithoutFinalizers(in.clientConfig, storageOSCluster); err != nil {
 		return errors.Wrap(errors.WithStack(err), errDuringStosUninstall)
 	}
@@ -542,7 +542,7 @@ func (in *Installer) ensureEtcdClusterRemoved(etcdName string) error {
 		}
 		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
 	}
-	fmt.Println(fmt.Sprintf(removingFinalizersMessage, etcdCluster.Name))
+	in.log.Warnf(removingFinalizersMessage, etcdCluster.Name)
 	if err := pluginutils.UpdateEtcdClusterWithoutFinalizers(in.clientConfig, etcdCluster); err != nil {
 		return errors.Wrap(errors.WithStack(err), errDuringEtcdUninstall)
 	}
