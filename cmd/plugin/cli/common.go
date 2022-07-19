@@ -148,6 +148,13 @@ func validateResourceLimit(resourceLimit string) error {
 	return nil
 }
 
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters long")
+	}
+	return nil
+}
+
 func GetBoolIfFlagSet(fs *pflag.FlagSet, flagName string) (*bool, error) {
 	if fs.Changed(flagName) {
 		enabled, err := fs.GetBool(flagName)
