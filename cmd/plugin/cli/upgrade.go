@@ -116,6 +116,13 @@ func UpgradeCmd() *cobra.Command {
 
 func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
 	log.Verbose = uninstallConfig.Spec.Verbose
+
+	if installConfig.Spec.Install.AdminPassword != "" {
+		if err := validatePassword(installConfig.Spec.Install.AdminPassword); err != nil {
+			return err
+		}
+	}
+
 	if installConfig.Spec.Install.StorageOSVersion == "" {
 		installConfig.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}

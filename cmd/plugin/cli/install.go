@@ -101,6 +101,12 @@ func InstallCmd() *cobra.Command {
 
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
+	if config.Spec.Install.AdminPassword != "" {
+		if err := validatePassword(config.Spec.Install.AdminPassword); err != nil {
+			return err
+		}
+	}
+
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
