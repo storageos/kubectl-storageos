@@ -15,7 +15,7 @@ KUBECTL_STOS_VERSION ?= v1.3.1
 # Generate kuttl e2e tests for the following storageos/kind-node versions
 # TEST_KIND_NODES is not intended to be updated manually.
 # Please edit LATEST_KIND_NODE instead and run 'make update-kind-nodes'.
-TEST_KIND_NODES ?= 1.20.5,1.21.0,1.22.3,1.23.0,1.24.2
+TEST_KIND_NODES ?= 1.21.0,1.22.3,1.23.0,1.24.2,1.24.2
 
 LATEST_KIND_NODE ?= 1.22.3
 REPO ?= kubectl-storageos
