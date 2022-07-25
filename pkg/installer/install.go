@@ -354,7 +354,7 @@ func (in *Installer) installStorageOSCluster() error {
 	var err error
 	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
 	// to storageos/cluster/kustomization.yaml based on flags (or cli in.stosConfig file)
-	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != in.stosConfig.Spec.Install.StorageOSOperatorNamespace {
+	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != consts.NewOperatorNamespace {
 		// apply the provided storageos cluster ns
 		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
 			return err
