@@ -14,7 +14,9 @@ func VersionCmd() *cobra.Command {
 		Long:         `Show kubectl storageos version`,
 		SilenceUsage: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			logger.NewLogger().Infof("%s", version.PluginVersion)
+			log := logger.NewLogger()
+			log.Verbose = true
+			log.Infof("%s", version.PluginVersion)
 		},
 	}
 
