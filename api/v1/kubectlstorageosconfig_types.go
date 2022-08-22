@@ -100,6 +100,7 @@ type Install struct {
 	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 	EnableMetrics                   *bool  `json:"enableMetrics,omitempty"`
 	MarkTestCluster                 bool   `json:"markTestCluster,omitempty"`
+	SkipK8sVersionCheck             bool   `json:"skipK8sVersionCheck,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand

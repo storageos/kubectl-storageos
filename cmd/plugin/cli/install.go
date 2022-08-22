@@ -92,6 +92,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
 	cmd.Flags().Bool(installer.TestClusterFlag, false, "mark the cluster being created as a test cluster")
+	cmd.Flags().Bool(installer.SkipK8sVersionCheckFlag, false, "skip the minimum k8s version check")
+
 	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
 	viper.BindPFlags(cmd.Flags())
@@ -257,6 +259,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			return err
 		}
 
+		config.Spec.Install.SkipK8sVersionCheck, err = cmd.Flags().GetBool(installer.SkipK8sVersionCheckFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
@@ -338,6 +345,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdReplicas = viper.GetString(installer.EtcdReplicasConfig)
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
 	config.Spec.Install.MarkTestCluster = viper.GetBool(installer.TestClusterConfig)
+	config.Spec.Install.SkipK8sVersionCheck = viper.GetBool(installer.SkipK8sVersionCheckConfig)
 
 	return nil
 }

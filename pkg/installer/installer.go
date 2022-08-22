@@ -72,6 +72,7 @@ const (
 	EtcdReplicasFlag                = "etcd-replicas"
 	EnableMetricsFlag               = "enable-metrics"
 	TestClusterFlag                 = "test-cluster"
+	SkipK8sVersionCheckFlag         = "skip-k8s-verison-check"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -127,6 +128,7 @@ const (
 	EtcdReplicasConfig                        = "spec.install.etcdReplicas"
 	EnableMetricsConfig                       = "spec.install.enableMetrics"
 	TestClusterConfig                         = "spec.install.enableTestClusterTaint"
+	SkipK8sVersionCheckConfig                 = "spec.install.skipK8sVerisonCheck"
 
 	// dir and file names for in memory fs
 	etcdDir                  = "etcd"
@@ -304,15 +306,19 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 
 	distribution := pluginutils.DetermineDistribution(currentVersionStr)
 
-	minVersion, err := fetchImageAndExtractFileFromTarball(pluginversion.OperatorLatestSupportedImageURL(), "MIN_KUBE_VERSION")
-	// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
-	if err == nil && minVersion != "" {
-		supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
-		if err != nil {
-			return installer, errors.WithStack(err)
-		} else if !supported {
-			return installer, errors.WithStack(fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s]", minVersion))
+	if !config.Spec.Install.SkipK8sVersionCheck {
+		minVersion, err := fetchImageAndExtractFileFromTarball(pluginversion.OperatorLatestSupportedImageURL(), "MIN_KUBE_VERSION")
+		// Version 2.5.0-beta.1 doesn't contains the version file. After 2.5.0 has released error handling needs here.
+		if err == nil && minVersion != "" {
+			supported, err := pluginversion.IsSupported(currentVersionStr, minVersion)
+			if err != nil {
+				return installer, errors.WithStack(err)
+			} else if !supported {
+				return installer, errors.WithStack(fmt.Errorf("current version of Kubernetes is lower than required minimum version [%s], use %v to skip this check", minVersion, SkipK8sVersionCheckFlag))
+			}
 		}
+	} else {
+		log.Warn("skipping minimum k8s version check - some features may not work on older k8s versions")
 	}
 
 	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
