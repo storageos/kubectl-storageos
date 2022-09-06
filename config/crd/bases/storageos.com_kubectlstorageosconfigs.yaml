@@ -158,6 +158,8 @@ spec:
                   storageOSPortalConfigYaml:
                     type: string
                 type: object
+              verbose:
+                type: boolean
             type: object
           status:
             description: KubectlStorageOSConfigStatus defines the observed state of
