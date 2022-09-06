@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -n "$(git status --short | grep -v "??")" ]]; then
+if git status --short | grep -qv "??"; then
     git stash
     function unstash() {
         git reset --hard
