@@ -194,7 +194,6 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/apiextensions-apiserver v0.22.2 // indirect
-	k8s.io/apiserver v0.21.1 // indirect
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/klog/v2 v2.8.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
@@ -209,7 +208,6 @@ replace (
 	github.com/improbable-eng/etcd-cluster-operator => github.com/storageos/etcd-cluster-operator v0.3.0
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc95
-	github.com/replicatedhq/troubleshoot => github.com/storageos/troubleshoot v0.9.48-0.20220712083915-79d30ba04eaf
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.21.1

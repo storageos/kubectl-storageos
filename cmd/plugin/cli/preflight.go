@@ -12,11 +12,6 @@ import (
 )
 
 const (
-	// defaultCollectorImage can be removed once
-	// https://github.com/replicatedhq/troubleshoot/pull/392 merges, then it
-	// will default to "replicatedhq/troubleshoot:latest".
-	defaultCollectorImage = "storageos/troubleshoot:c77d9dc"
-
 	// defaultPreflightSpec will be used if not supplied by the user.
 	defaultPreflightSpec = "https://raw.githubusercontent.com/storageos/kubectl-storageos/main/specs/preflight.yaml"
 )
@@ -46,10 +41,7 @@ func PreflightCmd() *cobra.Command {
 
 	cmd.Flags().Bool("interactive", true, "interactive preflights")
 	cmd.Flags().String("format", "human", "output format, one of human, json, yaml. only used when interactive is set to false")
-	cmd.Flags().String("collector-image", defaultCollectorImage, "the full name of the collector image to use")
-	cmd.Flags().String("collector-pullpolicy", "", "the pull policy of the collector image")
 	cmd.Flags().Bool("collect-without-permissions", false, "always run preflight checks even if some require permissions that preflight does not have")
-	cmd.Flags().String("selector", "", "selector (label query) to filter remote collection nodes on.")
 	cmd.Flags().String("since-time", "", "force pod logs collectors to return logs after a specific date (RFC3339)")
 	cmd.Flags().String("since", "", "force pod logs collectors to return logs newer than a relative duration like 5s, 2m, or 3h.")
 

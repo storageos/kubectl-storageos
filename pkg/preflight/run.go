@@ -23,7 +23,6 @@ import (
 	"github.com/spf13/viper"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -138,7 +137,7 @@ func Run(v *viper.Viper, arg string) error {
 				}
 				collectResults = append(collectResults, *r)
 			}
-			if len(hostPreflightSpec.Spec.RemoteCollectors) > 0 {
+			if len(hostPreflightSpec.Spec.Collectors) > 0 {
 				r, err := collectRemote(hostPreflightSpec, finishedCh, progressCh)
 				if err != nil {
 					return errors.Wrap(err, "failed to collect remotely")
@@ -267,19 +266,9 @@ func collectRemote(preflightSpec *troubleshootv1beta2.HostPreflight, finishedCh 
 		return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
-	labelSelector, err := labels.Parse(v.GetString("selector"))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse selector")
-	}
-
 	namespace := v.GetString("namespace")
 	if namespace == "" {
 		namespace = "default"
-	}
-
-	timeout := v.GetDuration("request-timeout")
-	if timeout == 0 {
-		timeout = 30 * time.Second
 	}
 
 	collectOpts := preflight.CollectOpts{
@@ -287,13 +276,9 @@ func collectRemote(preflightSpec *troubleshootv1beta2.HostPreflight, finishedCh 
 		IgnorePermissionErrors: v.GetBool("collect-without-permissions"),
 		ProgressChan:           progressCh,
 		KubernetesRestConfig:   restConfig,
-		Image:                  v.GetString("collector-image"),
-		PullPolicy:             v.GetString("collector-pullpolicy"),
-		LabelSelector:          labelSelector.String(),
-		Timeout:                timeout,
 	}
 
-	collectResults, err := preflight.CollectRemote(collectOpts, preflightSpec)
+	collectResults, err := preflight.CollectHost(collectOpts, preflightSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to collect from remote")
 	}
