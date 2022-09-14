@@ -10,7 +10,6 @@ jobs:
     env:
       KUTTL: /usr/local/bin/kubectl-kuttl
       KUBECTL_STORAGEOS: /usr/local/bin/kubectl-storageos
-      KIND: /usr/local/bin/kind
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
@@ -20,10 +19,6 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.18'
-      - name: Install kind
-        run: |
-          sudo curl -Lo $KIND https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
-          sudo chmod +x $KIND
       - name: Install kuttl
         run: |
           sudo curl -Lo $KUTTL https://github.com/kudobuilder/kuttl/releases/download/v0.11.1/kubectl-kuttl_0.11.1_linux_x86_64
@@ -32,14 +27,8 @@ jobs:
         run: |
           make _build
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
-      - name: Create kind cluster
-        run: kind create cluster --image=storageos/kind-node:v1.24.2
       - name: Run kuttl installer 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.24.yaml
-      - name: Delete kind cluster
-        run: kind delete cluster
-      - name: Create fresh kind cluster
-        run: kind create cluster --image=storageos/kind-node:v1.24.2
       - name: Run kuttl upgrade 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.24.yaml
 
