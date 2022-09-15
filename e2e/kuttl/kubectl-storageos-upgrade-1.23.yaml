@@ -4,5 +4,5 @@ kind: TestSuite
 testDirs:
 - ./e2e/tests/upgrade/stable
 kindConfig: e2e/kind/kind-config-1.23.yaml
-startKIND: true
+startKIND: false
 timeout: 300
