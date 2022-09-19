@@ -33,6 +33,10 @@ jobs:
           sudo cp bin/kubectl-storageos $KUBECTL_STORAGEOS
       - name: Run kuttl installer 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-installer-1.24.yaml
+      - name: Stop kind
+        run: kind delete cluster
+      - name: Start kind
+        run: kind create cluster --retain --wait 2m --config e2e/kind/kind-config-1.24.yaml
       - name: Run kuttl upgrade 1.24
         run: kubectl-kuttl test --config e2e/kuttl/kubectl-storageos-upgrade-1.24.yaml
 

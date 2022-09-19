@@ -116,6 +116,10 @@ jobs:
           sudo cp bin/kubectl-storageos \$KUBECTL_STORAGEOS
       - name: Run kuttl installer ${major}
         run: kubectl-kuttl test --config e2e/kuttl/${REPO}-installer-${major}.yaml
+      - name: Stop kind
+        run: kind delete cluster
+      - name: Start kind
+        run: kind create cluster --retain --wait 2m --config e2e/kind/kind-config-${major}.yaml
       - name: Run kuttl upgrade ${major}
         run: kubectl-kuttl test --config e2e/kuttl/${REPO}-upgrade-${major}.yaml
 
