@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ondat/operator-toolkit/declarative/applier/helper"
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 
@@ -147,7 +148,12 @@ func (in *Installer) validateEtcd(configSpec apiv1.KubectlStorageOSConfigSpec) e
 		}
 	}
 
-	if err = in.kubectlClient.Apply(context.TODO(), "", string(etcdShell), true); err != nil {
+	applyOptions, err := helper.NewApplyOptions(string(etcdShell), stdIOStream)
+	if err != nil {
+		return err
+	}
+
+	if err := applyOptions.Run(); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -181,7 +187,14 @@ func (in *Installer) tlsValidationPrep(namespace string, configInstall apiv1.Ins
 	if err != nil {
 		return "", err
 	}
-	if err = in.kubectlClient.Apply(context.TODO(), namespace, string(etcdSecretManifest), true); err != nil {
+
+	options, err := helper.NewApplyOptions(string(etcdSecretManifest), stdIOStream)
+	if err != nil {
+		return "", err
+	}
+	options.Namespace = namespace
+
+	if err := options.Run(); err != nil {
 		return "", errors.WithStack(err)
 	}
 

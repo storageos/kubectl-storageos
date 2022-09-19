@@ -1,13 +1,13 @@
 package installer
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"strconv"
 	"sync"
 
+	"github.com/ondat/operator-toolkit/declarative/applier/helper"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"sigs.k8s.io/kustomize/api/krusty"
@@ -355,10 +355,16 @@ func (in *Installer) installStorageOSCluster() error {
 	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
 	// to storageos/cluster/kustomization.yaml based on flags (or cli in.stosConfig file)
 	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != consts.NewOperatorNamespace {
-		// apply the provided storageos cluster ns
-		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
+		options, err := helper.NewApplyOptions(pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), stdIOStream)
+		if err != nil {
 			return err
 		}
+
+		// apply the provided storageos cluster ns
+		if err := options.Run(); err != nil {
+			return err
+		}
+
 		if err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSClusterNamespace, "namespace", ""); err != nil {
 			return err
 		}
@@ -538,15 +544,23 @@ func (in *Installer) kustomizeAndApply(dir, file string) error {
 		return err
 	}
 
-	err = in.kubectlClient.Apply(context.TODO(), "", string(manifest), true)
+	options, err := helper.NewApplyOptions(string(manifest), stdIOStream)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return options.Run()
 }
 
 // gracefullyApplyNS applies a namespace and then waits until it has been applied successfully before
 // returning no error
 func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
-	if err := in.kubectlClient.Apply(context.TODO(), "", namespaceManifest, true); err != nil {
+	options, err := helper.NewApplyOptions(namespaceManifest, stdIOStream)
+	if err != nil {
+		return err
+	}
+
+	if err := options.Run(); err != nil {
 		return err
 	}
 

@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/kustomize/api/filesys"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
 const (
@@ -177,6 +177,12 @@ var (
 	SerialInstall string
 	serialInstall bool
 )
+
+var stdIOStream = genericclioptions.IOStreams{
+	In:     os.Stdin,
+	Out:    os.Stdout,
+	ErrOut: os.Stderr,
+}
 
 func init() {
 	serialInstall = SerialInstall != ""

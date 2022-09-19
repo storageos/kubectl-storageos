@@ -15,7 +15,7 @@ import (
 	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
-	"sigs.k8s.io/kustomize/api/filesys"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
 const errFlagsNotSet = "The following flags have not been set:"
@@ -54,9 +54,6 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 				return fs, errors.WithStack(err)
 			}
 			for name, data := range files {
-				if _, err := fs.Create(filepath.Join(dir, subDir, name)); err != nil {
-					return fs, errors.WithStack(err)
-				}
 				if err := fs.WriteFile(filepath.Join(dir, subDir, name), data); err != nil {
 					return fs, errors.WithStack(err)
 				}

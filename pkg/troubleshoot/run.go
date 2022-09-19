@@ -42,8 +42,8 @@ import (
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
 const (
@@ -248,7 +248,7 @@ func Run(v *viper.Viper, arg string) error {
 			c.Printf("%s\r * Failed to extract support bundle for analysis: %v\n", cursor.ClearEntireLine(), err)
 		}
 
-		analyzeResults, err := analyzer.AnalyzeLocal(tmpDir, supportBundleSpec.Spec.Analyzers)
+		analyzeResults, err := analyzer.AnalyzeLocal(tmpDir, supportBundleSpec.Spec.Analyzers, supportBundleSpec.Spec.HostAnalyzers)
 		if err != nil {
 			c := color.New(color.FgHiRed)
 			c.Printf("%s\r * Failed to analyze support bundle: %v\n", cursor.ClearEntireLine(), err)
