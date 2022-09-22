@@ -52,7 +52,6 @@ spec:
               message: It is recommended to have at least 3 nodes for replication and high availability.
           - pass:
               message: There are enough nodes.
-
 ---
 apiVersion: troubleshoot.sh/v1beta2
 kind: HostPreflight
@@ -65,41 +64,28 @@ spec:
     - kernelModules:
         outcomes:
           - fail:
-              when: "target_core_mod != loaded,loadable"
-              message: |
-                The 'target_core_mod' kernel module is not loaded or loadable,
-                maybe target_core_mod.ko is, please check result
-          - fail:
-              when: "target_core_file != loaded,loadable"
-              message: |
-                The 'target_core_file' kernel module is not loaded or loadable,
-                maybe target_core_file.ko is, please check result
-          - fail:
-              when: "tcm_loop != loaded,loadable"
-              message: |
-                The 'tcm_loop' kernel module is not loaded or loadable,
-                maybe tcm_loop.ko is, please check result
-          - fail:
               when: "target_core_mod.ko != loaded,loadable"
               message: |
-                The 'target_core_mod.ko' kernel module is not loaded or loadable,
-                maybe target_core_mod is, please check result
+                The 'target_core_mod' kernel module is not loaded or loadable
           - fail:
-              when: "target_core_file.ko != loaded,loadable"
+              when: "target_core_user.ko != loaded,loadable"
               message: |
-                The 'target_core_file.ko' kernel module is not loaded or loadable,
-                maybe target_core_file is, please check result
+                The 'target_core_user' kernel module is not loaded or loadable
           - fail:
               when: "tcm_loop.ko != loaded,loadable"
               message: |
-                The 'tcm_loop.ko' kernel module is not loaded or loadable,
-                maybe tcm_loop is, please check result
+                The 'tcm_loop' kernel module is not loaded or loadable
+          - fail:
+              when: "configfs.ko != loaded,loadable"
+              message: |
+                The 'configfs' kernel module is not loaded or loadable
+          - fail:
+              when: "uio.ko != loaded,loadable"
+              message: |
+                The 'uio' kernel module is not loaded or loadable
           - warn:
               when: "nvme != loaded"
               message: The system is not using NVME storage, which will provide better performance
           - pass:
-              when: "target_core_mod,target_core_file,tcm_loop == loaded,loadable"
-              message: The 'target_core_mod', target_core_file', and 'tcm_loop' kernel modules are loaded or loadable
-          - pass:
-              when: "target_core_mod.ko,target_core_file.ko,tcm_loop.ko == loaded,loadable"
-              message: The 'target_core_mod.ko', target_core_file.ko', and 'tcm_loop.ko' kernel modules are loaded or loadable
+              when: "target_core_mod.ko,target_core_user.ko,tcm_loop.ko,configfs.ko,uio.ko == loaded,loadable"
+              message: The 'target_core_mod', target_core_user', 'tcm_loop', 'configfs', and 'uio' kernel modules are loaded or loadable

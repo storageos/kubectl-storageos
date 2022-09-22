@@ -279,7 +279,7 @@ func collectRemote(preflightSpec *troubleshootv1beta2.HostPreflight, finishedCh 
 
 	timeout := v.GetDuration("request-timeout")
 	if timeout == 0 {
-		timeout = 30 * time.Second
+		timeout = time.Minute
 	}
 
 	collectOpts := preflight.CollectOpts{
