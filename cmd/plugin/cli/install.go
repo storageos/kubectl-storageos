@@ -88,7 +88,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal api url")
-	cmd.Flags().String(installer.PortalManagerVersionFlag, "", "version of portal manager")
+	cmd.Flags().String(installer.PortalManagerVersionFlag, consts.PortalManagerLatestVersion, "version of portal manager")
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "install the local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
