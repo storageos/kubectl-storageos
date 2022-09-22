@@ -61,6 +61,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
+	cmd.Flags().String(installer.PortalManagerVersionFlag, "", "version of portal manager")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -85,6 +86,8 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 	}); err != nil {
 		return err
 	}
+
+	version.SetPortalManagerLatestSupportedVersion(config.Spec.Install.PortalManagerVersion)
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
@@ -127,8 +130,9 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Install.PortalClientID = cmd.Flags().Lookup(installer.PortalClientIDFlag).Value.String()
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
-		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
+		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
+		config.Spec.Install.PortalManagerVersion = cmd.Flags().Lookup(installer.PortalManagerVersionFlag).Value.String()
 		return nil
 	}
 	// config file read without error, set fields in new config object
@@ -139,7 +143,9 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
 	config.Spec.Install.PortalClientID = viper.GetString(installer.PortalClientIDConfig)
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
-	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
+	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
+	config.Spec.Install.PortalManagerVersion = viper.GetString(installer.PortalManagerVersionConfig)
+
 	return nil
 }

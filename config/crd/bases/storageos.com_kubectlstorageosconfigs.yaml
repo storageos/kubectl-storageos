@@ -101,6 +101,8 @@ spec:
                     type: string
                   portalClientID:
                     type: string
+                  portalManagerVersion:
+                    type: string
                   portalSecret:
                     type: string
                   portalTenantID:
