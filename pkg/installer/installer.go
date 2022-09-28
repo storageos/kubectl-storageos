@@ -72,7 +72,7 @@ const (
 	EtcdReplicasFlag                = "etcd-replicas"
 	EnableMetricsFlag               = "enable-metrics"
 	TestClusterFlag                 = "test-cluster"
-	SkipK8sVersionCheckFlag         = "skip-k8s-verison-check"
+	SkipK8sVersionCheckFlag         = "skip-k8s-version-check"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
