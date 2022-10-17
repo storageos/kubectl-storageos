@@ -35,15 +35,14 @@ jobs:
           sudo apt install -y libdevmapper-dev
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
          go-version: 1.18
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.46.0
           args: -c=".github/linters/.golangci.yml"
   build:
     # Name the Job
