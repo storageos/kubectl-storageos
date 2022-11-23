@@ -101,6 +101,8 @@ spec:
                     type: string
                   portalClientID:
                     type: string
+                  portalHttpsProxy:
+                    type: string
                   portalManagerVersion:
                     type: string
                   portalSecret:
@@ -110,6 +112,8 @@ spec:
                   resourceQuotaYaml:
                     type: string
                   skipEtcdEndpointsValidation:
+                    type: boolean
+                  skipK8sVersionCheck:
                     type: boolean
                   storageOSClusterNamespace:
                     type: string

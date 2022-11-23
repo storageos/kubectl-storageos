@@ -64,6 +64,7 @@ const (
 	PortalTenantIDFlag              = "portal-tenant-id"
 	PortalAPIURLFlag                = "portal-api-url"
 	PortalManagerVersionFlag        = "portal-manager-version"
+	PortalHTTPSProxyFlag            = "portal-https-proxy"
 	EnablePortalManagerFlag         = "enable-portal-manager"
 	IncludeLocalPathProvisionerFlag = "include-local-path-storage-class"
 	LocalPathProvisionerYamlFlag    = "local-path-provisioner-yaml"

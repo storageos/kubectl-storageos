@@ -62,6 +62,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
 	cmd.Flags().String(installer.PortalManagerVersionFlag, consts.PortalManagerLatestVersion, "version of portal manager")
+	cmd.Flags().String(installer.PortalHTTPSProxyFlag, "", "HTTPS proxy of portal manager")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -133,6 +134,7 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.PortalManagerVersion = cmd.Flags().Lookup(installer.PortalManagerVersionFlag).Value.String()
+		config.Spec.Install.PortalHTTPSProxy = cmd.Flags().Lookup(installer.PortalHTTPSProxyFlag).Value.String()
 		return nil
 	}
 	// config file read without error, set fields in new config object

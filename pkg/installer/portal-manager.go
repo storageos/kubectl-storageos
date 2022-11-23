@@ -59,6 +59,20 @@ func (in *Installer) installPortalManagerConfig(stosClusterNamespace string) err
 	if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, kustomizationFile), stosClusterNamespace, "namespace", ""); err != nil {
 		return err
 	}
+
+	if in.stosConfig.Spec.Install.PortalHTTPSProxy != "" {
+		portalConfig, err := in.getFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, stosPortalConfigFile), "data", "portal_config.yaml")
+		if err != nil {
+			return err
+		}
+
+		portalConfig += fmt.Sprintf("\n  httpsProxy: %s", in.stosConfig.Spec.Install.PortalHTTPSProxy)
+
+		if err := in.setFieldInFsManifest(filepath.Join(stosDir, portalConfigDir, stosPortalConfigFile), portalConfig, "portal_config.yaml", "data"); err != nil {
+			return err
+		}
+	}
+
 	return in.kustomizeAndApply(filepath.Join(stosDir, portalConfigDir), stosPortalConfigFile)
 }
 

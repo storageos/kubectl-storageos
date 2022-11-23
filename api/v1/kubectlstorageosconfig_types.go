@@ -98,6 +98,7 @@ type Install struct {
 	PortalTenantID                  string `json:"portalTenantID,omitempty"`
 	PortalAPIURL                    string `json:"portalAPIURL,omitempty"`
 	PortalManagerVersion            string `json:"portalManagerVersion,omitempty"`
+	PortalHTTPSProxy                string `json:"portalHttpsProxy,omitempty"`
 	LocalPathProvisionerYaml        string `json:"localPathProvisionerYaml,omitempty"`
 	EnableMetrics                   *bool  `json:"enableMetrics,omitempty"`
 	MarkTestCluster                 bool   `json:"markTestCluster,omitempty"`
