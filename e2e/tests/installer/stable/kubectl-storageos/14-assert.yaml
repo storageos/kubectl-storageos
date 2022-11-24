@@ -21,6 +21,7 @@ data:
       leaderElect: true
       resourceNamespace: storageos
       resourceName: storageos-portal-manager
+    httpsProxy: 127.0.0.1:8888
 kind: ConfigMap
 metadata:
   labels:
