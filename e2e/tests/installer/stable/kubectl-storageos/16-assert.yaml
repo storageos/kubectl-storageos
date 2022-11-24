@@ -8,7 +8,7 @@ status:
 ---
 apiVersion: v1
 data:
-  portal_config.yaml: |
+  portal_config.yaml: |-
     apiVersion: storageos.com/v1alpha1
     kind: PortalConfig
     health:
@@ -21,6 +21,7 @@ data:
       leaderElect: true
       resourceNamespace: storageos
       resourceName: storageos-portal-manager
+    httpsProxy: 127.0.0.1:8888
 kind: ConfigMap
 metadata:
   labels:
