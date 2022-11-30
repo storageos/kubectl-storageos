@@ -1798,3 +1798,143 @@ func TestAllInstructionTypesExcept(t *testing.T) {
 		}
 	}
 }
+
+func TestGetManifestFromConfigMapData(t *testing.T) {
+	tcases := []struct {
+		name        string
+		config      string
+		expManifest string
+		expError    bool
+	}{
+		{
+			name: "return operator config",
+			config: `apiVersion: v1
+data:
+  operator_config.yaml: |
+    apiVersion: config.storageos.com/v1
+    kind: OperatorConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: storageos-operator
+    webhookCertRefreshInterval: 15m
+    webhookServiceName: storageos-operator-webhook
+    webhookSecretRef: storageos-operator-webhook
+    validatingWebhookConfigRef: storageos-operator-validating-webhook
+`,
+			expManifest: `apiVersion: config.storageos.com/v1
+kind: OperatorConfig
+health:
+  healthProbeBindAddress: :8081
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: storageos-operator
+webhookCertRefreshInterval: 15m
+webhookServiceName: storageos-operator-webhook
+webhookSecretRef: storageos-operator-webhook
+validatingWebhookConfigRef: storageos-operator-validating-webhook
+`,
+		},
+		{
+			name: "no manifest in config",
+			config: `apiVersion: v1
+data:
+  some: data
+  exists: here
+  but: no
+  inner: manifest
+ `,
+			expManifest: "",
+			expError:    true,
+		},
+	}
+	for _, tc := range tcases {
+		manifest, err := GetManifestFromConfigMapData(tc.config)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+			// error occurred expectedly
+			return
+		}
+		if kyaml.MustParse(manifest).MustString() != kyaml.MustParse(tc.expManifest).MustString() {
+			t.Errorf("expected %v, got %v", tc.expManifest, manifest)
+		}
+	}
+}
+
+func TestSetManifestInConfigMapData(t *testing.T) {
+	tcases := []struct {
+		name            string
+		config          string
+		manifestName    string
+		manifestContent string
+		expConfig       string
+		expError        bool
+	}{
+		{
+			name: "insert operator config to empty configmap",
+			config: `apiVersion: v1
+data:
+`,
+			manifestName: "operator_config.yaml",
+			manifestContent: `apiVersion: config.storageos.com/v1
+kind: OperatorConfig
+health:
+  healthProbeBindAddress: :8081
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: storageos-operator
+webhookCertRefreshInterval: 15m
+webhookServiceName: storageos-operator-webhook
+webhookSecretRef: storageos-operator-webhook
+validatingWebhookConfigRef: storageos-operator-validating-webhook
+`,
+			expConfig: `apiVersion: v1
+data:
+  operator_config.yaml: |
+    apiVersion: config.storageos.com/v1
+    kind: OperatorConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: storageos-operator
+    webhookCertRefreshInterval: 15m
+    webhookServiceName: storageos-operator-webhook
+    webhookSecretRef: storageos-operator-webhook
+    validatingWebhookConfigRef: storageos-operator-validating-webhook
+`,
+		},
+	}
+	for _, tc := range tcases {
+		config, err := SetManifestInConfigMapData(tc.config, tc.manifestName, tc.manifestContent)
+		if err != nil {
+			if !tc.expError {
+				t.Errorf("unexpected error %v", err)
+			}
+			// error occurred expectedly
+			return
+		}
+		if kyaml.MustParse(config).MustString() != kyaml.MustParse(tc.expConfig).MustString() {
+			t.Errorf("expected %v, got %v", tc.expConfig, config)
+		}
+	}
+}

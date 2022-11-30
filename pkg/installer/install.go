@@ -347,6 +347,11 @@ func (in *Installer) installStorageOSOperator() error {
 		}
 	}
 
+	if in.stosConfig.Spec.Install.Wait {
+		if err := in.setExecutionStrategyForOperatorConfigMap(); err != nil {
+			return err
+		}
+	}
 	return in.kustomizeAndApply(filepath.Join(stosDir, operatorDir), stosOperatorFile)
 }
 
@@ -597,4 +602,69 @@ func (in *Installer) enableMetrics(enable *bool) error {
 	}
 
 	return in.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(makeMultiDoc(append(secrets, cluster)...)))
+}
+
+// setExecutionStrategyForOperatorConfigMap sets the OperatorConfig's serialExecutionStrategy
+// field to true. This ensures that the operator will install components serially.
+// Setting this value is greatly complicated by the fact that the OperatorConfig is stored
+// in the storageos-operator configmap - see comments throughout the function to help
+// describe the process.
+func (in *Installer) setExecutionStrategyForOperatorConfigMap() error {
+	stosOperatorYaml, err := in.fileSys.ReadFile(filepath.Join(stosDir, operatorDir, stosOperatorFile))
+	if err != nil {
+		return err
+	}
+
+	// We need to get the storageos-operator configmap.
+	// There is more than one configmap in storageos-operator.yaml, so first
+	// we will get all configmaps by kind. Then we will get the configmap we want
+	// by name (storageos-operator) - We cannot search by name initially as numerous
+	// objects of different kinds have that name, but only one configmap.
+	stosOperatorYamlConfigMaps, err := pluginutils.GetAllManifestsOfKindFromMultiDoc(string(stosOperatorYaml), "ConfigMap")
+	if err != nil {
+		return err
+	}
+	stosOperatorConfigMap, err := pluginutils.GetManifestFromMultiDocByName(makeMultiDoc(stosOperatorYamlConfigMaps...), "storageos-operator")
+	if err != nil {
+		return err
+	}
+
+	// Now that we have the configmap we want, we can extract the manifest from it's data
+	// that we need to transform. This is the OperatorConfig object.
+	operatorConfig, err := pluginutils.GetManifestFromConfigMapData(stosOperatorConfigMap)
+	if err != nil {
+		return err
+	}
+
+	// Set the serialExecutionStrategy in the OperatorConfig.
+	// Then set the updated OperatorConfig back in the configmap's data.
+	operatorConfig, err = pluginutils.SetFieldInManifest(operatorConfig, "true", "serialExecutionStrategy")
+	if err != nil {
+		return err
+	}
+	stosOperatorConfigMap, err = pluginutils.SetManifestInConfigMapData(stosOperatorConfigMap, "operator_config.yaml", operatorConfig)
+	if err != nil {
+		return err
+	}
+
+	// Now we need to replace the existing configmap in storageos-operator.yaml
+	// with the updated one which we have edited.
+	// To do this, we must first take the slice of all configmaps in storageos-operator.yaml
+	// and remove the 'old' storageos-operator configmap.
+	// Then swap in the 'new' storageos-operator configmap to our slice of configmaps.
+	// Next we get the existing storageos-operator.yaml WITHOUT any configmaps, and
+	// swap in the slice of configmaps we have created (containing the new storageos-operator configmap).
+	// Finally, we write the updated storageos-operator.yaml to the in-memory fs in its entirity
+	stosOperatorYamlConfigMapsWithoutOperatorConfig, err := pluginutils.OmitByNameFromMultiDoc(makeMultiDoc(stosOperatorYamlConfigMaps...), "storageos-operator")
+	if err != nil {
+		return err
+	}
+	stosOperatorYamlConfigMaps = []string{stosOperatorYamlConfigMapsWithoutOperatorConfig, stosOperatorConfigMap}
+	stosOperatorYamlWithoutConfigMaps, err := pluginutils.OmitKindFromMultiDoc(string(stosOperatorYaml), "ConfigMap")
+	if err != nil {
+		return err
+	}
+
+	return in.fileSys.WriteFile(filepath.Join(stosDir, operatorDir, stosOperatorFile),
+		[]byte(makeMultiDoc(append(stosOperatorYamlConfigMaps, stosOperatorYamlWithoutConfigMaps)...)))
 }

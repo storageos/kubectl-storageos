@@ -95,6 +95,26 @@ func OmitKindFromMultiDoc(multiDoc, kind string) (string, error) {
 	return strings.Join(objsWithoutKind, "\n---\n"), nil
 }
 
+// OmitByNameFromMultiDoc returns 'multiDoc' without objects of 'name'.
+func OmitByNameFromMultiDoc(multiDoc, name string) (string, error) {
+	objs, err := manifest.ParseObjects(context.Background(), multiDoc)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	objsWithoutName := make([]string, 0)
+	for _, obj := range objs.Items {
+		if obj.UnstructuredObject().GetName() == name {
+			continue
+		}
+		objYaml, err := yaml.Marshal(obj.UnstructuredObject())
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		objsWithoutName = append(objsWithoutName, string(objYaml))
+	}
+	return strings.Join(objsWithoutName, "\n---\n"), nil
+}
+
 // OmitAndReturnKindFromMultiDoc returns 'multiDoc' without objects of 'kind', while also returning
 // []string of 'kind' objects that are omitted
 func OmitAndReturnKindFromMultiDoc(multiDoc, kind string) (string, []string, error) {
@@ -200,6 +220,96 @@ func GetFieldInMultiDocByKind(multidoc, kind string, fields ...string) (string, 
 		return "", errors.WithStack(err)
 	}
 	return field, nil
+}
+
+// SetManifestInConfigMapData sets a manifest to the data of a configmap.
+// An example of such a configmap is the storageos-operator configmap,
+// which contains the storageos-operator.yaml operator config manifest.
+//
+//apiVersion: v1
+//data:
+//  operator_config.yaml: |
+//    apiVersion: config.storageos.com/v1
+//    kind: OperatorConfig
+//    health:
+//	    healthProbeBindAddress: :8081
+//	  metrics:
+//	    bindAddress: 127.0.0.1:8080
+//	  webhook:
+//	    port: 9443
+//	  leaderElection:
+//	    leaderElect: true
+//	    resourceName: storageos-operator
+//	  webhookCertRefreshInterval: 15m
+//	  webhookServiceName: storageos-operator-webhook
+//	  webhookSecretRef: storageos-operator-webhook
+//	  validatingWebhookConfigRef: storageos-operator-validating-webhook
+//
+// WARNING: using this function will overwrite ALL other data in the existing configmap
+// it is only suitable for a specific scenario wherby a configmap storing a single manifest
+// is required like the example above.
+func SetManifestInConfigMapData(configMap, manifestName, manifestContent string) (string, error) {
+	// we need to indent every line of the manifest and insert the pipe
+	manifestContent = strings.ReplaceAll(manifestContent, "\n", "\n  ")
+	formattedManifestToInsert := fmt.Sprintf("%s: |\n  %s", manifestName, manifestContent)
+	// now set the formatted manifest as data in the config map
+	return SetFieldInManifest(configMap, formattedManifestToInsert, "data")
+}
+
+// GetManifestFromConfigMapData returns a manifest from the data of a configmap.
+// By passing the following configmap string:
+//
+//apiVersion: v1
+//data:
+//  operator_config.yaml: |
+//    apiVersion: config.storageos.com/v1
+//    kind: OperatorConfig
+//    health:
+//	    healthProbeBindAddress: :8081
+//	  metrics:
+//	    bindAddress: 127.0.0.1:8080
+//	  webhook:
+//	    port: 9443
+//	  leaderElection:
+//	    leaderElect: true
+//	    resourceName: storageos-operator
+//	  webhookCertRefreshInterval: 15m
+//	  webhookServiceName: storageos-operator-webhook
+//	  webhookSecretRef: storageos-operator-webhook
+//	  validatingWebhookConfigRef: storageos-operator-validating-webhook
+//
+// the 'inner' manifest will be returned, eg:
+//
+//apiVersion: config.storageos.com/v1
+//kind: OperatorConfig
+//health:
+//  healthProbeBindAddress: :8081
+//metrics:
+//  bindAddress: 127.0.0.1:8080
+//webhook:
+//  port: 9443
+//leaderElection:
+//  leaderElect: true
+//  resourceName: storageos-operator
+//webhookCertRefreshInterval: 15m
+//webhookServiceName: storageos-operator-webhook
+//webhookSecretRef: storageos-operator-webhook
+//validatingWebhookConfigRef: storageos-operator-validating-webhook
+//
+// WARNING: This function is only capable of reliably returning a manifest
+// from the configmap, if only a single manifest exists in the configmap's
+// data as per the example above. TODO: Improve to find for multiple manifests.
+func GetManifestFromConfigMapData(configMap string) (string, error) {
+	configMapData, err := GetFieldInManifest(configMap, "data")
+	if err != nil {
+		return "", err
+	}
+	configMapDataSplit := strings.Split(configMapData, "|")
+	if len(configMapDataSplit) < 2 {
+		return "", fmt.Errorf("no manifest found in config map data")
+	}
+
+	return configMapDataSplit[1], nil
 }
 
 // KustomizePatch is useed to pass a new patch to a kustomization file, see AddPatchesToKustomize
