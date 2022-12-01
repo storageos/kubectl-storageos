@@ -111,6 +111,8 @@ spec:
                     type: string
                   skipEtcdEndpointsValidation:
                     type: boolean
+                  skipK8sVersionCheck:
+                    type: boolean
                   storageOSClusterNamespace:
                     type: string
                   storageOSClusterYaml:
@@ -128,6 +130,8 @@ spec:
                   wait:
                     type: boolean
                 type: object
+              serial:
+                type: boolean
               skipExistingWorkloadCheck:
                 type: boolean
               skipNamespaceDeletion:

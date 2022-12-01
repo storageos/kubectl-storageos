@@ -84,7 +84,9 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 		errChan <- in.uninstallStorageOS(upgrade, currentVersion)
 	}()
 
-	if serialInstall {
+	// serialInstall can be set via a build flag, whereas Spec.Serial is
+	// passed to the plugin via cli flag or config.
+	if serialInstall || in.stosConfig.Spec.Serial {
 		wg.Wait()
 	}
 

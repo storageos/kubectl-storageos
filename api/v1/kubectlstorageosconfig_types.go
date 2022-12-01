@@ -29,6 +29,7 @@ type KubectlStorageOSConfigSpec struct {
 	IncludeEtcd                 bool `json:"includeEtcd,omitempty"`
 	IncludeLocalPathProvisioner bool `json:"includeLocalPathProvisioner,omitempty"`
 	Verbose                     bool `json:"verbose,omitempty"`
+	Serial                      bool `json:"serial,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file

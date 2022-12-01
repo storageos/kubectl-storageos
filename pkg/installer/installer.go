@@ -74,6 +74,7 @@ const (
 	EnableMetricsFlag               = "enable-metrics"
 	TestClusterFlag                 = "test-cluster"
 	SkipK8sVersionCheckFlag         = "skip-k8s-version-check"
+	SerialFlag                      = "serial"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -82,6 +83,7 @@ const (
 	SkipExistingWorkloadCheckConfig           = "spec.skipExistingWorkloadCheck"
 	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
 	IncludeEtcdConfig                         = "spec.includeEtcd"
+	SerialConfig                              = "spec.serial"
 	WaitConfig                                = "spec.install.wait"
 	DryRunConfig                              = "spec.install.dryRun"
 	StosVersionConfig                         = "spec.install.storageOSVersion"
