@@ -185,12 +185,6 @@ var (
 	serialInstall bool
 )
 
-var stdIOStream = genericclioptions.IOStreams{
-	In:     os.Stdin,
-	Out:    os.Stdout,
-	ErrOut: os.Stderr,
-}
-
 func init() {
 	serialInstall = SerialInstall != ""
 }

@@ -1,10 +1,10 @@
 package installer
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
-	"github.com/ondat/operator-toolkit/declarative/applier/helper"
 	"github.com/pkg/errors"
 	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
@@ -329,12 +329,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 			return err
 		}
 
-		options, err := helper.NewApplyOptions(string(manifestWithFinaliser), stdIOStream)
-		if err != nil {
-			return err
-		}
-
-		if err := options.Run(); err != nil {
+		if err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true); err != nil {
 			return errors.WithStack(err)
 		}
 	}
