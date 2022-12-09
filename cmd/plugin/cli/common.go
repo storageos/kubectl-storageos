@@ -7,6 +7,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
@@ -172,4 +173,28 @@ func GetBoolIfConfigSet(key string) *bool {
 		return &enabled
 	}
 	return nil
+}
+
+func storageosCommand(cmd *cobra.Command, args []string) []string {
+	commands := []string{"storageos"}
+	if cmd.HasParent() && cmd.Parent().Use != "kubectl-storageos" {
+		commands = append(commands, cmd.Parent().Use)
+	}
+	commands = append(commands, cmd.Use)
+
+	return append(commands, parseArgs(args)...)
+}
+
+func parseArgs(args []string) []string {
+	parsedArgs := make([]string, 0)
+	for _, individualArg := range args {
+		if strings.Contains(individualArg, "=") {
+			argsSeparated := strings.Split(strings.ReplaceAll(individualArg, "=", " "), " ")
+			parsedArgs = append(parsedArgs, argsSeparated...)
+			continue
+		}
+		parsedArgs = append(parsedArgs, individualArg)
+	}
+
+	return parsedArgs
 }

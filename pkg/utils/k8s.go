@@ -155,7 +155,7 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 		Stderr: &stderr,
 		Tty:    false,
 	}); err != nil {
-		return "", "", errors.WithStack(fmt.Errorf("error in Stream: %v", err))
+		return stdout.String(), stderr.String(), errors.WithStack(fmt.Errorf("error in Stream: %v", err))
 	}
 
 	return stdout.String(), stderr.String(), nil
