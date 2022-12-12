@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/google/go-containerregistry/pkg/name"
 	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/daemon"
 
 	"github.com/pkg/errors"
 
@@ -150,6 +152,19 @@ func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
 
 	defer resp.Body.Close()
 	return ioutil.ReadAll(resp.Body)
+}
+
+func Image(imageUrl string) (gocontainerv1.Image, error) {
+	ref, err := name.ParseReference(imageUrl)
+	if err != nil {
+		return nil, fmt.Errorf("parsing reference %q: %w", imageUrl, err)
+	}
+
+	image, err := daemon.Image(ref)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return image, nil
 }
 
 // PullImage pulls an image from imageUrl string of the form 'repo:tag'
