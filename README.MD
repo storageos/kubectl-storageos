@@ -20,7 +20,7 @@ Administrating tool for your StorageOS clusters.
 
 ```bash
 curl -sSLo kubectl-storageos.tar.gz \
-    https://github.com/storageos/kubectl-storageos/releases/download/v1.3.2/kubectl-storageos_1.3.2_linux_amd64.tar.gz \
+    https://github.com/storageos/kubectl-storageos/releases/download/v1.3.3/kubectl-storageos_1.3.3_linux_amd64.tar.gz \
     && tar -xf kubectl-storageos.tar.gz \
     && chmod +x kubectl-storageos \
     && sudo mv kubectl-storageos /usr/local/bin/ \
