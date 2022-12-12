@@ -83,12 +83,15 @@ func isDockerRepo(url string) bool {
 
 // fetchImageAndExtractFromTarball creates a tarball from an OCI image and returns the file at filePath
 func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, error) {
-	pulled, err := pluginutils.PullImage(imageURL)
+	image, err := pluginutils.Image(imageURL)
 	if err != nil {
-		return "", errors.WithStack(err)
+		image, err = pluginutils.PullImage(imageURL)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
 	}
 
-	exported, err := pluginutils.ExportTarball(pulled)
+	exported, err := pluginutils.ExportTarball(image)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
