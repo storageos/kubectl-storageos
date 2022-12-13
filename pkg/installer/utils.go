@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	gyaml "github.com/ghodss/yaml"
+	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/replicatedhq/troubleshoot/cmd/util"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	operatorapi "github.com/storageos/operator/api/v1"
@@ -81,7 +82,9 @@ func isDockerRepo(url string) bool {
 	return strings.HasPrefix(url, "docker.io/")
 }
 
-// fetchImageAndExtractFromTarball creates a tarball from an OCI image and returns the file at filePath
+// fetchImageAndExtractFromTarball attempts to retrieve an OCI image locally.
+// If this fails, an attempt is made to pull the image remotely. Then the file
+// at filePath is extracted and returned.
 func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, error) {
 	image, err := pluginutils.Image(imageURL)
 	if err != nil {
@@ -91,6 +94,11 @@ func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, err
 		}
 	}
 
+	return extractFileFromImage(image, filePath)
+}
+
+// extractFileFromImage creates a tarball from an OCI image and returns the file at filePath
+func extractFileFromImage(image gocontainerv1.Image, filePath string) (string, error) {
 	exported, err := pluginutils.ExportTarball(image)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -100,6 +108,7 @@ func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, err
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return string(file), nil
 }
 

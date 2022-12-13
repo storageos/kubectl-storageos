@@ -314,7 +314,7 @@ func (fb *fileBuilder) createFileWithData(config *rest.Config) (map[string][]byt
 // readOrPullManifest returns a string of the manifest from path, url or image provided
 func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
 	// attempt to read file from local path. At this point the 'yamlPath' could be a local
-	// path, a docker image or a url. Whatever the user has passed via the flag/config.
+	// path, a docker image or a url (it is whatever the user has passed via the flag/config).
 	location := fb.yamlPath
 	if location != "" && !isDockerRepo(location) && !util.IsURL(location) {
 		if _, err := os.Stat(location); err != nil {
@@ -333,9 +333,22 @@ func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
 	location = fb.yamlImage
 	if location != "" {
 		if isDockerRepo(location) {
-			contents, err := fetchImageAndExtractFileFromTarball(location, fb.fileName)
+			// attempt to fetch image locally
+			image, err := pluginutils.Image(location)
 			if err == nil {
-				return contents, nil
+				contents, err := extractFileFromImage(image, fb.fileName)
+				if err == nil {
+					return contents, nil
+				}
+			}
+
+			// attempt to pull image remotely
+			image, err = pluginutils.PullImage(location)
+			if err == nil {
+				contents, err := extractFileFromImage(image, fb.fileName)
+				if err == nil {
+					return contents, nil
+				}
 			}
 		}
 	}
