@@ -86,7 +86,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build storageos/operator
 	if o.storageosOperator {
-		stosOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSOperatorYaml, config.Spec.Uninstall.StorageOSOperatorYaml), pluginversion.OperatorLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosOpFiles, err := newFileBuilder(
+			// path to storageos-operator.yaml as passed by --stos-operator-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.StorageOSOperatorYaml, config.Spec.Uninstall.StorageOSOperatorYaml),
+			// url for latest storageos-operator.yaml
+			pluginversion.OperatorLatestSupportedURL(),
+			// latest docker image docker.io/storageos/operator-manifests
+			pluginversion.OperatorLatestSupportedImageURL(),
+			// filename storageos-operator.yaml
+			stosOperatorFile,
+			// storageos operator namespace
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -95,7 +105,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build storageos/cluster
 	if o.storageosCluster {
-		stosClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml), pluginversion.ClusterLatestSupportedURL(), pluginversion.OperatorLatestSupportedImageURL(), stosClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosClusterFiles, err := newFileBuilder(
+			// path to storageos-cluster.yaml as passed by --stos-cluster-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.StorageOSClusterYaml, config.Spec.Uninstall.StorageOSClusterYaml),
+			// url for latest storageos-cluster.yaml
+			pluginversion.ClusterLatestSupportedURL(),
+			// latest docker image docker.io/storageos/operator-manifests
+			pluginversion.OperatorLatestSupportedImageURL(),
+			// filename storageos-cluster.yaml
+			stosClusterFile,
+			// storageos operator namespace
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -116,7 +136,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build resource quota
 	if o.resourceQuota {
-		resourceQuotaFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.ResourceQuotaYaml, config.Spec.Uninstall.ResourceQuotaYaml), pluginversion.ResourceQuotaLatestSupportedURL(), "", resourceQuotaFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		resourceQuotaFiles, err := newFileBuilder(
+			// path to resource-quota.yaml as passed by --resource-quota-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.ResourceQuotaYaml, config.Spec.Uninstall.ResourceQuotaYaml),
+			// url for latest resource-quota.yaml
+			pluginversion.ResourceQuotaLatestSupportedURL(),
+			// docker image does not exist for this file
+			"",
+			// filename resource-quota.yaml
+			resourceQuotaFile,
+			// storageos operator namespace
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -126,8 +156,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 	// build storageos/portal-client this consists only of a kustomization file with a secret generator
 	if o.portalClient {
 		stosPortalClientFiles := make(map[string][]byte)
-
-		stosPortalClientKust, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalClientSecretYaml, config.Spec.Uninstall.StorageOSPortalClientSecretYaml), pluginversion.PortalClientLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalClientFile, "").readOrPullManifest(clientConfig)
+		stosPortalClientKust, err := newFileBuilder(
+			// path to storageos-portal-client.yaml as passed by --stos-portal-client-secret-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.StorageOSPortalClientSecretYaml, config.Spec.Uninstall.StorageOSPortalClientSecretYaml),
+			// url for latest storageos-portal-client.yaml
+			pluginversion.PortalClientLatestSupportedURL(),
+			// latest docker image docker.io/storageos/portal-manager-manifests
+			pluginversion.PortalManagerLatestSupportedImageURL(),
+			// filename storageos-portal-client.yaml
+			stosPortalClientFile,
+			// namespace not applicable
+			"").readOrPullManifest(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -137,7 +176,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	if o.portalConfig {
 		// build storageos/portal-config
-		stosPortalConfigFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml), pluginversion.PortalConfigLatestSupportedURL(), pluginversion.PortalManagerLatestSupportedImageURL(), stosPortalConfigFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		stosPortalConfigFiles, err := newFileBuilder(
+			// path to storageos-portal-configmap.yaml as passed by --stos-portal-config-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.StorageOSPortalConfigYaml, config.Spec.Uninstall.StorageOSPortalConfigYaml),
+			// url for latest storageos-portal-configmap.yaml
+			pluginversion.PortalConfigLatestSupportedURL(),
+			// latest docker image docker.io/storageos/portal-manager-manifests
+			pluginversion.PortalManagerLatestSupportedImageURL(),
+			// filename storageos-portal-configmap.yaml
+			stosPortalConfigFile,
+			// storageos operator namespace
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -146,9 +195,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 	fsData[stosDir] = stosSubDirs
 
 	if o.localPathProvisioner {
-		localPathProvisionerFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.LocalPathProvisionerYaml, config.Spec.Uninstall.LocalPathProvisionerYaml),
+		localPathProvisionerFiles, err := newFileBuilder(
+			// path to local-path-provisioner-storage-class.yaml as passed by --local-path-provisioner-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.LocalPathProvisionerYaml, config.Spec.Uninstall.LocalPathProvisionerYaml),
+			// url for latest local-path-provisioner-storage-class.yaml
 			pluginversion.LocalPathProvisionerLatestSupportVersion(),
-			"", localPathProvisionerFile, "").createFileWithKustPair(clientConfig)
+			// docker images does not exist for this file
+			"",
+			// filename local-path-provisioner-storage-class.yaml
+			localPathProvisionerFile,
+			// namespace not applicable
+			"").createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -171,7 +228,17 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	// build etcd/operator
 	if o.etcdOperator {
-		etcdOpFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml), "", pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdOperatorFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		etcdOpFiles, err := newFileBuilder(
+			// path to etcd-operator.yaml as passed by --etcd-operator-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.EtcdOperatorYaml, config.Spec.Uninstall.EtcdOperatorYaml),
+			// no url for latest etcd-operator.yaml
+			"",
+			// latest docker image docker.io/storageos/etcd-cluster-operator-manifests
+			pluginversion.EtcdOperatorLatestSupportedImageURL(),
+			// filename etcd-operator.yaml
+			etcdOperatorFile,
+			// storageos operator namespace
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
@@ -180,7 +247,16 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 
 	if o.etcdCluster {
 		// build etcd/cluster
-		etcdClusterFiles, err := newFileBuilder(getStringWithDefault(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml), pluginversion.EtcdClusterLatestSupportedURL(), pluginversion.EtcdOperatorLatestSupportedImageURL(), etcdClusterFile, config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+		etcdClusterFiles, err := newFileBuilder(
+			// path to etcd-cluster.yaml as passed by --etcd-cluster-yaml can be a local path, a docker image or url.
+			getStringWithDefault(config.Spec.Install.EtcdClusterYaml, config.Spec.Uninstall.EtcdClusterYaml),
+			// url for latest etcd-cluster.yaml
+			pluginversion.EtcdClusterLatestSupportedURL(),
+			// latest docker image docker.io/storageos/etcd-cluster-operator-manifests
+			pluginversion.EtcdOperatorLatestSupportedImageURL(),
+			// filename etcd-cluster.yaml
+			etcdClusterFile,
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
 		if err != nil {
 			return fs, err
 		}
