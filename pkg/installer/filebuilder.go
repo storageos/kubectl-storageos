@@ -313,42 +313,44 @@ func (fb *fileBuilder) createFileWithData(config *rest.Config) (map[string][]byt
 
 // readOrPullManifest returns a string of the manifest from path, url or image provided
 func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
+	// attempt to read file from local path. At this point the 'yamlPath' could be a local
+	// path, a docker image or a url. Whatever the user has passed via the flag/config.
 	location := fb.yamlPath
-	if location == "" {
-		location = fb.yamlImage
-	}
-	if location == "" {
-		location = fb.yamlUrl
-	}
-	if location == "" {
-		return "", errors.WithStack(errors.New("manifest location not set"))
-	}
-
-	if isDockerRepo(location) {
-		contents, err := fetchImageAndExtractFileFromTarball(location, fb.fileName)
-		if err == nil {
-			return contents, nil
+	if location != "" && !isDockerRepo(location) && !util.IsURL(location) {
+		if _, err := os.Stat(location); err != nil {
+			return "", errors.WithStack(err)
 		}
-		// could not get file from image (may not exist on provided version)
-		// default to release URL
-		location = fb.yamlUrl
-	}
-
-	if util.IsURL(location) {
-		contents, err := pullManifest(location)
+		contents, err := ioutil.ReadFile(location)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		return contents, nil
+		if len(contents) != 0 {
+			return string(contents), nil
+		}
 	}
 
-	if _, err := os.Stat(location); err != nil {
-		return "", errors.WithStack(err)
-	}
-	contents, err := ioutil.ReadFile(location)
-	if err != nil {
-		return "", errors.WithStack(err)
+	// attempt to read file from docker image
+	location = fb.yamlImage
+	if location != "" {
+		if isDockerRepo(location) {
+			contents, err := fetchImageAndExtractFileFromTarball(location, fb.fileName)
+			if err == nil {
+				return contents, nil
+			}
+		}
 	}
 
-	return string(contents), nil
+	// attempt to read file from url
+	location = fb.yamlUrl
+	if location != "" {
+		if util.IsURL(location) {
+			contents, err := pullManifest(location)
+			if err != nil {
+				return "", errors.WithStack(err)
+			}
+			return contents, nil
+		}
+	}
+
+	return "", errors.WithStack(fmt.Errorf("could not retrieve file %s from local path, remote url or docker repo", fb.fileName))
 }
