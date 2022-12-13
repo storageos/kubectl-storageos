@@ -183,9 +183,8 @@ func ClusterUrlByVersion(operatorVersion string) (string, error) {
 		return fmt.Sprintf(oldClusterYamlUrl, operatorVersion), nil
 	}
 
-	// new storageos-cluster.yaml is located on plugin repo,
-	// so we use 'PluginVersion' instead of 'operatorVersion'.
-	return fmt.Sprintf(newClusterYamlUrl, PluginVersion), nil
+	// new storageos-cluster.yaml is located in the operator-manifests image.
+	return fmt.Sprintf("%s:%s", stosOperatorManifestsImageUrl, operatorVersion), nil
 }
 
 func ResourceQuotaUrlByVersion(operatorVersion string) (string, error) {

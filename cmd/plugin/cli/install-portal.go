@@ -63,6 +63,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
 	cmd.Flags().String(installer.PortalManagerVersionFlag, consts.PortalManagerLatestVersion, "version of portal manager")
 	cmd.Flags().String(installer.PortalHTTPSProxyFlag, "", "HTTPS proxy of portal manager")
+	cmd.Flags().Bool(installer.AirGapFlag, false, "install portal manger in an air gapped environment")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -71,6 +72,22 @@ func InstallPortalCmd() *cobra.Command {
 
 func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
+
+	requiredFlags := map[string]string{
+		installer.PortalClientIDFlag: config.Spec.Install.PortalClientID,
+		installer.PortalSecretFlag:   config.Spec.Install.PortalSecret,
+		installer.PortalTenantIDFlag: config.Spec.Install.PortalTenantID,
+		installer.PortalAPIURLFlag:   config.Spec.Install.PortalAPIURL,
+	}
+
+	if config.Spec.AirGap {
+		requiredFlags[installer.PortalManagerVersionFlag] = config.Spec.Install.PortalManagerVersion
+	}
+
+	if err := installer.FlagsAreSet(requiredFlags); err != nil {
+		return err
+	}
+
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -79,16 +96,11 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 	if err := versionSupportsFeature(existingOperatorVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
 		return err
 	}
-	if err := installer.FlagsAreSet(map[string]string{
-		installer.PortalClientIDFlag: config.Spec.Install.PortalClientID,
-		installer.PortalSecretFlag:   config.Spec.Install.PortalSecret,
-		installer.PortalTenantIDFlag: config.Spec.Install.PortalTenantID,
-		installer.PortalAPIURLFlag:   config.Spec.Install.PortalAPIURL,
-	}); err != nil {
-		return err
-	}
 
-	version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
+	if config.Spec.Install.PortalManagerVersion == "" {
+		config.Spec.Install.PortalManagerVersion = version.PortalManagerLatestSupportedVersion()
+	}
+	version.SetPortalManagerLatestSupportedVersion(config.Spec.Install.PortalManagerVersion)
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
@@ -126,6 +138,11 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 		if err != nil {
 			return err
 		}
+		config.Spec.AirGap, err = cmd.Flags().GetBool(installer.AirGapFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
@@ -140,6 +157,7 @@ func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSCo
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
+	config.Spec.AirGap = viper.GetBool(installer.AirGapConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
 	config.Spec.Install.StorageOSPortalClientSecretYaml = viper.GetString(installer.InstallStosPortalClientSecretYamlConfig)
 	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)

@@ -78,6 +78,11 @@ func UninstallCmd() *cobra.Command {
 
 func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
+
+	if err := airGapUninstallFilter(config); err != nil {
+		return err
+	}
+
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !config.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
