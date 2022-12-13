@@ -189,7 +189,7 @@ func parseArgs(args []string) []string {
 	parsedArgs := make([]string, 0)
 	for _, individualArg := range args {
 		if strings.Contains(individualArg, "=") {
-			argsSeparated := strings.Split(strings.ReplaceAll(individualArg, "=", " "), " ")
+			argsSeparated := strings.Split(strings.ReplaceAll(individualArg, "=", "¬"), "¬")
 			parsedArgs = append(parsedArgs, argsSeparated...)
 			continue
 		}
