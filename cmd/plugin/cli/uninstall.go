@@ -69,6 +69,7 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.IncludeLocalPathProvisionerFlag, false, "uninstall local path provisioner storage class")
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall components serially")
+	cmd.Flags().Bool(installer.AirGapFlag, false, "uninstall in an air gapped environment")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -160,6 +161,10 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		if err != nil {
 			return err
 		}
+		config.Spec.AirGap, err = cmd.Flags().GetBool(installer.AirGapFlag)
+		if err != nil {
+			return err
+		}
 
 		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
 		config.Spec.Uninstall.EtcdNamespace = cmd.Flags().Lookup(installer.EtcdNamespaceFlag).Value.String()
@@ -182,6 +187,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.Serial = viper.GetBool(installer.SerialConfig)
+	config.Spec.AirGap = viper.GetBool(installer.AirGapConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
 	config.Spec.Uninstall.EtcdNamespace = valueOrDefault(viper.GetString(installer.UninstallEtcdNSConfig), consts.EtcdOperatorNamespace)
 	config.Spec.Uninstall.StorageOSOperatorYaml = viper.GetString(installer.UninstallStosOperatorYamlConfig)

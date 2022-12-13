@@ -76,6 +76,7 @@ const (
 	TestClusterFlag                 = "test-cluster"
 	SkipK8sVersionCheckFlag         = "skip-k8s-version-check"
 	SerialFlag                      = "serial"
+	AirGapFlag                      = "air-gap"
 
 	// config file fields - contain path delimiters for plugin interpretation of config manifest
 	StackTraceConfig                          = "spec.stackTrace"
@@ -85,6 +86,7 @@ const (
 	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
 	IncludeEtcdConfig                         = "spec.includeEtcd"
 	SerialConfig                              = "spec.serial"
+	AirGapConfig                              = "spec.airGap"
 	WaitConfig                                = "spec.install.wait"
 	DryRunConfig                              = "spec.install.dryRun"
 	StosVersionConfig                         = "spec.install.storageOSVersion"

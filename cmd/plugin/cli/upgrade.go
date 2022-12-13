@@ -109,6 +109,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall and install components serially")
+	cmd.Flags().Bool(installer.AirGapFlag, false, "upgrade in a air gapped environment")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -217,6 +218,10 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
+		config.Spec.AirGap, err = cmd.Flags().GetBool(installer.AirGapFlag)
+		if err != nil {
+			return err
+		}
 		config.Spec.Install.SkipEtcdEndpointsValidation, err = cmd.Flags().GetBool(installer.SkipEtcdEndpointsValFlag)
 		if err != nil {
 			return err
@@ -255,6 +260,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.SkipExistingWorkloadCheck = viper.GetBool(installer.SkipExistingWorkloadCheckConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Serial = viper.GetBool(installer.SerialConfig)
+	config.Spec.AirGap = viper.GetBool(installer.AirGapConfig)
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.EnableMetrics = GetBoolIfConfigSet(installer.EnableMetricsConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)

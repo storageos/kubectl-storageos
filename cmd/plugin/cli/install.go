@@ -96,6 +96,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.TestClusterFlag, false, "mark the cluster being created as a test cluster")
 	cmd.Flags().Bool(installer.SkipK8sVersionCheckFlag, false, "skip the minimum k8s version check")
 	cmd.Flags().Bool(installer.SerialFlag, false, "install components serially")
+	cmd.Flags().Bool(installer.AirGapFlag, false, "install in an air gapped environment")
 
 	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
@@ -278,6 +279,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			return err
 		}
 
+		config.Spec.AirGap, err = cmd.Flags().GetBool(installer.AirGapFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
 		config.Spec.Install.KubernetesVersion = cmd.Flags().Lookup(installer.K8sVersionFlag).Value.String()
@@ -319,6 +325,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.IncludeEtcd = viper.GetBool(installer.IncludeEtcdConfig)
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Serial = viper.GetBool(installer.SerialConfig)
+	config.Spec.AirGap = viper.GetBool(installer.AirGapConfig)
 	config.Spec.Install.EnablePortalManager = viper.GetBool(installer.EnablePortalManagerConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.DryRun = viper.GetBool(installer.DryRunConfig)
