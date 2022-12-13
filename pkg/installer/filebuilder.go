@@ -96,7 +96,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename storageos-operator.yaml
 			stosOperatorFile,
 			// storageos operator namespace
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -115,7 +115,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename storageos-cluster.yaml
 			stosClusterFile,
 			// storageos operator namespace
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -146,7 +146,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename resource-quota.yaml
 			resourceQuotaFile,
 			// storageos operator namespace
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -166,7 +166,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename storageos-portal-client.yaml
 			stosPortalClientFile,
 			// namespace not applicable
-			"").readOrPullManifest(clientConfig)
+			"").readOrPullManifest(config)
 		if err != nil {
 			return fs, err
 		}
@@ -186,7 +186,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename storageos-portal-configmap.yaml
 			stosPortalConfigFile,
 			// storageos operator namespace
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -205,7 +205,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename local-path-provisioner-storage-class.yaml
 			localPathProvisionerFile,
 			// namespace not applicable
-			"").createFileWithKustPair(clientConfig)
+			"").createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -238,7 +238,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			// filename etcd-operator.yaml
 			etcdOperatorFile,
 			// storageos operator namespace
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -256,7 +256,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 			pluginversion.EtcdOperatorLatestSupportedImageURL(),
 			// filename etcd-cluster.yaml
 			etcdClusterFile,
-			config.Spec.GetOperatorNamespace()).createFileWithKustPair(clientConfig)
+			config.Spec.GetOperatorNamespace()).createFileWithKustPair(config)
 		if err != nil {
 			return fs, err
 		}
@@ -283,7 +283,7 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 // resources:
 // - <filename>
 //
-func (fb *fileBuilder) createFileWithKustPair(config *rest.Config) (map[string][]byte, error) {
+func (fb *fileBuilder) createFileWithKustPair(config *apiv1.KubectlStorageOSConfig) (map[string][]byte, error) {
 	files, err := fb.createFileWithData(config)
 	if err != nil {
 		return files, err
@@ -300,7 +300,7 @@ func (fb *fileBuilder) createFileWithKustPair(config *rest.Config) (map[string][
 }
 
 // createFileWithData returns a map with a single entry of [filename][filecontent]
-func (fb *fileBuilder) createFileWithData(config *rest.Config) (map[string][]byte, error) {
+func (fb *fileBuilder) createFileWithData(config *apiv1.KubectlStorageOSConfig) (map[string][]byte, error) {
 	file := make(map[string][]byte)
 	yamlContents, err := fb.readOrPullManifest(config)
 	if err != nil {
@@ -312,7 +312,7 @@ func (fb *fileBuilder) createFileWithData(config *rest.Config) (map[string][]byt
 }
 
 // readOrPullManifest returns a string of the manifest from path, url or image provided
-func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
+func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) (string, error) {
 	// attempt to read file from local path. At this point the 'yamlPath' could be a local
 	// path, a docker image or a url (it is whatever the user has passed via the flag/config).
 	location := fb.yamlPath
@@ -341,6 +341,11 @@ func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
 					return contents, nil
 				}
 			}
+			// pulling a remote image requires an internet connection, so return at this point if
+			// --air-gap flag has been set.
+			if config.Spec.AirGap {
+				return "", errors.WithStack(fmt.Errorf("unable to find image %s locally for air gapped operation.", location))
+			}
 
 			// attempt to pull image remotely
 			image, err = pluginutils.PullImage(location)
@@ -351,6 +356,11 @@ func (fb *fileBuilder) readOrPullManifest(config *rest.Config) (string, error) {
 				}
 			}
 		}
+	}
+	// getting the file from the default url equires an internet connection, so return at this point if
+	// --air-gap flag has been set.
+	if config.Spec.AirGap {
+		return "", errors.WithStack(fmt.Errorf("to complete this air gapped operation, a local path or image must be specified for %s.", fb.fileName))
 	}
 
 	// attempt to read file from url
