@@ -364,10 +364,11 @@ func (in *Installer) installStorageOSCluster() error {
 	// add changes to storageos kustomizations here before kustomizeAndApply calls ie make changes
 	// to storageos/cluster/kustomization.yaml based on flags (or cli in.stosConfig file)
 	if in.stosConfig.Spec.Install.StorageOSClusterNamespace != consts.NewOperatorNamespace {
-		if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
-			return err
+		if !in.stosConfig.Spec.Install.DryRun {
+			if err = in.kubectlClient.Apply(context.TODO(), "", pluginutils.NamespaceYaml(in.stosConfig.Spec.Install.StorageOSClusterNamespace), true); err != nil {
+				return err
+			}
 		}
-
 		if err = in.setFieldInFsManifest(filepath.Join(stosDir, clusterDir, kustomizationFile), in.stosConfig.Spec.Install.StorageOSClusterNamespace, "namespace", ""); err != nil {
 			return err
 		}
