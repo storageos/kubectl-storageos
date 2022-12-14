@@ -82,7 +82,7 @@ func isDockerRepo(url string) bool {
 	return strings.HasPrefix(url, "docker.io/")
 }
 
-// fetchImageAndExtractFromTarball attempts to retrieve an OCI image locally.
+// fetchImageAndExtractFromTarball attempts to retrieve an OCI image from the docker dameon.
 // If this fails, an attempt is made to pull the image remotely. Then the file
 // at filePath is extracted and returned.
 func fetchImageAndExtractFileFromTarball(imageURL, filePath string) (string, error) {

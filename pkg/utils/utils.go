@@ -154,6 +154,7 @@ func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
+// Image attempts to get an image from the docker daemon.
 func Image(imageUrl string) (gocontainerv1.Image, error) {
 	ref, err := name.ParseReference(imageUrl)
 	if err != nil {

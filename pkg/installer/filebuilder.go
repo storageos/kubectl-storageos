@@ -344,7 +344,7 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 			// pulling a remote image requires an internet connection, so return at this point if
 			// --air-gap flag has been set.
 			if config.Spec.AirGap {
-				return "", errors.WithStack(fmt.Errorf("unable to find image %s locally for air gapped operation.", location))
+				return "", errors.WithStack(fmt.Errorf("unable to get image %s with file %s from the docker daemon for air gapped operation.", location, fb.fileName))
 			}
 
 			// attempt to pull image remotely
