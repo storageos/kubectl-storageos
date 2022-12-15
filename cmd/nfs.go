@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func DetachCmd() *cobra.Command {
+func NfsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "detach",
-		Short:              "Detach a volume from its current location",
+		Use:                "nfs",
+		Short:              "Make changes and attach nfs volumes",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

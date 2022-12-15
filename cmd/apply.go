@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func CreateCmd() *cobra.Command {
+func ApplyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "create",
-		Short:              "Create new resources",
+		Use:                "apply",
+		Short:              "Make changes to existing resources",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

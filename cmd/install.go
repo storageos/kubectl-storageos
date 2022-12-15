@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"fmt"
@@ -98,9 +98,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SerialFlag, false, "install components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "install in an air gapped environment")
 
-	cmd.Flags().MarkHidden(installer.TestClusterFlag)
+	_ = cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -204,7 +204,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 }
 
 func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

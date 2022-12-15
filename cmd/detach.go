@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func AttachCmd() *cobra.Command {
+func DetachCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "attach",
-		Short:              "Attach a volume to a node",
+		Use:                "detach",
+		Short:              "Detach a volume from its current location",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

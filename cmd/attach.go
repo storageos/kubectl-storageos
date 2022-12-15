@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func DeleteCmd() *cobra.Command {
+func AttachCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "delete",
-		Short:              "Delete resources in the cluster",
+		Use:                "attach",
+		Short:              "Attach a volume to a node",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

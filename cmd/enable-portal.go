@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"fmt"
@@ -15,17 +15,17 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
-const disablePortal = "disable-portal"
+const enablePortal = "enable-portal"
 
-func DisablePortalCmd() *cobra.Command {
+func EnablePortalCmd() *cobra.Command {
 	var err error
 	var traceError bool
 	pluginLogger := logger.NewLogger()
 	cmd := &cobra.Command{
-		Use:          disablePortal,
+		Use:          enablePortal,
 		Args:         cobra.MinimumNArgs(0),
-		Short:        "Disable StorageOS Portal Manager",
-		Long:         `Disable StorageOS Portal Manager`,
+		Short:        "Enable StorageOS Portal Manager",
+		Long:         `Enable StorageOS Portal Manager`,
 		SilenceUsage: true,
 		PreRun:       func(cmd *cobra.Command, args []string) {},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -34,20 +34,20 @@ func DisablePortalCmd() *cobra.Command {
 			})
 
 			config := &apiv1.KubectlStorageOSConfig{}
-			if err = setDisablePortalValues(cmd, config); err != nil {
+			if err = setEnablePortalValues(cmd, config); err != nil {
 				return
 			}
 
 			traceError = config.Spec.StackTrace
 
-			err = disablePortalCmd(config, pluginLogger)
+			err = enablePortalCmd(config, pluginLogger)
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
-			if err := pluginutils.HandleError(disablePortal, err, traceError); err != nil {
-				pluginLogger.Error(fmt.Sprintf("%s%s", disablePortal, " has failed"))
+			if err := pluginutils.HandleError(enablePortal, err, traceError); err != nil {
+				pluginLogger.Error(fmt.Sprintf("%s%s", enablePortal, " has failed"))
 				return err
 			}
-			pluginLogger.Success("Portal Manager successfully disabled.")
+			pluginLogger.Success("Portal Manager enabled successfully.")
 			return nil
 		},
 	}
@@ -56,12 +56,12 @@ func DisablePortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
 
-func disablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+func enablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
 	if err != nil {
@@ -77,14 +77,13 @@ func disablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 		if err != nil {
 			return err
 		}
-
-		log.Commencing(disablePortal)
-		return cliInstaller.EnablePortalManager(false)
+		log.Commencing(enablePortal)
+		return cliInstaller.EnablePortalManager(true)
 	})
 }
 
-func setDisablePortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+func setEnablePortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
+	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

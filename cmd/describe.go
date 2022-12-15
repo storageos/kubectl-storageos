@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func UncordonCmd() *cobra.Command {
+func DescribeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "uncordon",
-		Short:              "Marks a node as uncordoned",
+		Use:                "describe",
+		Short:              "Fetch extended details for resources",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

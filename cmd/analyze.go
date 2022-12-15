@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"encoding/json"
@@ -24,9 +24,9 @@ func AnalyzeCmd() *cobra.Command {
 		Short: "Analyze a support bundle",
 		Long:  `Analyze a support bundle using the Analyzer definitions provided`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.BindPFlag("bundle", cmd.Flags().Lookup("bundle"))
-			viper.BindPFlag("output", cmd.Flags().Lookup("output"))
-			viper.BindPFlag("quiet", cmd.Flags().Lookup("quiet"))
+			_ = viper.BindPFlag("bundle", cmd.Flags().Lookup("bundle"))
+			_ = viper.BindPFlag("output", cmd.Flags().Lookup("output"))
+			_ = viper.BindPFlag("quiet", cmd.Flags().Lookup("quiet"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
@@ -72,13 +72,13 @@ func AnalyzeCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("bundle", "", "filename of the support bundle to analyze")
-	cmd.MarkFlagRequired("bundle")
+	_ = cmd.MarkFlagRequired("bundle")
 	cmd.Flags().String("output", "", "output format: json, yaml")
 	cmd.Flags().String("compatibility", "", "output compatibility mode: support-bundle")
-	cmd.Flags().MarkHidden("compatibility")
+	_ = cmd.Flags().MarkHidden("compatibility")
 	cmd.Flags().Bool("quiet", false, "enable/disable error messaging and only show parseable output")
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }

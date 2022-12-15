@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func CordonCmd() *cobra.Command {
+func UpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "cordon",
-		Short:              "Marks a node as cordoned",
+		Use:                "update",
+		Short:              "Make changes to existing resources",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},

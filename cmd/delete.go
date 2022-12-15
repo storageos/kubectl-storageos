@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -6,10 +6,10 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
 
-func NfsCmd() *cobra.Command {
+func DeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "nfs",
-		Short:              "Make changes and attach nfs volumes",
+		Use:                "delete",
+		Short:              "Delete resources in the cluster",
 		Args:               cobra.MinimumNArgs(0),
 		SilenceUsage:       true,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
