@@ -21,7 +21,7 @@ import (
 
 const errFlagsNotSet = "The following flags have not been set and are required to perform this operation:"
 
-//splitMultiDoc splits a single multidoc manifest into multiple manifests
+// splitMultiDoc splits a single multidoc manifest into multiple manifests
 func splitMultiDoc(multidoc string) []string {
 	return strings.Split(multidoc, "\n---\n")
 }

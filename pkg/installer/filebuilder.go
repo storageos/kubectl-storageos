@@ -82,7 +82,7 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 
 // buildInstallerFileSys builds an in-memory filesystem for installer with relevant storageos and
 // etcd manifests based on installerOptions.
-// - storageos
+/* - storageos
 //   - operator
 //     - storageos-operator.yaml
 //     - kustomization.yaml
@@ -108,6 +108,7 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 //   - storageclass
 //     - local-path-provisioner.yaml
 //     - kustomization.yaml
+*/
 func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSConfig, clientConfig *rest.Config) (filesys.FileSystem, error) {
 	fs := filesys.MakeFsInMemory()
 	fsData := make(fsData)
@@ -312,7 +313,6 @@ func (o *installerOptions) buildInstallerFileSys(config *apiv1.KubectlStorageOSC
 //
 // resources:
 // - <filename>
-//
 func (fb *fileBuilder) createFileWithKustPair(config *apiv1.KubectlStorageOSConfig) (map[string][]byte, error) {
 	files, err := fb.createFileWithData(config)
 	if err != nil {

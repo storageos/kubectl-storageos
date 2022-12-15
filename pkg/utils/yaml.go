@@ -226,25 +226,25 @@ func GetFieldInMultiDocByKind(multidoc, kind string, fields ...string) (string, 
 // An example of such a configmap is the storageos-operator configmap,
 // which contains the storageos-operator.yaml operator config manifest.
 //
-//apiVersion: v1
-//data:
-//  operator_config.yaml: |
-//    apiVersion: config.storageos.com/v1
-//    kind: OperatorConfig
-//    health:
-//	    healthProbeBindAddress: :8081
-//	  metrics:
-//	    bindAddress: 127.0.0.1:8080
-//	  webhook:
-//	    port: 9443
-//	  leaderElection:
-//	    leaderElect: true
-//	    resourceName: storageos-operator
-//	  webhookCertRefreshInterval: 15m
-//	  webhookServiceName: storageos-operator-webhook
-//	  webhookSecretRef: storageos-operator-webhook
-//	  validatingWebhookConfigRef: storageos-operator-validating-webhook
-//
+/* apiVersion: v1
+// data:
+//	 operator_config.yaml: |
+//	   apiVersion: config.storageos.com/v1
+//	   kind: OperatorConfig
+//	   health:
+//		    healthProbeBindAddress: :8081
+//     metrics:
+//	     bindAddress: 127.0.0.1:8080
+//	   webhook:
+//       port: 9443
+//     leaderElection:
+//       leaderElect: true
+//       resourceName: storageos-operator
+//      webhookCertRefreshInterval: 15m
+//      webhookServiceName: storageos-operator-webhook
+//      webhookSecretRef: storageos-operator-webhook
+//      validatingWebhookConfigRef: storageos-operator-validating-webhook
+*/
 // WARNING: using this function will overwrite ALL other data in the existing configmap
 // it is only suitable for a specific scenario wherby a configmap storing a single manifest
 // is required like the example above.
@@ -259,42 +259,51 @@ func SetManifestInConfigMapData(configMap, manifestName, manifestContent string)
 // GetManifestFromConfigMapData returns a manifest from the data of a configmap.
 // By passing the following configmap string:
 //
-//apiVersion: v1
-//data:
-//  operator_config.yaml: |
-//    apiVersion: config.storageos.com/v1
-//    kind: OperatorConfig
-//    health:
-//	    healthProbeBindAddress: :8081
-//	  metrics:
-//	    bindAddress: 127.0.0.1:8080
-//	  webhook:
-//	    port: 9443
-//	  leaderElection:
-//	    leaderElect: true
-//	    resourceName: storageos-operator
-//	  webhookCertRefreshInterval: 15m
-//	  webhookServiceName: storageos-operator-webhook
-//	  webhookSecretRef: storageos-operator-webhook
-//	  validatingWebhookConfigRef: storageos-operator-validating-webhook
+// apiVersion: v1
+// data:
+//
+//	 operator_config.yaml: |
+//	   apiVersion: config.storageos.com/v1
+//	   kind: OperatorConfig
+//	   health:
+//		    healthProbeBindAddress: :8081
+//		  metrics:
+//		    bindAddress: 127.0.0.1:8080
+//		  webhook:
+//		    port: 9443
+//		  leaderElection:
+//		    leaderElect: true
+//		    resourceName: storageos-operator
+//		  webhookCertRefreshInterval: 15m
+//		  webhookServiceName: storageos-operator-webhook
+//		  webhookSecretRef: storageos-operator-webhook
+//		  validatingWebhookConfigRef: storageos-operator-validating-webhook
 //
 // the 'inner' manifest will be returned, eg:
 //
-//apiVersion: config.storageos.com/v1
-//kind: OperatorConfig
-//health:
-//  healthProbeBindAddress: :8081
-//metrics:
-//  bindAddress: 127.0.0.1:8080
-//webhook:
-//  port: 9443
-//leaderElection:
-//  leaderElect: true
-//  resourceName: storageos-operator
-//webhookCertRefreshInterval: 15m
-//webhookServiceName: storageos-operator-webhook
-//webhookSecretRef: storageos-operator-webhook
-//validatingWebhookConfigRef: storageos-operator-validating-webhook
+// apiVersion: config.storageos.com/v1
+// kind: OperatorConfig
+// health:
+//
+//	healthProbeBindAddress: :8081
+//
+// metrics:
+//
+//	bindAddress: 127.0.0.1:8080
+//
+// webhook:
+//
+//	port: 9443
+//
+// leaderElection:
+//
+//	leaderElect: true
+//	resourceName: storageos-operator
+//
+// webhookCertRefreshInterval: 15m
+// webhookServiceName: storageos-operator-webhook
+// webhookSecretRef: storageos-operator-webhook
+// validatingWebhookConfigRef: storageos-operator-validating-webhook
 //
 // WARNING: This function is only capable of reliably returning a manifest
 // from the configmap, if only a single manifest exists in the configmap's
@@ -323,28 +332,30 @@ type KustomizePatch struct {
 // returning the updated kustomization file as a string.
 
 // Example
-//*******************************************************
+// *******************************************************
 // Input kustomization file:
-//*******************************************************
+// *******************************************************
 // apiVersion: kustomize.config.k8s.io/v1beta1
 // kind: Kustomization
 //
 // resources:
 // - storageos-cluster.yaml
-//******************************************************
+// ******************************************************
 // Other inputs:
 // targetKind: "StorageOSCluster"
 // targetName: "storageoscluster-sample"
-// patches: []KustomizePatch{
-//	{
-//		Op: "replace",
-//		Path: "/spec/kvBackend/address",
-//		Value: 	"storageos.storageos-etcd:2379",
-//	},
-// }
-//*******************************************************
+//
+//	patches: []KustomizePatch{
+//		{
+//			Op: "replace",
+//			Path: "/spec/kvBackend/address",
+//			Value: 	"storageos.storageos-etcd:2379",
+//		},
+//	}
+//
+// *******************************************************
 // Results in the following output kustomization file:
-//*******************************************************
+// *******************************************************
 // apiVersion: kustomize.config.k8s.io/v1beta1
 // kind: Kustomization
 //
@@ -352,14 +363,15 @@ type KustomizePatch struct {
 // - storageos-cluster.yaml
 //
 // patches:
-// - target:
+//   - target:
 //     kind: StorageOSCluster
 //     name: storageoscluster-sample
-//   patch: |
-//     - op: replace
-//       path: /spec/kvBackend/address
-//       value: storageos.storageos-etcd:2379
-//*******************************************************
+//     patch: |
+//   - op: replace
+//     path: /spec/kvBackend/address
+//     value: storageos.storageos-etcd:2379
+//
+// *******************************************************
 func AddPatchesToKustomize(kustomizationFile, targetKind, targetName string, patches []KustomizePatch) (string, error) {
 	obj, err := kyaml.Parse(string(kustomizationFile))
 	if err != nil {

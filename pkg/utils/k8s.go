@@ -196,7 +196,7 @@ func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.
 	return &pods.Items[0], nil
 }
 
-//ListPods returns PodList discovered by namespace and label.
+// ListPods returns PodList discovered by namespace and label.
 func ListPods(config *rest.Config, namespace, label string) (*corev1.PodList, error) {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
