@@ -24,7 +24,7 @@ func PreflightCmd() *cobra.Command {
 		Long:         `A preflight check is a set of validations that can and should be run to ensure that a cluster meets the requirements to run StorageOS.`,
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			_ = viper.BindPFlags(cmd.Flags())
+			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()

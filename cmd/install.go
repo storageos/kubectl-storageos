@@ -98,9 +98,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SerialFlag, false, "install components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "install in an air gapped environment")
 
-	_ = cmd.Flags().MarkHidden(installer.TestClusterFlag)
+	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
-	_ = viper.BindPFlags(cmd.Flags())
+	viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -204,7 +204,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 }
 
 func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

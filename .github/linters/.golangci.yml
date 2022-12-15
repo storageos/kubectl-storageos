@@ -1,12 +1,6 @@
----
-#########################
-#########################
-## Golang Linter rules ##
-#########################
-#########################
+# See https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+# and https://golangci-lint.run/
 
-# configure golangci-lint
-# see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
   skip-files: zz_generated*
   timeout: 3m
@@ -21,7 +15,7 @@ issues:
     - path: cmd/
       linters:
       - errcheck
-    
+
 linters:
   disable: 
     - typecheck

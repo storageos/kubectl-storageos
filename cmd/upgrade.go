@@ -111,7 +111,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall and install components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "upgrade in a air gapped environment")
 
-	_ = viper.BindPFlags(cmd.Flags())
+	viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -181,7 +181,7 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 }
 
 func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")
@@ -291,7 +291,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 }
 
 func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

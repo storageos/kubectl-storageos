@@ -20,7 +20,7 @@ func RootCmd() *cobra.Command {
 		Short:   "StorageOS",
 		Long:    `StorageOS kubectl plugin`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			_ = viper.BindPFlags(cmd.Flags())
+			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

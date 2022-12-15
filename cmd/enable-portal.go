@@ -56,7 +56,7 @@ func EnablePortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
 
-	_ = viper.BindPFlags(cmd.Flags())
+	viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -83,7 +83,7 @@ func enablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) e
 }
 
 func setEnablePortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

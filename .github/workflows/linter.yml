@@ -1,24 +1,7 @@
----
-#################################
-#################################
-## Super Linter GitHub Actions ##
-#################################
-#################################
 name: Lint Full Codebase
 
-#
-# Documentation:
-# https://help.github.com/en/articles/workflow-syntax-for-github-actions
-#
-
-#############################
-# Start the job on all push #
-#############################
 on: [ push ]
 
-###############
-# Set the Job #
-###############
 jobs:
   golangci:
     name: Go Linter
@@ -33,52 +16,42 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential
           sudo apt install -y libdevmapper-dev
-
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
          go-version: 1.18
-
       - uses: actions/checkout@v2
-
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.45.2
           args: -c=".github/linters/.golangci.yml"
-  build:
-    # Name the Job
-    name: Super Linter (non-Go)
-    # Set the agent to run on
-    runs-on: ubuntu-latest
 
-    ##################
-    # Load all steps #
-    ##################
+  super-linter:
+    name: Super Linter
+    runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
-      ##########################
-      # Checkout the code base #
-      ##########################
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
-
-      ################################
-      # Run Linter against code base #
-      ################################
-      - name: super-linter
-        uses: github/super-linter@v4
+      - name: Run super-linter
+        uses: github/super-linter/slim@v4 # slim image has - 2gb and excludes support for languages we don't use
         env:
-          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_ALL_CODEBASE: false # only new or edited files. A broken change that has already been merged will not be picked up a second time!
+          FILTER_REGEX_EXCLUDE: vendor/*
+          # From docs: "If any one of the variables are set to true, we default to leaving any unset variable to false"
+          VALIDATE_GO: true
           VALIDATE_MARKDOWN: true
           VALIDATE_SHELL_SHFMT: true
           VALIDATE_YAML: true
           VALIDATE_BASH: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IGNORE_GITIGNORED_FILES: true
+          LINTER_RULES_PATH: .github/linters
