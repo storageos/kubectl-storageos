@@ -53,10 +53,13 @@ help: ## Display this help.
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
 vet: ## Run go vet against code.
 	go vet ${BUILDFLAGS} ./...
 
-test: vet generate ## Run tests.
+test: fmt vet generate ## Run tests.
 	go test -v ${BUILDFLAGS} github.com/storageos/kubectl-storageos/...
 
 e2e: ## Run e2e tests against latest supported k8s cluster.  
@@ -80,7 +83,7 @@ _build: ## Build manager binary.
 _build-pre: ## Build manager binary.
 	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION) -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
-run: vet generate ## Run a controller from your host.
+run: fmt vet generate ## Run a controller from your host.
 	go run ${BUILDFLAGS} ./main.go
 
 update-kind-nodes: 

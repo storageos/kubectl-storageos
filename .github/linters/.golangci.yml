@@ -2,24 +2,25 @@
 # and https://golangci-lint.run/
 
 run:
-  skip-files: zz_generated*
+  skip-files:
+    - zz_generated*
   timeout: 3m
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
-      - dupl
-      - gosec
-      - goconst
+        - dupl
+        - gosec
+        - goconst
     - path: cmd/
       linters:
-      - errcheck
+        - errcheck
 
 linters:
   disable: 
     - typecheck
-  enable:
+  enable: # some linters are disabled with go1.18. See https://github.com/golangci/golangci-lint/issues/2649
     - nilerr
     - whitespace
     - gofmt
