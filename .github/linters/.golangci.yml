@@ -5,6 +5,7 @@ run:
   skip-files:
     - zz_generated*
   timeout: 3m
+  go: 1.18
 
 issues:
   exclude-rules:
