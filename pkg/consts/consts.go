@@ -18,6 +18,4 @@ const (
 	EtcdOperatorNamespace = "storageos-etcd"
 
 	EtcdSecretName = "storageos-etcd-secret"
-
-	PortalManagerLatestVersion = "v1.0.5"
 )

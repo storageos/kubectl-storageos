@@ -61,7 +61,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalSecretFlag, "", "storageos portal secret (plaintext)")
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().String(installer.PortalAPIURLFlag, "", "storageos portal url")
-	cmd.Flags().String(installer.PortalManagerVersionFlag, consts.PortalManagerLatestVersion, "version of portal manager")
+	cmd.Flags().String(installer.PortalManagerVersionFlag, "", "version of portal manager")
 	cmd.Flags().String(installer.PortalHTTPSProxyFlag, "", "HTTPS proxy of portal manager")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "install portal manger in an air gapped environment")
 
