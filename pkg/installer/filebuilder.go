@@ -14,6 +14,23 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
+const errManifestNotFoundFromImage = `
+   An error occurred attempting to fetch the manifest image %s with manifest %s from the docker daemon. 
+   Possible causes:
+      - The manifest image is not stored locally (please ensure you have specified the correct version).
+	  - The docker daemon is not running.
+	  - Some other error occurred while retrieving the manifest from the image.
+
+   Alternatively, the manifest itself can be saved locally and passed to kubectl-storageos using the flag:
+   
+      --%s=/path/to/%s
+`
+const errNoURLForAirGap = `
+   Air gapped operation - the source of the manifest %s passed to %s cannot be a URL.
+
+   It must be a local file or locally stored manifest image.
+`
+
 type installerOptions struct {
 	storageosOperator    bool
 	storageosCluster     bool
@@ -38,6 +55,9 @@ type fileBuilder struct {
 	fileName string
 	// namespace of yaml file
 	namespace string
+	// flagToFile is a map of flags to their corresponding files.
+	// Only used for more helpful error messages
+	flagToFile map[string]string
 }
 
 func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *fileBuilder {
@@ -47,6 +67,16 @@ func newFileBuilder(yamlPath, yamlUrl, yamlImage, fileName, namespace string) *f
 		yamlImage: yamlImage,
 		fileName:  fileName,
 		namespace: namespace,
+		flagToFile: map[string]string{
+			stosOperatorFile:         StosOperatorYamlFlag,
+			stosClusterFile:          StosClusterYamlFlag,
+			stosPortalClientFile:     StosPortalClientSecretYamlFlag,
+			stosPortalConfigFile:     StosPortalConfigYamlFlag,
+			resourceQuotaFile:        ResourceQuotaYamlFlag,
+			etcdOperatorFile:         EtcdOperatorYamlFlag,
+			etcdClusterFile:          EtcdClusterYamlFlag,
+			localPathProvisionerFile: LocalPathProvisionerYamlFlag,
+		},
 	}
 }
 
@@ -344,7 +374,7 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 			// pulling a remote image requires an internet connection, so return at this point if
 			// --air-gap flag has been set.
 			if config.Spec.AirGap {
-				return "", errors.WithStack(fmt.Errorf("unable to get image %s with file %s from the docker daemon for air gapped operation.", location, fb.fileName))
+				return "", errors.WithStack(fmt.Errorf(errManifestNotFoundFromImage, location, fb.fileName, fb.flagToFile[fb.fileName], fb.fileName))
 			}
 
 			// attempt to pull image remotely
@@ -360,7 +390,7 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 	// getting the file from the default url equires an internet connection, so return at this point if
 	// --air-gap flag has been set.
 	if config.Spec.AirGap {
-		return "", errors.WithStack(fmt.Errorf("to complete this air gapped operation, a local path or image must be specified for %s.", fb.fileName))
+		return "", errors.WithStack(fmt.Errorf(errNoURLForAirGap, fb.fileName, fb.flagToFile[fb.fileName]))
 	}
 
 	// attempt to read file from url
