@@ -15,18 +15,18 @@ import (
 )
 
 const errManifestNotFoundFromImage = `
-   An error occurred attempting to fetch the manifest image %s with manifest %s from the docker daemon. 
+   An error occurred attempting to fetch the manifest image "%s" with manifest "%s" from the docker daemon. 
    Possible causes:
       - The manifest image is not stored locally (please ensure you have specified the correct version).
-	  - The docker daemon is not running.
-	  - Some other error occurred while retrieving the manifest from the image.
+      - The docker daemon is not running.
+      - Some other error occurred while retrieving the manifest from the image.
 
    Alternatively, the manifest itself can be saved locally and passed to kubectl-storageos using the flag:
    
       --%s=/path/to/%s
 `
 const errNoURLForAirGap = `
-   Air gapped operation - the source of the manifest %s passed to %s cannot be a URL.
+   Air gapped operation - the source of the manifest "%s" passed to "%s" cannot be a URL.
 
    It must be a local file or locally stored manifest image.
 `
@@ -343,67 +343,91 @@ func (fb *fileBuilder) createFileWithData(config *apiv1.KubectlStorageOSConfig) 
 
 // readOrPullManifest returns a string of the manifest from path, url or image provided
 func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) (string, error) {
-	// attempt to read file from local path. At this point the 'yamlPath' could be a local
-	// path, a docker image or a url (it is whatever the user has passed via the flag/config).
+	// At this point the 'yamlPath' could be a local has been passed by the user and
+	// can be a local path, a docker image or a url. Attempt to retrieve the manifest
+	// from whatever has been specified.
 	location := fb.yamlPath
-	if location != "" && !isDockerRepo(location) && !util.IsURL(location) {
-		if _, err := os.Stat(location); err != nil {
-			return "", errors.WithStack(err)
-		}
-		contents, err := ioutil.ReadFile(location)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-		if len(contents) != 0 {
-			return string(contents), nil
+	if location != "" {
+		if !isDockerRepo(location) && !util.IsURL(location) {
+			// not docker repo or url, must be a local path
+			return fb.getManifestFromPath(location)
+		} else if util.IsURL(location) {
+			return fb.getManifestFromURL(config.Spec.AirGap, location)
+		} else if isDockerRepo(location) {
+			return fb.getManifestFromImage(config.Spec.AirGap, location)
 		}
 	}
 
-	// attempt to read file from docker image
+	// the user did not specify a location for the manifest, so
+	// we will attempt to retrieve it from the manifest image.
 	location = fb.yamlImage
-	if location != "" {
-		if isDockerRepo(location) {
-			// attempt to fetch image locally
-			image, err := pluginutils.Image(location)
-			if err == nil {
-				contents, err := extractFileFromImage(image, fb.fileName)
-				if err == nil {
-					return contents, nil
-				}
-			}
-			// pulling a remote image requires an internet connection, so return at this point if
-			// --air-gap flag has been set.
-			if config.Spec.AirGap {
-				return "", errors.WithStack(fmt.Errorf(errManifestNotFoundFromImage, location, fb.fileName, fb.flagToFile[fb.fileName], fb.fileName))
-			}
-
-			// attempt to pull image remotely
-			image, err = pluginutils.PullImage(location)
-			if err == nil {
-				contents, err := extractFileFromImage(image, fb.fileName)
-				if err == nil {
-					return contents, nil
-				}
-			}
+	if location != "" && isDockerRepo(location) {
+		contents, err := fb.getManifestFromImage(config.Spec.AirGap, location)
+		if err == nil {
+			return contents, nil
 		}
 	}
-	// getting the file from the default url equires an internet connection, so return at this point if
-	// --air-gap flag has been set.
-	if config.Spec.AirGap {
-		return "", errors.WithStack(fmt.Errorf(errNoURLForAirGap, fb.fileName, fb.flagToFile[fb.fileName]))
-	}
 
-	// attempt to read file from url
+	// could not get the manifest from the manifest image either,
+	// last resort is to pull from the default url.
 	location = fb.yamlUrl
-	if location != "" {
-		if util.IsURL(location) {
-			contents, err := pullManifest(location)
-			if err != nil {
-				return "", errors.WithStack(err)
-			}
+	if location != "" && util.IsURL(location) {
+		contents, err := fb.getManifestFromURL(config.Spec.AirGap, location)
+		if err == nil {
 			return contents, nil
 		}
 	}
 
 	return "", errors.WithStack(fmt.Errorf("could not retrieve file %s from local path, remote url or docker repo", fb.fileName))
+}
+
+func (fb *fileBuilder) getManifestFromPath(location string) (string, error) {
+	if _, err := os.Stat(location); err != nil {
+		return "", errors.WithStack(err)
+	}
+	contents, err := ioutil.ReadFile(location)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return string(contents), nil
+}
+
+func (fb *fileBuilder) getManifestFromURL(airGap bool, location string) (string, error) {
+	// getting the file from the default url equires an internet connection, so return at this point if
+	// --air-gap flag has been set.
+	if airGap {
+		return "", errors.WithStack(fmt.Errorf(errNoURLForAirGap, fb.fileName, fb.flagToFile[fb.fileName]))
+	}
+
+	contents, err := pullManifest(location)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return contents, nil
+}
+
+func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (string, error) {
+	// attempt to fetch image locally
+	image, err := pluginutils.Image(location)
+	if err == nil {
+		contents, err := extractFileFromImage(image, fb.fileName)
+		if err != nil {
+			return "", err
+		}
+		return contents, nil
+	}
+	// pulling a remote image requires an internet connection, so return at this point if
+	// --air-gap flag has been set.
+	if airGap {
+		return "", errors.WithStack(fmt.Errorf(errManifestNotFoundFromImage, location, fb.fileName, fb.flagToFile[fb.fileName], fb.fileName))
+	}
+
+	// attempt to pull image remotely
+	image, err = pluginutils.PullImage(location)
+	if err != nil {
+		return "", err
+	}
+
+	return extractFileFromImage(image, fb.fileName)
 }
