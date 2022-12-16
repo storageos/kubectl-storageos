@@ -79,7 +79,7 @@ func UninstallCmd() *cobra.Command {
 func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if err := airGapUninstallFilter(config); err != nil {
+	if err := installer.FlagsAreSet(uninstallFlagsFilter(config)); err != nil {
 		return err
 	}
 

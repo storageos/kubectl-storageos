@@ -201,12 +201,19 @@ func parseArgs(args []string) []string {
 	return parsedArgs
 }
 
-func airGapInstallFilter(config *apiv1.KubectlStorageOSConfig) error {
-	if !config.Spec.AirGap {
-		return nil
+func installFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string {
+	requiredFlags := make(map[string]string)
+	if config.Spec.Install.EnablePortalManager {
+		requiredFlags[installer.PortalClientIDFlag] = config.Spec.Install.PortalClientID
+		requiredFlags[installer.PortalSecretFlag] = config.Spec.Install.PortalSecret
+		requiredFlags[installer.PortalTenantIDFlag] = config.Spec.Install.PortalTenantID
+		requiredFlags[installer.PortalAPIURLFlag] = config.Spec.Install.PortalAPIURL
 	}
 
-	requiredFlags := make(map[string]string)
+	if !config.Spec.AirGap {
+		return requiredFlags
+	}
+
 	requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
 
 	if config.Spec.IncludeEtcd {
@@ -221,19 +228,27 @@ func airGapInstallFilter(config *apiv1.KubectlStorageOSConfig) error {
 		requiredFlags[installer.PortalManagerVersionFlag] = config.Spec.Install.PortalManagerVersion
 	}
 
-	return installer.FlagsAreSet(requiredFlags)
+	return requiredFlags
 }
 
-func airGapUninstallFilter(config *apiv1.KubectlStorageOSConfig) error {
-	if !config.Spec.AirGap {
-		return nil
-	}
-
+func uninstallFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string {
 	requiredFlags := make(map[string]string)
+	if !config.Spec.AirGap {
+		return requiredFlags
+	}
 
 	if config.Spec.IncludeLocalPathProvisioner {
 		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
 	}
 
-	return installer.FlagsAreSet(requiredFlags)
+	return requiredFlags
+}
+
+func upgradeFlagsFilter(uninstallConfig, installConfig *apiv1.KubectlStorageOSConfig) map[string]string {
+	uninstallFlags := uninstallFlagsFilter(uninstallConfig)
+	installFlags := installFlagsFilter(installConfig)
+	for k, v := range uninstallFlags {
+		installFlags[k] = v
+	}
+	return installFlags
 }

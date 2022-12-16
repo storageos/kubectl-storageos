@@ -108,7 +108,7 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if err := airGapInstallFilter(config); err != nil {
+	if err := installer.FlagsAreSet(installFlagsFilter(config)); err != nil {
 		return err
 	}
 
@@ -156,14 +156,6 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 	if config.Spec.Install.EnablePortalManager {
 		if err := versionSupportsFeature(config.Spec.Install.StorageOSVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
 			return fmt.Errorf("failed to install portal manager: %w", err)
-		}
-		if err := installer.FlagsAreSet(map[string]string{
-			installer.PortalClientIDFlag: config.Spec.Install.PortalClientID,
-			installer.PortalSecretFlag:   config.Spec.Install.PortalSecret,
-			installer.PortalTenantIDFlag: config.Spec.Install.PortalTenantID,
-			installer.PortalAPIURLFlag:   config.Spec.Install.PortalAPIURL,
-		}); err != nil {
-			return err
 		}
 		if config.Spec.Install.PortalManagerVersion == "" {
 			config.Spec.Install.PortalManagerVersion = (version.PortalManagerLatestSupportedVersion())

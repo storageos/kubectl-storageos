@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
-const errFlagsNotSet = "The following flags have not been set: "
+const errFlagsNotSet = "The following flags have not been set and are required to perform this operation:"
 
 //splitMultiDoc splits a single multidoc manifest into multiple manifests
 func splitMultiDoc(multidoc string) []string {
@@ -309,7 +309,7 @@ func FlagsAreSet(flags map[string]string) error {
 		}
 	}
 	if len(missingFlags) != 0 {
-		return fmt.Errorf(errFlagsNotSet + strings.Join(missingFlags, ","))
+		return fmt.Errorf(errFlagsNotSet + "\n   --" + strings.Join(missingFlags, "\n   --"))
 	}
 	return nil
 }
