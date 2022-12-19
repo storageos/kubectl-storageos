@@ -26,7 +26,7 @@ const errManifestNotFoundFromImage = `
       --%s=/path/to/%s
 `
 const errNoURLForAirGap = `
-   Air gapped operation - the source of the manifest "%s" passed to "%s" cannot be a URL.
+   Air gapped operation - the source of the manifest "%s" passed to "--%s" cannot be a URL.
 
    It must be a local file or locally stored manifest image.
 `
@@ -365,6 +365,8 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 		contents, err := fb.getManifestFromImage(config.Spec.AirGap, location)
 		if err == nil {
 			return contents, nil
+		} else if err != nil && config.Spec.AirGap {
+			return "", err
 		}
 	}
 
@@ -412,10 +414,9 @@ func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (strin
 	image, err := pluginutils.Image(location)
 	if err == nil {
 		contents, err := extractFileFromImage(image, fb.fileName)
-		if err != nil {
-			return "", err
+		if err == nil {
+			return contents, nil
 		}
-		return contents, nil
 	}
 	// pulling a remote image requires an internet connection, so return at this point if
 	// --air-gap flag has been set.
