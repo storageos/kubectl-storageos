@@ -3,6 +3,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
 - ./e2e/tests/installer/stable
-kindConfig: e2e/kind/kind-config-1.21.yaml
+kindConfig: e2e/kind/kind-config-1.26.yaml
 startKIND: false
 timeout: 300
