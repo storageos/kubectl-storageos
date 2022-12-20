@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-scheduler
+  namespace: storageos
+  labels:
+    app: storageos
+    app.kubernetes.io/component: scheduler
+ status:
+   readyReplicas: 1

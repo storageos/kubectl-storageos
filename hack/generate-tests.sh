@@ -39,12 +39,9 @@ EOF
 	fi
 	file=./e2e/kuttl/${REPO}-upgrade-${major}.yaml
 
-	# if major version is greater than or equal to 1.22, use 1.22 testdir.
-	# Otherwise, use 1.21 (old operator is not supported in 1.22+)
-	test_dir="1.21"
-	new_operator_k8s="1.22"
-	if [ "$(printf '%s\n' "$new_operator_k8s" "$major" | sort -V | head -n1)" = "$new_operator_k8s" ]; then
-		test_dir="stable"
+    test_dir="stable"
+	if [ "$major" == "1.26" ]; then
+		test_dir="1.26"
 	fi
 
 	cat <<EOF > "${file}"
