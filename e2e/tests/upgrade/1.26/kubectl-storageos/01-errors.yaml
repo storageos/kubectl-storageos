@@ -6,5 +6,5 @@ metadata:
   labels:
     app: storageos
     app.kubernetes.io/component: scheduler
- status:
-   readyReplicas: 1
+status:
+  readyReplicas: 1
