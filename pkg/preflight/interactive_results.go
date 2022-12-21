@@ -2,7 +2,7 @@ package preflight
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"time"
 
@@ -240,7 +240,7 @@ func save(preflightName string, analyzeResults []*analyzerunner.AnalyzeResult) (
 
 	// Overwrite any previous data.
 	filename := path.Join(util.HomeDir(), fmt.Sprintf("%s-results.txt", preflightName))
-	if err := ioutil.WriteFile(filename, []byte(results), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(results), 0644); err != nil {
 		return "", errors.Wrap(err, "failed to save preflight results")
 	}
 

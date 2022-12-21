@@ -10,7 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/installer"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"github.com/storageos/kubectl-storageos/pkg/version"
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
@@ -97,7 +96,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 		return err
 	}
 	log.Successf("Discovered StorageOS cluster and operator version '%s'.", operatorVersion)
-	version.SetOperatorLatestSupportedVersion(operatorVersion)
+	pluginversion.SetOperatorLatestSupportedVersion(operatorVersion)
 
 	if config.Spec.IncludeEtcd {
 		etcdOperatorVersion, err := pluginversion.GetExistingEtcdOperatorVersion(config.Spec.Uninstall.EtcdNamespace)
@@ -105,7 +104,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 			return err
 		}
 
-		version.SetEtcdOperatorLatestSupportedVersion(etcdOperatorVersion)
+		pluginversion.SetEtcdOperatorLatestSupportedVersion(etcdOperatorVersion)
 	}
 
 	if err = setVersionSpecificValues(config, operatorVersion); err != nil {

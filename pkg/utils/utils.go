@@ -7,8 +7,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -17,10 +17,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
-
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 
-	"github.com/manifoldco/promptui"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -151,7 +150,7 @@ func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
 	}
 
 	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 // Image attempts to get an image from the docker daemon.
@@ -206,11 +205,20 @@ func ExtractFile(filename string, r io.Reader) ([]byte, error) {
 			continue
 
 		case header.Name == filename:
-			file, err := ioutil.ReadAll(tr)
+			file, err := io.ReadAll(tr)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 			return file, nil
 		}
 	}
+}
+
+func IsURL(str string) bool {
+	parsed, err := url.ParseRequestURI(str)
+	if err != nil {
+		return false
+	}
+
+	return parsed.Scheme != ""
 }

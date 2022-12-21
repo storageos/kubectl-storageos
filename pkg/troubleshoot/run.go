@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,7 +22,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/troubleshoot/cmd/util"
 	analyzer "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -38,6 +36,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/storageos/kubectl-storageos/pkg/installer"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -232,11 +231,7 @@ func Run(v *viper.Viper, arg string) error {
 
 	// perform analysis, if possible
 	if len(supportBundleSpec.Spec.Analyzers) > 0 {
-		tmpDir, err := ioutil.TempDir("", "troubleshoot")
-		if err != nil {
-			c := color.New(color.FgHiRed)
-			c.Printf("%s\r * Failed to make directory for analysis: %v\n", cursor.ClearEntireLine(), err)
-		}
+		tmpDir := os.TempDir()
 
 		f, err := os.Open(archivePath)
 		if err != nil {
@@ -254,27 +249,14 @@ func Run(v *viper.Viper, arg string) error {
 			c.Printf("%s\r * Failed to analyze support bundle: %v\n", cursor.ClearEntireLine(), err)
 		}
 
-		interactive := isatty.IsTerminal(os.Stdout.Fd())
-
-		if interactive {
-			close(finishedCh) // this removes the spinner
-			isFinishedChClosed = true
-
-			if err := showInteractiveResults(supportBundleSpec.Name, analyzeResults); err != nil {
-				interactive = false
-			}
+		data := convert.FromAnalyzerResult(analyzeResults)
+		formatted, err := json.MarshalIndent(data, "", "    ")
+		if err != nil {
+			c := color.New(color.FgHiRed)
+			c.Printf("%s\r * Failed to format analysis: %v\n", cursor.ClearEntireLine(), err)
 		}
 
-		if !interactive {
-			data := convert.FromAnalyzerResult(analyzeResults)
-			formatted, err := json.MarshalIndent(data, "", "    ")
-			if err != nil {
-				c := color.New(color.FgHiRed)
-				c.Printf("%s\r * Failed to format analysis: %v\n", cursor.ClearEntireLine(), err)
-			}
-
-			fmt.Printf("%s", formatted)
-		}
+		fmt.Printf("%s", formatted)
 	}
 
 	if !fileUploaded {
@@ -319,13 +301,13 @@ func loadSpec(v *viper.Viper, arg string) ([]byte, error) {
 	}
 
 	if _, err = os.Stat(arg); err == nil {
-		b, err := ioutil.ReadFile(arg)
+		b, err := os.ReadFile(arg)
 		if err != nil {
 			return nil, errors.Wrap(err, "read spec file")
 		}
 
 		return b, nil
-	} else if !util.IsURL(arg) {
+	} else if !utils.IsURL(arg) {
 		return nil, fmt.Errorf("%s is not a URL and was not found (err %s)", arg, err)
 	}
 
@@ -359,7 +341,7 @@ func loadSpecFromURL(v *viper.Viper, arg string) ([]byte, error) {
 		}
 		defer resp.Body.Close()
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, errors.Wrap(err, "read response body")
 		}
@@ -426,13 +408,10 @@ func canTryInsecure(v *viper.Viper) bool {
 }
 
 func runCollectors(collectors []*troubleshootv1beta2.Collect, additionalRedactors *troubleshootv1beta2.Redactor, progressChan chan interface{}, opts supportbundle.SupportBundleCreateOpts) (string, error) {
-	bundlePath, err := ioutil.TempDir("", "troubleshoot")
-	if err != nil {
-		return "", errors.Wrap(err, "create temp dir")
-	}
+	bundlePath := os.TempDir()
 	defer os.RemoveAll(bundlePath)
 
-	if err = writeVersionFile(bundlePath); err != nil {
+	if err := writeVersionFile(bundlePath); err != nil {
 		return "", errors.Wrap(err, "write version file")
 	}
 
@@ -588,7 +567,7 @@ func untarAndSave(tarFile []byte, bundlePath string) error {
 	}
 	//Populate folders with respective files and its permissions stored in the header.
 	for k, v := range files {
-		if err := ioutil.WriteFile(filepath.Join(bundlePath, k), v, fileHeaders[k].FileInfo().Mode().Perm()); err != nil {
+		if err := os.WriteFile(filepath.Join(bundlePath, k), v, fileHeaders[k].FileInfo().Mode().Perm()); err != nil {
 			return err
 		}
 	}
@@ -730,7 +709,7 @@ func tarSupportBundleDir(inputDir, outputFilename string) error {
 		filepath.Join(inputDir, VersionFilename), // version file should be first in tar archive for quick extraction
 	}
 
-	topLevelFiles, err := ioutil.ReadDir(inputDir)
+	topLevelFiles, err := os.ReadDir(inputDir)
 	if err != nil {
 		return errors.Wrap(err, "list bundle directory contents")
 	}

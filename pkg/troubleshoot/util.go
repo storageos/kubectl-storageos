@@ -2,7 +2,6 @@ package troubleshoot
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -39,7 +38,7 @@ func findFileName(basename, extension string) (string, error) {
 }
 
 func writeFile(filename string, contents []byte) error {
-	if err := ioutil.WriteFile(filename, contents, 0644); err != nil {
+	if err := os.WriteFile(filename, contents, 0644); err != nil {
 		return err
 	}
 

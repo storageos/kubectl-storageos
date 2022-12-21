@@ -2,8 +2,7 @@ package troubleshoot
 
 import (
 	"fmt"
-
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -42,7 +41,7 @@ func writeVersionFile(path string) error {
 	}
 
 	filename := filepath.Join(path, VersionFilename)
-	err = ioutil.WriteFile(filename, b, 0644)
+	err = os.WriteFile(filename, b, 0644)
 	if err != nil {
 		return err
 	}

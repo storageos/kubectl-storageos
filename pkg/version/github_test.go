@@ -3,9 +3,9 @@ package version
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -28,7 +28,7 @@ func TestFetchVersionsOrPanic(t *testing.T) {
 
 func startGithubServerMock(t *testing.T) (string, func()) {
 	ms := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		releases, err := ioutil.ReadFile("test-data/cluster-operator-releases.json")
+		releases, err := os.ReadFile("test-data/cluster-operator-releases.json")
 		if err != nil {
 			t.Fatalf("failed to read testdata: %s", err.Error())
 		}
@@ -45,7 +45,7 @@ func TestSelectLatestVersionEnableUnofficialReleaseFalse(t *testing.T) {
 		}
 	}()
 
-	rawVersions, err := ioutil.ReadFile("test-data/cluster-operator-releases.json")
+	rawVersions, err := os.ReadFile("test-data/cluster-operator-releases.json")
 	if err != nil {
 		t.Fatalf("failed to read testdata: %s", err.Error())
 	}
@@ -75,7 +75,7 @@ func TestSelectLatestVersionEnableUnofficialReleaseTrue(t *testing.T) {
 		enableUnofficialRelease = false
 	}()
 
-	rawVersions, err := ioutil.ReadFile("test-data/cluster-operator-releases.json")
+	rawVersions, err := os.ReadFile("test-data/cluster-operator-releases.json")
 	if err != nil {
 		t.Fatalf("failed to read testdata: %s", err.Error())
 	}

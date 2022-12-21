@@ -2,7 +2,7 @@ package preflight
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,7 +12,6 @@ import (
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/troubleshoot/cmd/util"
 	analyzer "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -25,6 +24,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
 const (
@@ -204,9 +205,9 @@ func loadSpecContent(arg string) ([]byte, error) {
 		return spec, nil
 	}
 	if _, err := os.Stat(arg); err == nil {
-		return ioutil.ReadFile(arg)
+		return os.ReadFile(arg)
 	}
-	if util.IsURL(arg) {
+	if utils.IsURL(arg) {
 		req, err := http.NewRequest("GET", arg, nil)
 		if err != nil {
 			return nil, err
@@ -221,7 +222,7 @@ func loadSpecContent(arg string) ([]byte, error) {
 		}
 		defer resp.Body.Close()
 
-		return ioutil.ReadAll(resp.Body)
+		return io.ReadAll(resp.Body)
 	}
 	return nil, fmt.Errorf("%s is not a URL and was not found", arg)
 }

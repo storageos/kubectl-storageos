@@ -11,7 +11,7 @@ import (
 
 	gyaml "github.com/ghodss/yaml"
 	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/replicatedhq/troubleshoot/cmd/util"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -66,7 +66,7 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 
 // pullManifest returns a string of contents at url
 func pullManifest(url string) (string, error) {
-	if !util.IsURL(url) {
+	if !utils.IsURL(url) {
 		return "", errors.WithStack(fmt.Errorf("%s is not a URL and was not found", url))
 	}
 

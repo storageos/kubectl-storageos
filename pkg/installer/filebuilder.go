@@ -2,16 +2,15 @@ package installer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/troubleshoot/cmd/util"
-	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
-	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
+
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const errManifestNotFoundFromImage = `
@@ -319,7 +318,7 @@ func (fb *fileBuilder) createFileWithKustPair(config *apiv1.KubectlStorageOSConf
 		return files, err
 	}
 
-	kustYamlContents, err := pluginutils.SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", fb.fileName, "]"), "resources", "")
+	kustYamlContents, err := utils.SetFieldInManifest(kustTemp, fmt.Sprintf("%s%s%s", "[", fb.fileName, "]"), "resources", "")
 	if err != nil {
 		return files, err
 	}
@@ -348,10 +347,10 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 	// from whatever has been specified.
 	location := fb.yamlPath
 	if location != "" {
-		if !isDockerRepo(location) && !util.IsURL(location) {
+		if !isDockerRepo(location) && !utils.IsURL(location) {
 			// not docker repo or url, must be a local path
 			return fb.getManifestFromPath(location)
-		} else if util.IsURL(location) {
+		} else if utils.IsURL(location) {
 			return fb.getManifestFromURL(config.Spec.AirGap, location)
 		} else if isDockerRepo(location) {
 			return fb.getManifestFromImage(config.Spec.AirGap, location)
@@ -373,7 +372,7 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 	// could not get the manifest from the manifest image either,
 	// last resort is to pull from the default url.
 	location = fb.yamlUrl
-	if location != "" && util.IsURL(location) {
+	if location != "" && utils.IsURL(location) {
 		contents, err := fb.getManifestFromURL(config.Spec.AirGap, location)
 		if err == nil {
 			return contents, nil
@@ -387,7 +386,7 @@ func (fb *fileBuilder) getManifestFromPath(location string) (string, error) {
 	if _, err := os.Stat(location); err != nil {
 		return "", errors.WithStack(err)
 	}
-	contents, err := ioutil.ReadFile(location)
+	contents, err := os.ReadFile(location)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -411,7 +410,7 @@ func (fb *fileBuilder) getManifestFromURL(airGap bool, location string) (string,
 
 func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (string, error) {
 	// attempt to fetch image locally
-	image, err := pluginutils.Image(location)
+	image, err := utils.Image(location)
 	if err == nil {
 		contents, err := extractFileFromImage(image, fb.fileName)
 		if err == nil {
@@ -425,7 +424,7 @@ func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (strin
 	}
 
 	// attempt to pull image remotely
-	image, err = pluginutils.PullImage(location)
+	image, err = utils.PullImage(location)
 	if err != nil {
 		return "", err
 	}
