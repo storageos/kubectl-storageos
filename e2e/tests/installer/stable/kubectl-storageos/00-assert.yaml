@@ -21,3 +21,15 @@ metadata:
   namespace: etcd-install-full
 status:
   replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageos-node-manager
+  namespace: stos-cluster-install-full
+  labels:
+    app: storageos
+    app.kubernetes.io/component: node-manager
+    control-plane: storageos-node-manager
+status:
+  replicas: 1
