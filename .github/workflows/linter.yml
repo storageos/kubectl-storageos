@@ -18,6 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Run golangci-lint
+        env:
+          CGO_ENABLED: 0
         uses: golangci/golangci-lint-action@v3.2.0
         with:
           version: v1.50.1
