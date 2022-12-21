@@ -50,16 +50,16 @@ require (
 	github.com/ondat/operator-toolkit v0.0.0-20221205143413-92680f1a39a5
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851
-	github.com/replicatedhq/troubleshoot v0.42.0
+	github.com/replicatedhq/troubleshoot v0.43.1
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/storageos/operator v0.0.0-20220620091939-c98630624350
 	github.com/tj/go-spin v1.1.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
-	k8s.io/cli-runtime v0.25.0
+	k8s.io/api v0.25.2
+	k8s.io/apimachinery v0.25.2
+	k8s.io/cli-runtime v0.25.2
 	k8s.io/client-go v11.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/kubebuilder-declarative-pattern v0.11.20220512
@@ -243,7 +243,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.25.0 // indirect
-	k8s.io/apiserver v0.25.0 // indirect
+	k8s.io/apiserver v0.25.2 // indirect
 	k8s.io/component-base v0.25.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
