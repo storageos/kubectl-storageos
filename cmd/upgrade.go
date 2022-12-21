@@ -111,6 +111,7 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall and install components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "upgrade in an air gapped environment")
 	cmd.Flags().Bool(installer.EnableNodeGuardFlag, false, "enable node guard")
+	cmd.Flags().String(installer.NodeGuardEnvFlag, "", "comma delimited string of environment variables for node guard - eg: \"MINIMUM_REPLICAS=2,WATCH_ALL_VOLUMES=true\"")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -144,6 +145,11 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 		if err := versionSupportsFeature(installConfig.Spec.Install.StorageOSVersion, consts.MetricsExporterFirstSupportedVersion); err != nil {
 			return fmt.Errorf("failed to enable metrics exporter: %w", err)
 		}
+	}
+
+	// if node guard env vars have been set, set enable flag implicitly
+	if installConfig.Spec.Install.NodeGuardEnv != "" {
+		installConfig.Spec.Install.EnableNodeGuard = true
 	}
 
 	version.SetOperatorLatestSupportedVersion(installConfig.Spec.Install.StorageOSVersion)
@@ -260,6 +266,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		config.Spec.Install.PortalSecret = cmd.Flags().Lookup(installer.PortalSecretFlag).Value.String()
 		config.Spec.Install.PortalAPIURL = cmd.Flags().Lookup(installer.PortalAPIURLFlag).Value.String()
 		config.Spec.Install.PortalTenantID = cmd.Flags().Lookup(installer.PortalTenantIDFlag).Value.String()
+		config.Spec.Install.NodeGuardEnv = cmd.Flags().Lookup(installer.NodeGuardEnvFlag).Value.String()
 		config.InstallerMeta.StorageOSSecretYaml = ""
 		return nil
 	}
@@ -293,6 +300,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
 	config.Spec.Install.EnableNodeGuard = viper.GetBool(installer.EnableNodeGuardConfig)
+	config.Spec.Install.NodeGuardEnv = viper.GetString(installer.NodeGuardEnvConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

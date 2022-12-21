@@ -101,6 +101,8 @@ spec:
                     type: string
                   markTestCluster:
                     type: boolean
+                  nodeGuardEnv:
+                    type: string
                   portalAPIURL:
                     type: string
                   portalClientID:

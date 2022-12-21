@@ -445,7 +445,7 @@ func (in *Installer) installStorageOSCluster() error {
 		nodeGuardPatch := pluginutils.KustomizePatch{
 			Op:    "replace",
 			Path:  "/spec/nodeManagerFeatures",
-			Value: "{nodeGuard: \"\"}",
+			Value: "{nodeGuard: \"" + in.stosConfig.Spec.Install.NodeGuardEnv + "\"}",
 		}
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{nodeGuardPatch}); err != nil {
 			return err

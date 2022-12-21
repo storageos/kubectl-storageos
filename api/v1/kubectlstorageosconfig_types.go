@@ -106,6 +106,7 @@ type Install struct {
 	MarkTestCluster                 bool   `json:"markTestCluster,omitempty"`
 	SkipK8sVersionCheck             bool   `json:"skipK8sVersionCheck,omitempty"`
 	EnableNodeGuard                 bool   `json:"enableNodeGuard,omitempty"`
+	NodeGuardEnv                    string `json:"nodeGuardEnv,omitempty"`
 }
 
 // Uninstall defines options for cli uninstall subcommand
