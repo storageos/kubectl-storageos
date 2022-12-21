@@ -97,6 +97,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SkipK8sVersionCheckFlag, false, "skip the minimum k8s version check")
 	cmd.Flags().Bool(installer.SerialFlag, false, "install components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "install in an air gapped environment")
+	cmd.Flags().Bool(installer.EnableNodeGuardFlag, false, "enable node guard")
 
 	cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
@@ -266,6 +267,11 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 			return err
 		}
 
+		config.Spec.Install.EnableNodeGuard, err = cmd.Flags().GetBool(installer.EnableNodeGuardFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.IncludeLocalPathProvisioner, err = cmd.Flags().GetBool(installer.IncludeLocalPathProvisionerFlag)
 		if err != nil {
 			return err
@@ -363,6 +369,7 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.EtcdTopologyKey = viper.GetString(installer.EtcdTopologyKeyConfig)
 	config.Spec.Install.MarkTestCluster = viper.GetBool(installer.TestClusterConfig)
 	config.Spec.Install.SkipK8sVersionCheck = viper.GetBool(installer.SkipK8sVersionCheckConfig)
+	config.Spec.Install.EnableNodeGuard = viper.GetBool(installer.EnableNodeGuardConfig)
 
 	return nil
 }

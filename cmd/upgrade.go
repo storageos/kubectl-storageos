@@ -109,7 +109,8 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalTenantIDFlag, "", "storageos portal tenant id")
 	cmd.Flags().Bool(installer.EnableMetricsFlag, false, "enable metrics exporter")
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall and install components serially")
-	cmd.Flags().Bool(installer.AirGapFlag, false, "upgrade in a air gapped environment")
+	cmd.Flags().Bool(installer.AirGapFlag, false, "upgrade in an air gapped environment")
+	cmd.Flags().Bool(installer.EnableNodeGuardFlag, false, "enable node guard")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -238,6 +239,11 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		if err != nil {
 			return err
 		}
+		config.Spec.Install.EnableNodeGuard, err = cmd.Flags().GetBool(installer.EnableNodeGuardFlag)
+		if err != nil {
+			return err
+		}
+
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installStosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installStosClusterYamlFlag).Value.String()
@@ -286,6 +292,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.PortalSecret = viper.GetString(installer.PortalSecretConfig)
 	config.Spec.Install.PortalAPIURL = viper.GetString(installer.PortalAPIURLConfig)
 	config.Spec.Install.PortalTenantID = viper.GetString(installer.PortalTenantIDConfig)
+	config.Spec.Install.EnableNodeGuard = viper.GetBool(installer.EnableNodeGuardConfig)
 	config.InstallerMeta.StorageOSSecretYaml = ""
 	return nil
 }

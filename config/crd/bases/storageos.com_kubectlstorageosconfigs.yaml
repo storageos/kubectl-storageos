@@ -63,6 +63,8 @@ spec:
                     type: boolean
                   enableMetrics:
                     type: boolean
+                  enableNodeGuard:
+                    type: boolean
                   enablePortalManager:
                     type: boolean
                   etcdCPULimit:
