@@ -450,7 +450,6 @@ func (in *Installer) installStorageOSCluster() error {
 		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{nodeGuardPatch}); err != nil {
 			return err
 		}
-
 	}
 	return in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
 }
