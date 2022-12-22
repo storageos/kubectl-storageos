@@ -408,7 +408,10 @@ func canTryInsecure(v *viper.Viper) bool {
 }
 
 func runCollectors(collectors []*troubleshootv1beta2.Collect, additionalRedactors *troubleshootv1beta2.Redactor, progressChan chan interface{}, opts supportbundle.SupportBundleCreateOpts) (string, error) {
-	bundlePath := os.TempDir()
+	bundlePath, err := os.MkdirTemp("", "ondat-tmp-*")
+	if err != nil {
+		return "", errors.Wrap(err, "create temp dir")
+	}
 	defer os.RemoveAll(bundlePath)
 
 	if err := writeVersionFile(bundlePath); err != nil {
