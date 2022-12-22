@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/storageos/kubectl-storageos/pkg/consts"
@@ -442,12 +443,7 @@ func (in *Installer) installStorageOSCluster() error {
 	}
 
 	if in.stosConfig.Spec.Install.EnableNodeGuard {
-		nodeGuardPatch := pluginutils.KustomizePatch{
-			Op:    "replace",
-			Path:  "/spec/nodeManagerFeatures",
-			Value: "{nodeGuard: \"" + in.stosConfig.Spec.Install.NodeGuardEnv + "\"}",
-		}
-		if err := in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, fsStosClusterName, []pluginutils.KustomizePatch{nodeGuardPatch}); err != nil {
+		if err := in.enableNodeGuard(fsStosClusterName); err != nil {
 			return err
 		}
 	}
@@ -666,4 +662,44 @@ func (in *Installer) setExecutionStrategyForOperatorConfigMap() error {
 
 	return in.fileSys.WriteFile(filepath.Join(stosDir, operatorDir, stosOperatorFile),
 		[]byte(makeMultiDoc(append(stosOperatorYamlConfigMaps, stosOperatorYamlWithoutConfigMaps)...)))
+}
+
+// enableNodeGuard sets nodeGuard in nodeManagerFeatures in cluster spec.
+// This can be simply enabling node guard: 'nodeGuard: ""'
+// Or enabling node guard with env vars:   'nodeGuard: "FOO=foo,BAR=bar"'
+func (in *Installer) enableNodeGuard(storageOSClusterName string) error {
+	nodeManagerFeatures, err := in.getFieldInFsMultiDocByKind(filepath.Join(stosDir, clusterDir, stosClusterFile), stosClusterKind, "spec", "nodeManagerFeatures")
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(nodeManagerFeatures, "nodeGuard:") && in.stosConfig.Spec.Install.NodeGuardEnv == "" {
+		// nodeGuard is already enabled and we have not specified any new env vars.
+		// Nothing to do so return to prevent overwriting any existing env vars.
+		return nil
+	}
+	// nodeManagerFeatures, if not empty, will be a string that looks like:
+	// "foo: foo
+	// bar: bar"
+	//
+	// We need to turn this into:
+	// "foo: foo,bar: bar,"
+	nodeManagerFeatures = strings.ReplaceAll(nodeManagerFeatures, "\n", ",")
+	if nodeManagerFeatures != "" {
+		nodeManagerFeatures += ","
+	}
+
+	// Then append the new nodeGuard values, ending up with a map:
+	// "{foo: foo,bar: bar,nodeGuard: "FOO=foo,BAR=bar"}".
+	// Put existing features at the beginning of the map so that if nodeGuard already exists we
+	// will overwrite it with the new values (this 'Value' behaves like a normal map when kustomize is run).
+	nodeManagerFeatures = "{" + nodeManagerFeatures + "nodeGuard: \"" + in.stosConfig.Spec.Install.NodeGuardEnv + "\"}"
+
+	nodeGuardPatch := pluginutils.KustomizePatch{
+		Op:    "add",
+		Path:  "/spec/nodeManagerFeatures",
+		Value: nodeManagerFeatures,
+	}
+
+	return in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, storageOSClusterName, []pluginutils.KustomizePatch{nodeGuardPatch})
 }
