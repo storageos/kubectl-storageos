@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -145,11 +146,27 @@ func FetchHttpContent(url string, headers map[string]string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode > http.StatusMultipleChoices {
+		if strings.Contains(url, "api.github.com") {
+			// temporary block to show us more insigh as to why the github api request failed
+			if body, err := io.ReadAll(resp.Body); err == nil {
+				// format of the github response when we get back an error
+				githubErrResp := struct {
+					Message string
+				}{}
+				if err = json.Unmarshal(body, &githubErrResp); err != nil {
+					return nil, errors.New("failed to parse the body from http request to github api")
+				}
+				return nil, errors.WithStack(fmt.Errorf("error fetching content of %s, status code: %d, github response: %s", url, resp.StatusCode, githubErrResp.Message))
+			} else {
+				return nil, errors.New("failed to read body from http request to github api")
+			}
+		}
 		return nil, errors.WithStack(fmt.Errorf("error fetching content of %s, status code: %d", url, resp.StatusCode))
 	}
 
-	defer resp.Body.Close()
 	return io.ReadAll(resp.Body)
 }
 
