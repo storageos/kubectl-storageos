@@ -5,7 +5,7 @@ on: [push]
 jobs:
   test:
     name: dry-run test
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       KUBECTL_STORAGEOS: /usr/local/bin/kubectl-storageos
     steps:

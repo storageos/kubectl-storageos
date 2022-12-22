@@ -86,7 +86,7 @@ on: [push]
 jobs:
   test:
     name: kuttl e2e test ${major}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       KUTTL: /usr/local/bin/kubectl-kuttl
       KUBECTL_STORAGEOS: /usr/local/bin/kubectl-storageos
