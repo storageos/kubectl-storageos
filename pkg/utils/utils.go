@@ -19,10 +19,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const promptTimeout = time.Minute

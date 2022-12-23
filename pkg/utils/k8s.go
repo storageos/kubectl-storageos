@@ -9,12 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	etcdoperatorapi "github.com/improbable-eng/etcd-cluster-operator/api/v1alpha1"
-	"github.com/storageos/kubectl-storageos/pkg/consts"
-	operatorapi "github.com/storageos/operator/api/v1"
-
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
@@ -29,6 +25,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/storageos/kubectl-storageos/pkg/consts"
+	operatorapi "github.com/storageos/operator/api/v1"
 )
 
 const helperDeletionErrorMessage = `Unable to delete helper %s.
@@ -116,8 +115,8 @@ func GetKubernetesVersion(config *rest.Config) (*kversion.Info, error) {
 
 // ExecToPod execs into a pod and executes command from inside that pod.
 // containerName can be "" if the pod contains only a single container.
-// Returned are strings represent STDOUT and STDERR respectively.
-// Also returned is any error encountered.
+//
+// Returnes both STDOUT and STDERR as strings.
 func ExecToPod(config *rest.Config, command []string, containerName, podName, namespace string, stdin io.Reader) (string, string, error) {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
@@ -161,7 +160,6 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	return stdout.String(), stderr.String(), nil
 }
 
-// FetchPodLogs fetches logs of the given pod.
 func FetchPodLogs(config *rest.Config, name, namespace string) (string, error) {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
@@ -172,18 +170,17 @@ func FetchPodLogs(config *rest.Config, name, namespace string) (string, error) {
 	logs.Timeout(time.Minute)
 	result := logs.Do(context.Background())
 	if result.Error() != nil {
-		return "", errors.WithStack(fmt.Errorf("unable to read job logs: %s", result.Error()))
+		return "", errors.WithStack(fmt.Errorf("unable to read pod logs: %s", result.Error()))
 	}
 
 	raw, err := result.Raw()
 	if err != nil {
-		return "", errors.WithStack(fmt.Errorf("unable to read job output: %s", err.Error()))
+		return "", errors.WithStack(fmt.Errorf("unable to read pod output: %s", err.Error()))
 	}
 
 	return string(raw), nil
 }
 
-// FindFirstPodByLabel finds first pod by label or returns error.
 func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.Pod, error) {
 	pods, err := ListPods(config, namespace, label)
 	if err != nil {
@@ -196,7 +193,6 @@ func FindFirstPodByLabel(config *rest.Config, namespace, label string) (*corev1.
 	return &pods.Items[0], nil
 }
 
-// ListPods returns PodList discovered by namespace and label.
 func ListPods(config *rest.Config, namespace, label string) (*corev1.PodList, error) {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
@@ -213,7 +209,6 @@ func ListPods(config *rest.Config, namespace, label string) (*corev1.PodList, er
 	return pods, nil
 }
 
-// PodHasPVC returns true if the pod has the pvc.
 func PodHasPVC(pod *corev1.Pod, pvcName string) bool {
 	for _, vol := range pod.Spec.Volumes {
 		if VolumeHasPVC(&vol, pvcName) {
@@ -223,13 +218,11 @@ func PodHasPVC(pod *corev1.Pod, pvcName string) bool {
 	return false
 }
 
-// VolumeHasPVC returns true if the volume has the pvc.
 func VolumeHasPVC(vol *corev1.Volume, pvcName string) bool {
 	return vol.PersistentVolumeClaim != nil && vol.PersistentVolumeClaim.ClaimName == pvcName
 }
 
-// GetStorageClass returns storageclass of name.
-func GetStorageClass(config *rest.Config, name string) (*kstoragev1.StorageClass, error) {
+func GetStorageClassByName(config *rest.Config, name string) (*kstoragev1.StorageClass, error) {
 	storageV1Client, err := storagev1.NewForConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
@@ -261,17 +254,6 @@ func GetDefaultStorageClass(config *rest.Config) (*kstoragev1.StorageClass, erro
 	}
 
 	return nil, fmt.Errorf("no default storage class discovered in cluster")
-}
-
-// GetDefaultStorageClassName returns the name of the default storage class in the cluster, if more
-// than one storage class is set to default, the first one discovered is returned. An error is returned
-// if no default storage class is found.
-func GetDefaultStorageClassName(config *rest.Config) (string, error) {
-	defaultSC, err := GetDefaultStorageClass(config)
-	if err != nil {
-		return "", err
-	}
-	return defaultSC.Name, nil
 }
 
 // IsProvisionedStorageClass returns true if the StorageClass has one of the given provisioners.
@@ -319,7 +301,7 @@ func StorageClassForPVC(config *rest.Config, pvc *corev1.PersistentVolumeClaim) 
 		}
 		return sc, nil
 	}
-	sc, err := GetStorageClass(config, name)
+	sc, err := GetStorageClassByName(config, name)
 	if err != nil {
 		return nil, err
 	}
@@ -456,13 +438,6 @@ func NamespaceDoesNotExist(config *rest.Config, namespace string) error {
 	return fmt.Errorf("namespace %s exists in cluster", namespace)
 }
 
-// NamespaceExists returns no error only if the specified namespace exists in the k8s cluster
-func NamespaceExists(config *rest.Config, namespace string) error {
-	_, err := GetNamespace(config, namespace)
-
-	return err
-}
-
 // ListStorageClasses returns StorageClassList
 func ListStorageClasses(config *rest.Config, listOptions metav1.ListOptions) (*kstoragev1.StorageClassList, error) {
 	clientset, err := GetClientsetFromConfig(config)
@@ -570,13 +545,6 @@ func SecretDoesNotExist(config *rest.Config, name, namespace string) error {
 	return fmt.Errorf("secret %v exists in cluster", namespace)
 }
 
-// SecretExists returns no error only if the specified secret exists in the k8s cluster
-func SecretExists(config *rest.Config, name, namespace string) error {
-	_, err := GetSecret(config, name, namespace)
-
-	return err
-}
-
 // GetFirstStorageOSCluster returns the storageoscluster object if it exists in the k8s cluster.
 // Use 'List' to discover as there can only be one object per k8s cluster and 'List' does not
 // require name/namespace.
@@ -678,9 +646,9 @@ func UpdateEtcdClusterWithoutFinalizers(config *rest.Config, etcdCluster *etcdop
 	return newClient.Update(context.TODO(), etcdCluster)
 }
 
-// EnsureNamespace Creates namespace if it does not exists.
-func EnsureNamespace(config *rest.Config, name string) error {
-	if err := NamespaceExists(config, name); err == nil {
+// CreateNamespaceIfNotPresent creates a namespace if it does not exists yet.
+func CreateNamespaceIfNotPresent(config *rest.Config, namespace string) error {
+	if _, err := GetNamespace(config, namespace); err == nil {
 		return nil
 	}
 
@@ -691,14 +659,15 @@ func EnsureNamespace(config *rest.Config, name string) error {
 
 	if _, err = clientset.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: namespace,
 		},
 	}, metav1.CreateOptions{}); err != nil {
 		return errors.WithStack(err)
 	}
 
 	err = WaitFor(func() error {
-		return NamespaceExists(config, name)
+		_, err := GetNamespace(config, namespace)
+		return err
 	}, 120, 5)
 
 	return err

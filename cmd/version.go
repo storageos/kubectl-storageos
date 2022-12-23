@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )

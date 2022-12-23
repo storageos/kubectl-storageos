@@ -11,12 +11,12 @@ import (
 
 	gyaml "github.com/ghodss/yaml"
 	gocontainerv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/storageos/kubectl-storageos/pkg/utils"
-	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	operatorapi "github.com/storageos/operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
+
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	operatorapi "github.com/storageos/operator/api/v1"
 )
 
 const errFlagsNotSet = "The following flags have not been set and are required to perform this operation:"
@@ -66,7 +66,7 @@ func createDirAndFiles(fs filesys.FileSystem, fsData fsData) (filesys.FileSystem
 
 // pullManifest returns a string of contents at url
 func pullManifest(url string) (string, error) {
-	if !utils.IsURL(url) {
+	if !pluginutils.IsURL(url) {
 		return "", errors.WithStack(fmt.Errorf("%s is not a URL and was not found", url))
 	}
 

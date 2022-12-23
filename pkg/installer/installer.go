@@ -10,12 +10,6 @@ import (
 	"github.com/ondat/operator-toolkit/declarative/deleter"
 	otkkubectl "github.com/ondat/operator-toolkit/declarative/kubectl"
 	"github.com/pkg/errors"
-	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
-	"github.com/storageos/kubectl-storageos/pkg/logger"
-	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
-	operatorapi "github.com/storageos/operator/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,6 +18,12 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
+
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
+	operatorapi "github.com/storageos/operator/api/v1"
 )
 
 const (
@@ -291,12 +291,12 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 		return installer, errors.WithStack(err)
 	}
 
-	if err := pluginutils.EnsureNamespace(clientConfig, config.Spec.GetOperatorNamespace()); err != nil {
+	if err := pluginutils.CreateNamespaceIfNotPresent(clientConfig, config.Spec.GetOperatorNamespace()); err != nil {
 		return installer, errors.WithStack(err)
 	}
 
 	if etcdNS := config.Spec.GetETCDValidationNamespace(); etcdNS != "" && etcdNS != config.Spec.GetOperatorNamespace() {
-		err = pluginutils.EnsureNamespace(clientConfig, etcdNS)
+		err = pluginutils.CreateNamespaceIfNotPresent(clientConfig, etcdNS)
 		if err != nil {
 			return installer, errors.WithStack(err)
 		}

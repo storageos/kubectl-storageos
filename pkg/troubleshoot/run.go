@@ -34,15 +34,16 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/specs"
 	"github.com/replicatedhq/troubleshoot/pkg/supportbundle"
 	"github.com/spf13/viper"
-	"github.com/storageos/kubectl-storageos/pkg/installer"
-	"github.com/storageos/kubectl-storageos/pkg/logger"
-	"github.com/storageos/kubectl-storageos/pkg/utils"
-	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	spin "github.com/tj/go-spin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
+
+	"github.com/storageos/kubectl-storageos/pkg/installer"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
 const (
@@ -190,7 +191,7 @@ func Run(v *viper.Viper, arg string) error {
 	}()
 
 	collectorCB := func(c chan interface{}, msg string) {
-		c <- fmt.Sprintf("%s", msg)
+		c <- msg
 	}
 
 	createOpts := supportbundle.SupportBundleCreateOpts{
@@ -418,7 +419,7 @@ func runCollectors(collectors []*troubleshootv1beta2.Collect, additionalRedactor
 		return "", errors.Wrap(err, "write version file")
 	}
 
-	collectSpecs := make([]*troubleshootv1beta2.Collect, 0, 0)
+	collectSpecs := make([]*troubleshootv1beta2.Collect, 0)
 	collectSpecs = append(collectSpecs, collectors...)
 	collectSpecs = ensureCollectorInList(collectSpecs, troubleshootv1beta2.Collect{ClusterInfo: &troubleshootv1beta2.ClusterInfo{}})
 	collectSpecs = ensureCollectorInList(collectSpecs, troubleshootv1beta2.Collect{ClusterResources: &troubleshootv1beta2.ClusterResources{}})

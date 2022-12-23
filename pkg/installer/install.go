@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"sync"
 
+	"sigs.k8s.io/kustomize/api/krusty"
+
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"sigs.k8s.io/kustomize/api/krusty"
 )
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
@@ -229,10 +230,11 @@ func (in *Installer) installEtcd() error {
 	// get the cluster's default storage class if a storage class has not been provided. In any case, add patch
 	// with desired storage class name to kustomization for etcd cluster
 	if in.stosConfig.Spec.Install.EtcdStorageClassName == "" {
-		in.stosConfig.Spec.Install.EtcdStorageClassName, err = pluginutils.GetDefaultStorageClassName(in.clientConfig)
+		defaultSc, err := pluginutils.GetDefaultStorageClass(in.clientConfig)
 		if err != nil {
 			return err
 		}
+		in.stosConfig.Spec.Install.EtcdStorageClassName = defaultSc.Name
 	}
 
 	storageClassPatch := pluginutils.KustomizePatch{
@@ -563,7 +565,8 @@ func (in *Installer) gracefullyApplyNS(namespaceManifest string) error {
 		return err
 	}
 	err = pluginutils.WaitFor(func() error {
-		return pluginutils.NamespaceExists(in.clientConfig, namespace)
+		_, err := pluginutils.GetNamespace(in.clientConfig, namespace)
+		return err
 	}, 120, 5)
 
 	return err

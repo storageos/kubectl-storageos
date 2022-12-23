@@ -7,12 +7,13 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	"github.com/storageos/kubectl-storageos/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/api/krusty"
+
+	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const (

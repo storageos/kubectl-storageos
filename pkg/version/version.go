@@ -10,9 +10,10 @@ import (
 	"github.com/blang/semver"
 	goversion "github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/storageos/kubectl-storageos/pkg/consts"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
