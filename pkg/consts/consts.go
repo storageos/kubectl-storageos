@@ -18,4 +18,7 @@ const (
 	EtcdOperatorNamespace = "storageos-etcd"
 
 	EtcdSecretName = "storageos-etcd-secret"
+
+	VersionRegex    = "v?([0-9]+.[0-9]+.[0-9]+)"
+	ShaVersionRegex = "^[a-fA-F0-9]+$"
 )

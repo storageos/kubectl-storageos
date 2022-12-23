@@ -1,6 +1,22 @@
 package version
 
-import "testing"
+import (
+	"regexp"
+	"testing"
+
+	"github.com/storageos/kubectl-storageos/pkg/consts"
+	"github.com/stretchr/testify/require"
+)
+
+func TestRegexIsValid(t *testing.T) {
+	t.Parallel()
+
+	_, err := regexp.Compile(consts.VersionRegex)
+	require.NoError(t, err, "version regex is not valid")
+
+	_, err = regexp.Compile(consts.ShaVersionRegex)
+	require.NoError(t, err, "sha version regex is not valid")
+}
 
 func TestIsDevelop(t *testing.T) {
 	tests := map[string]struct {

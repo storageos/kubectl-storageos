@@ -50,17 +50,9 @@ var (
 	enablePreReleases bool
 
 	versionRegexp *regexp.Regexp
-	shaRegexp     *regexp.Regexp
 
 	PluginVersion string
 )
-
-var shaLengths map[int]bool = map[int]bool{
-	224 / 4: true,
-	256 / 4: true,
-	384 / 4: true,
-	512 / 4: true,
-}
 
 func init() {
 	var err error
@@ -72,27 +64,18 @@ func init() {
 		}
 	}
 
-	versionRegexp, err = regexp.Compile("v?([0-9]+.[0-9]+.[0-9]+)")
-	if err != nil {
-		panic(err)
-	}
-
-	shaRegexp, err = regexp.Compile("^[a-fA-F0-9]+$")
-	if err != nil {
-		panic(err)
-	}
+	versionRegexp, _ = regexp.Compile(consts.VersionRegex)
 }
 
-// IsDevelop determines dev versions.
 func IsDevelop(version string) bool {
 	if version == "develop" || version == "test" {
 		return true
 	}
 
-	if _, ok := shaLengths[len(version)]; ok {
-		if shaRegexp.Match([]byte(version)) {
-			return true
-		}
+	switch len(version) {
+	case 56, 64, 96, 128:
+		shaRegexp, _ := regexp.Compile(consts.ShaVersionRegex)
+		return shaRegexp.Match([]byte(version))
 	}
 
 	return false
