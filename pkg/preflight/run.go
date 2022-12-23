@@ -168,13 +168,6 @@ func Run(v *viper.Viper, arg string) error {
 
 	finishedCh <- true
 
-	if v.GetBool("interactive") {
-		if len(analyzeResults) == 0 {
-			return errors.New("no data has been collected")
-		}
-		return showInteractiveResults(preflightSpecName, analyzeResults)
-	}
-
 	return showStdoutResults(v.GetString("format"), preflightSpecName, analyzeResults)
 }
 
