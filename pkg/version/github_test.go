@@ -38,7 +38,7 @@ func startGithubServerMock(t *testing.T) (string, func()) {
 	return ms.URL, ms.Close
 }
 
-func TestSelectLatestVersionEnableUnofficialReleaseFalse(t *testing.T) {
+func TestSelectLatestVersionEnablePreReleasesFalse(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("panic not allowed: %v", r)
@@ -63,16 +63,16 @@ func TestSelectLatestVersionEnableUnofficialReleaseFalse(t *testing.T) {
 	}
 }
 
-func TestSelectLatestVersionEnableUnofficialReleaseTrue(t *testing.T) {
+func TestSelectLatestVersionEnablePreReleasesTrue(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("panic not allowed: %v", r)
 		}
 	}()
 
-	enableUnofficialRelease = true
+	enablePreReleases = true
 	defer func() {
-		enableUnofficialRelease = false
+		enablePreReleases = false
 	}()
 
 	rawVersions, err := os.ReadFile("test-data/cluster-operator-releases.json")

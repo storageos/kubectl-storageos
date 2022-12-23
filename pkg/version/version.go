@@ -21,7 +21,7 @@ const (
 	oldClusterYamlUrl  = "https://raw.githubusercontent.com/storageos/cluster-operator/%s/deploy/crds/storageos.com_v1_storageoscluster_cr.yaml"
 	oldSecretYamlUrl   = "https://raw.githubusercontent.com/storageos/cluster-operator/%s/deploy/secret.yaml"
 
-	// URLs to installation manifests
+	// URLs to install manifests
 	stosOperatorManifestsImageUrl = "docker.io/storageos/operator-manifests"
 	stosOperatorManifestsUrl      = "https://github.com/storageos/operator/releases/download/%s/storageos-operator.yaml"
 
@@ -43,11 +43,11 @@ const (
 )
 
 var (
-	// EnableUnofficialRelease allows the installer to install not official of operator.
-	// This could be change with build flag:
-	// -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true
-	EnableUnofficialRelease string
-	enableUnofficialRelease bool
+	// EnablePreReleases allows the installer to install pre-release versions of the operator.
+	// This setting is defined at build time
+	// -X github.com/storageos/kubectl-storageos/pkg/version.EnablePreReleases=true
+	EnablePreReleases string
+	enablePreReleases bool
 
 	versionRegexp *regexp.Regexp
 	shaRegexp     *regexp.Regexp
@@ -65,8 +65,8 @@ var shaLengths map[int]bool = map[int]bool{
 func init() {
 	var err error
 
-	if EnableUnofficialRelease != "" {
-		enableUnofficialRelease, err = strconv.ParseBool(EnableUnofficialRelease)
+	if EnablePreReleases != "" {
+		enablePreReleases, err = strconv.ParseBool(EnablePreReleases)
 		if err != nil {
 			panic(err)
 		}

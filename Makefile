@@ -77,11 +77,11 @@ tidy: ## Regenerates Go dependencies.
 build: test ## Test and build manager binary.
 	make _build
 
-_build: ## Build manager binary.
+_build: ## Build
 	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION)" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
-_build-pre: ## Build manager binary.
-	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION) -X github.com/storageos/kubectl-storageos/pkg/version.EnableUnofficialRelease=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
+_build-pre: ## Build configured to grab pre-release version of the operator
+	go build ${BUILDFLAGS} -ldflags "$(LDF_FLAGS)$(KUBECTL_STOS_VERSION) -X github.com/storageos/kubectl-storageos/pkg/version.EnablePreReleases=true" -o bin/kubectl-storageos github.com/storageos/kubectl-storageos
 
 run: fmt vet generate ## Run a controller from your host.
 	go run ${BUILDFLAGS} ./main.go

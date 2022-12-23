@@ -142,10 +142,7 @@ func selectLatestVersionOrPanic(releases []GithubRelease) string {
 	versions := []GithubRelease{}
 
 	for _, release := range releases {
-		if release.Draft {
-			continue
-		}
-		if !enableUnofficialRelease && release.Prerelease {
+		if release.Draft || !enablePreReleases && release.Prerelease {
 			continue
 		}
 
