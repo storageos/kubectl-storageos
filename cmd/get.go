@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
 	"github.com/storageos/kubectl-storageos/pkg/forwarder"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 )
@@ -16,12 +17,7 @@ func GetCmd() *cobra.Command {
 		DisableFlagParsing: true,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			f, err := forwarder.NewForwarder(logger.NewLogger())
-			if err != nil {
-				return err
-			}
-
-			return f.ForwardToCLIPod(storageosCommand(cmd, args))
+			return forwarder.ForwardToCLIPod(logger.NewLogger(), storageosCommand(cmd, args))
 		},
 	}
 
