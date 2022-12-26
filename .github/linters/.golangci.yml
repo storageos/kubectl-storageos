@@ -28,9 +28,5 @@ linters:
     - misspell
 
 linters-settings:
-  errcheck:
-    # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
-    # default is false: such cases aren't reported by default.
-    check-blank: true
   gosimple:
     checks: [ "-S1019" ]     
