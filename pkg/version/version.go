@@ -64,7 +64,10 @@ func init() {
 		}
 	}
 
-	versionRegexp, _ = regexp.Compile(consts.VersionRegex)
+	versionRegexp, err = regexp.Compile(consts.VersionRegex)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func IsDevelop(version string) bool {
@@ -74,7 +77,10 @@ func IsDevelop(version string) bool {
 
 	switch len(version) {
 	case 56, 64, 96, 128:
-		shaRegexp, _ := regexp.Compile(consts.ShaVersionRegex)
+		shaRegexp, err := regexp.Compile(consts.ShaVersionRegex)
+		if err != nil {
+			return false
+		}
 		return shaRegexp.Match([]byte(version))
 	}
 
