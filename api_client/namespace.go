@@ -2,82 +2,10 @@ package apiclient
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/storageos/kubectl-storageos/api_client/openapi"
 	"github.com/storageos/kubectl-storageos/model"
 )
-
-// DeleteNamespaceRequestParams contains optional request parameters for a
-// delete namespace operation.
-type DeleteNamespaceRequestParams struct {
-	CASVersion string
-}
-
-type NamespaceNotFoundError struct {
-	uid  string
-	name string
-}
-
-func (e NamespaceNotFoundError) Error() string {
-	switch {
-	case e.uid != "":
-		return fmt.Sprintf("namespace with ID %v not found", e.uid)
-	case e.name != "":
-		return fmt.Sprintf("namespace with name %v not found", e.name)
-	}
-
-	return "namespace not found"
-}
-
-func NewNamespaceNotFoundError(uid string) NamespaceNotFoundError {
-	return NamespaceNotFoundError{
-		uid: uid,
-	}
-}
-
-func NewNamespaceNameNotFoundError(name string) NamespaceNotFoundError {
-	return NamespaceNotFoundError{
-		name: name,
-	}
-}
-
-// NamespaceExistsError is returned when a namespace creation request is sent to
-// a cluster where that name is already in use.
-type NamespaceExistsError struct {
-	name string
-}
-
-func (e NamespaceExistsError) Error() string {
-	return fmt.Sprintf("namespace name %s is already in use", e.name)
-}
-
-func NewNamespaceExistsError(name string) NamespaceExistsError {
-	return NamespaceExistsError{
-		name: name,
-	}
-}
-
-type InvalidNamespaceCreationError struct {
-	details string
-}
-
-// Error returns an error message indicating that a namespace creation request
-// made to the StorageOS API is invalid, including details if available.
-func (e InvalidNamespaceCreationError) Error() string {
-	msg := "namespace creation request is invalid"
-	if e.details != "" {
-		msg = fmt.Sprintf("%v: %v", msg, e.details)
-	}
-	return msg
-}
-
-// NewInvalidNamespaceCreationError returns an InvalidNamespaceCreationError,
-// using details to provide information about what must be corrected.
-func NewInvalidNamespaceCreationError(details string) InvalidNamespaceCreationError {
-	return InvalidNamespaceCreationError{
-		details: details,
-	}
-}
 
 // GetNamespaceByName requests basic information for the namespace resource
 // which has the given name.
@@ -90,7 +18,7 @@ func NewInvalidNamespaceCreationError(details string) InvalidNamespaceCreationEr
 // namespaces from the StorageOS API and returning the first one where the
 // name matches.
 func (c *Client) GetNamespaceByName(ctx context.Context, name string) (*model.Namespace, error) {
-	namespaces, err := c.Transport.ListNamespaces(ctx)
+	namespaces, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +29,7 @@ func (c *Client) GetNamespaceByName(ctx context.Context, name string) (*model.Na
 		}
 	}
 
-	return nil, NewNamespaceNameNotFoundError(name)
+	return nil, openapi.NewNamespaceNameNotFoundError(name)
 }
 
 // GetListNamespacesByUID requests a list of namespace resources present in the
@@ -111,7 +39,7 @@ func (c *Client) GetNamespaceByName(ctx context.Context, name string) (*model.Na
 // namespace resources which have a matching ID. If no uids are given then
 // all namespaces are returned.
 func (c *Client) GetListNamespacesByUID(ctx context.Context, uids ...string) ([]*model.Namespace, error) {
-	resources, err := c.Transport.ListNamespaces(ctx)
+	resources, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +54,7 @@ func (c *Client) GetListNamespacesByUID(ctx context.Context, uids ...string) ([]
 // namespaces resources which have a matching name. If no names are given then
 // all namespaces are returned.
 func (c *Client) GetListNamespacesByName(ctx context.Context, names ...string) ([]*model.Namespace, error) {
-	resources, err := c.Transport.ListNamespaces(ctx)
+	resources, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +83,7 @@ func filterNamespacesForNames(namespaces []*model.Namespace, names ...string) ([
 	for _, name := range names {
 		ns, ok := retrieved[name]
 		if !ok {
-			return nil, NewNamespaceNameNotFoundError(name)
+			return nil, openapi.NewNamespaceNameNotFoundError(name)
 		}
 		filtered = append(filtered, ns)
 	}
@@ -185,7 +113,7 @@ func filterNamespacesForUIDs(namespaces []*model.Namespace, uids ...string) ([]*
 	for _, idVar := range uids {
 		ns, ok := retrieved[idVar]
 		if !ok {
-			return nil, NewNamespaceNotFoundError(idVar)
+			return nil, openapi.NewNamespaceNotFoundError(idVar)
 		}
 		filtered = append(filtered, ns)
 	}

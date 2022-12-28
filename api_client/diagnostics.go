@@ -11,5 +11,5 @@ func (c *Client) GetSingleNodeDiagnosticsByName(ctx context.Context, name string
 		return nil, "", err
 	}
 
-	return c.Transport.GetSingleNodeDiagnostics(ctx, node.ID)
+	return c.GetSingleNodeDiagnostics(ctx, node.ID)
 }

@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -24,19 +23,38 @@ func TestAPICmd() *cobra.Command {
 		DisableFlagParsing: true,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := Test()
+			client, err := GetAPIClient()
 			if err != nil {
 				return err
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 			defer cancel()
-			_, err = client.Authenticate(ctx, "storageos", "storageos")
+			_, _, err = client.Authenticate(ctx, "storageos", "storageos")
 			if err != nil {
 				return err
 			}
 
 			vols, err := client.GetAllVolumes(ctx)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("Got %d volumes back\n", len(vols))
+
+			vols, err = client.GetAllVolumes(ctx)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("Got %d volumes back\n", len(vols))
+
+			_, _, err = client.Authenticate(ctx, "storageos", "storageos")
+			if err != nil {
+				return err
+			}
+
+			vols, err = client.GetAllVolumes(ctx)
 			if err != nil {
 				return err
 			}
@@ -49,52 +67,21 @@ func TestAPICmd() *cobra.Command {
 	return cmd
 }
 
-func Test() (*apiclient.Client, error) {
+func GetAPIClient() (*apiclient.ClientWithReauth, error) {
 	userAgent := strings.Join([]string{"ondat kubectl plugin", version.PluginVersion}, "/")
 
-	// TODO get from somewhere
+	// TODO retrieve credentials like before
 	username, password := "storageos", "storageos"
 
-	// disabledAuthCache, err := config.AuthCacheDisabled()
-	// if err != nil {
-	// 	return err
-	// }
-	disabledAuthCache := true
-
 	// TODO make endpoints configurable
-	// get the OpenAPI client
-	var client apiclient.Transport
-	client, err := openapi.NewOpenAPI([]string{consts.DefaultStorageOSEndpoint}, userAgent)
+	basicOpenAPIClient, err := openapi.NewOpenAPI([]string{consts.DefaultStorageOSEndpoint}, userAgent)
 	if err != nil {
 		return nil, err
 	}
 
-	clientWithReauth := apiclient.NewTransportWithReauth(client, username, password)
+	// client wrapper adding some extra useful methods on top
+	internalClient := apiclient.NewClient(basicOpenAPIClient)
+	clientWithReauth := apiclient.NewClientWithReauth(internalClient, username, password)
 
-	// internal client wrapper
-	internalClient := &apiclient.Client{
-		Transport: clientWithReauth,
-	}
-
-	if disabledAuthCache {
-		return internalClient, nil
-	}
-
-	// TODO make dir configurable
-	// Ensure that the cache dir exists
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return internalClient, nil
-	}
-
-	err = os.Mkdir(cacheDir, 0700)
-	if err != nil && !os.IsExist(err) {
-		return nil, err
-	}
-
-	// wrap transport with authentication chaching capacilities
-	clientWithReauthAndCaching := apiclient.NewAuthCachedTransport(client)
-	internalClient.Transport = clientWithReauthAndCaching
-
-	return internalClient, nil
+	return clientWithReauth, nil
 }

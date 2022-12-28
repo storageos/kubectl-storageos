@@ -3,29 +3,24 @@ package apiclient
 import (
 	"context"
 
+	"github.com/storageos/kubectl-storageos/api_client/openapi"
 	"github.com/storageos/kubectl-storageos/model"
 )
-
-// UpdateLicenceRequestParams contains optional request parameters for a update
-// licence operation.
-type UpdateLicenceRequestParams struct {
-	CASVersion string
-}
 
 // UpdateLicence sends a new version of the licence to apply to the current
 // cluster. It returns the new licence resource if correctly applied. It doesn't
 // require a version but overwrite the licence using the last available version
 // from the current licence.
-func (c *Client) UpdateLicence(ctx context.Context, licence []byte, params *UpdateLicenceRequestParams) (*model.License, error) {
+func (c *Client) UpdateLicence(ctx context.Context, licence []byte, params *openapi.UpdateLicenceRequestParams) (*model.License, error) {
 	if params == nil || params.CASVersion == "" {
-		l, err := c.Transport.GetLicence(ctx)
+		l, err := c.GetLicence(ctx)
 		if err != nil {
 			return nil, err
 		}
-		params = &UpdateLicenceRequestParams{
+		params = &openapi.UpdateLicenceRequestParams{
 			CASVersion: l.Version,
 		}
 	}
 
-	return c.Transport.UpdateLicence(ctx, licence, params)
+	return c.UpdateLicence(ctx, licence, params)
 }

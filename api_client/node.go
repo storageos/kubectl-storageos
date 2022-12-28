@@ -2,53 +2,10 @@ package apiclient
 
 import (
 	"context"
-	"fmt"
-	"time"
 
+	"github.com/storageos/kubectl-storageos/api_client/openapi"
 	"github.com/storageos/kubectl-storageos/model"
 )
-
-// DeleteNodeRequestParams contains optional request parameters for a delete
-// node operation.
-type DeleteNodeRequestParams struct {
-	CASVersion string
-	AsyncMax   time.Duration
-}
-
-// SetCordonedRequestParams contains the required and optional parameteres
-// for a set cordoned operation
-type SetCordonedRequestParams struct {
-	Cordoned   bool
-	CASVersion string
-}
-
-type NodeNotFoundError struct {
-	uid  string
-	name string
-}
-
-func (e NodeNotFoundError) Error() string {
-	switch {
-	case e.uid != "":
-		return fmt.Sprintf("node with ID %v not found", e.uid)
-	case e.name != "":
-		return fmt.Sprintf("node with name %v not found", e.name)
-	}
-
-	return "node not found"
-}
-
-func NewNodeNotFoundError(uid string) NodeNotFoundError {
-	return NodeNotFoundError{
-		uid: uid,
-	}
-}
-
-func NewNodeNameNotFoundError(name string) NodeNotFoundError {
-	return NodeNotFoundError{
-		name: name,
-	}
-}
 
 // GetNodeByName requests basic information for the node resource which has
 // name.
@@ -61,7 +18,7 @@ func NewNodeNameNotFoundError(name string) NodeNotFoundError {
 // in the cluster from the StorageOS API and returning the first node where the
 // name matches.
 func (c *Client) GetNodeByName(ctx context.Context, name string) (*model.Node, error) {
-	nodes, err := c.Transport.ListNodes(ctx)
+	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +29,7 @@ func (c *Client) GetNodeByName(ctx context.Context, name string) (*model.Node, e
 		}
 	}
 
-	return nil, NewNodeNameNotFoundError(name)
+	return nil, openapi.NewNodeNameNotFoundError(name)
 }
 
 // GetListNodesByUID requests a list containing basic information on each
@@ -81,7 +38,7 @@ func (c *Client) GetNodeByName(ctx context.Context, name string) (*model.Node, e
 // The returned list is filtered using uids so that it contains only those
 // resources which have a matching ID. Omitting uids will skip the filtering.
 func (c *Client) GetListNodesByUID(ctx context.Context, uids ...string) ([]*model.Node, error) {
-	nodes, err := c.Transport.ListNodes(ctx)
+	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +52,7 @@ func (c *Client) GetListNodesByUID(ctx context.Context, uids ...string) ([]*mode
 // The returned list is filtered using names so that it contains only those
 // resources which have a matching name. Omitting names will skip the filtering.
 func (c *Client) GetListNodesByName(ctx context.Context, names ...string) ([]*model.Node, error) {
-	nodes, err := c.Transport.ListNodes(ctx)
+	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +83,7 @@ func filterNodesForNames(nodes []*model.Node, names ...string) ([]*model.Node, e
 	for _, name := range names {
 		n, ok := retrieved[name]
 		if !ok {
-			return nil, NewNodeNameNotFoundError(name)
+			return nil, openapi.NewNodeNameNotFoundError(name)
 		}
 		filtered = append(filtered, n)
 	}
@@ -157,7 +114,7 @@ func filterNodesForUIDs(nodes []*model.Node, uids ...string) ([]*model.Node, err
 	for _, idVar := range uids {
 		n, ok := retrieved[idVar]
 		if !ok {
-			return nil, NewNodeNotFoundError(idVar)
+			return nil, openapi.NewNodeNotFoundError(idVar)
 		}
 		filtered = append(filtered, n)
 	}

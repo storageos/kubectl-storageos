@@ -2,100 +2,10 @@ package apiclient
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/storageos/kubectl-storageos/api_client/openapi"
 	"github.com/storageos/kubectl-storageos/model"
 )
-
-// DeletePolicyGroupRequestParams contains optional request parameters for a
-// delete policy group operation.
-type DeletePolicyGroupRequestParams struct {
-	CASVersion string
-}
-
-// PolicyGroupNotFoundError indicates that the API could not find the policy
-// group specified.
-type PolicyGroupNotFoundError struct {
-	msg string
-
-	gid  string
-	name string
-}
-
-// Error returns an error message indicating that the policy group with a given
-// ID or name was not found, as configured.
-func (e PolicyGroupNotFoundError) Error() string {
-	switch {
-	case e.gid != "":
-		return fmt.Sprintf("policy group with ID %v not found", e.gid)
-	case e.name != "":
-		return fmt.Sprintf("policy group with name %v not found", e.name)
-	}
-
-	return e.msg
-}
-
-// NewPolicyGroupIDNotFoundError returns a PolicyGroupNotFoundError for the
-// policy group with gid, constructing a user friendly message and storing
-// the ID inside the error.
-func NewPolicyGroupIDNotFoundError(gid string) PolicyGroupNotFoundError {
-	return PolicyGroupNotFoundError{
-		gid: gid,
-	}
-}
-
-// NewPolicyGroupNameNotFoundError returns a PolicyGroupNotFoundError for the
-// policy group with name, constructing a user friendly message and storing
-// the name inside the error.
-func NewPolicyGroupNameNotFoundError(name string) PolicyGroupNotFoundError {
-	return PolicyGroupNotFoundError{
-		name: name,
-	}
-}
-
-// PolicyGroupExistsError is returned when a policy group creation request is sent to
-// a cluster where that name is already in use.
-type PolicyGroupExistsError struct {
-	name string
-}
-
-// Error returns an error message indicating that a policy group name is already in
-// use.
-func (e PolicyGroupExistsError) Error() string {
-	return fmt.Sprintf("policy group name %s is already in use", e.name)
-}
-
-// NewPolicyGroupExistsError returns an error indicating that a policy group with
-// that name already exists.
-func NewPolicyGroupExistsError(name string) PolicyGroupExistsError {
-	return PolicyGroupExistsError{
-		name: name,
-	}
-}
-
-// InvalidPolicyGroupCreationError is returned when a policy group creation
-// request sent to the StorageOS API is invalid.
-type InvalidPolicyGroupCreationError struct {
-	details string
-}
-
-// Error returns an error message indicating that a policy group creation
-// request made to the StorageOS API is invalid, including details if available.
-func (e InvalidPolicyGroupCreationError) Error() string {
-	msg := "policy group creation request is invalid"
-	if e.details != "" {
-		msg = fmt.Sprintf("%v: %v", msg, e.details)
-	}
-	return msg
-}
-
-// NewInvalidPolicyGroupCreationError returns an InvalidPolicyGroupCreationError,
-// using details to provide information about what must be corrected.
-func NewInvalidPolicyGroupCreationError(details string) InvalidPolicyGroupCreationError {
-	return InvalidPolicyGroupCreationError{
-		details: details,
-	}
-}
 
 // GetListPolicyGroupsByUID requests a list containing basic information on each
 // policy group configured for the cluster.
@@ -103,7 +13,7 @@ func NewInvalidPolicyGroupCreationError(details string) InvalidPolicyGroupCreati
 // The returned list is filtered using gids so that it contains  only those
 // resources which have a matching GID. Omitting gids  will skip the filtering.
 func (c *Client) GetListPolicyGroupsByUID(ctx context.Context, gids ...string) ([]*model.PolicyGroup, error) {
-	policyGroups, err := c.Transport.ListPolicyGroups(ctx)
+	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +23,7 @@ func (c *Client) GetListPolicyGroupsByUID(ctx context.Context, gids ...string) (
 
 // GetPolicyGroupByName requests a policy group given its name
 func (c *Client) GetPolicyGroupByName(ctx context.Context, name string) (*model.PolicyGroup, error) {
-	policyGroups, err := c.Transport.ListPolicyGroups(ctx)
+	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +34,7 @@ func (c *Client) GetPolicyGroupByName(ctx context.Context, name string) (*model.
 		}
 	}
 
-	return nil, NewPolicyGroupNameNotFoundError(name)
+	return nil, openapi.NewPolicyGroupNameNotFoundError(name)
 }
 
 // GetListPolicyGroupsByName requests a list containing basic information on each
@@ -133,7 +43,7 @@ func (c *Client) GetPolicyGroupByName(ctx context.Context, name string) (*model.
 // The returned list is filtered using name so that it contains  only those
 // resources which have a matching name. Omitting gids  will skip the filtering.
 func (c *Client) GetListPolicyGroupsByName(ctx context.Context, names ...string) ([]*model.PolicyGroup, error) {
-	policyGroups, err := c.Transport.ListPolicyGroups(ctx)
+	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +74,7 @@ func filterPolicyGroupsForNames(policyGroups []*model.PolicyGroup, names ...stri
 	for _, name := range names {
 		g, ok := retrieved[name]
 		if !ok {
-			return nil, NewPolicyGroupNameNotFoundError(name)
+			return nil, openapi.NewPolicyGroupNameNotFoundError(name)
 		}
 		filtered = append(filtered, g)
 	}
@@ -194,7 +104,7 @@ func filterPolicyGroupsForIDs(policyGroups []*model.PolicyGroup, gids ...string)
 	for _, gid := range gids {
 		g, ok := retrieved[gid]
 		if !ok {
-			return nil, NewPolicyGroupIDNotFoundError(gid)
+			return nil, openapi.NewPolicyGroupIDNotFoundError(gid)
 		}
 		filtered = append(filtered, g)
 	}
