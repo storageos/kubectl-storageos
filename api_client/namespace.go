@@ -17,7 +17,7 @@ import (
 // Retrieving a namespace resource by name involves requesting a list of all
 // namespaces from the StorageOS API and returning the first one where the
 // name matches.
-func (c *Client) GetNamespaceByName(ctx context.Context, name string) (*model.Namespace, error) {
+func (c *client) GetNamespaceByName(ctx context.Context, name string) (*model.Namespace, error) {
 	namespaces, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (c *Client) GetNamespaceByName(ctx context.Context, name string) (*model.Na
 // The returned list is filtered using uids so that it contains only those
 // namespace resources which have a matching ID. If no uids are given then
 // all namespaces are returned.
-func (c *Client) GetListNamespacesByUID(ctx context.Context, uids ...string) ([]*model.Namespace, error) {
+func (c *client) GetListNamespacesByUID(ctx context.Context, uids ...string) ([]*model.Namespace, error) {
 	resources, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (c *Client) GetListNamespacesByUID(ctx context.Context, uids ...string) ([]
 // The returned list is filtered using names so that it contains only those
 // namespaces resources which have a matching name. If no names are given then
 // all namespaces are returned.
-func (c *Client) GetListNamespacesByName(ctx context.Context, names ...string) ([]*model.Namespace, error) {
+func (c *client) GetListNamespacesByName(ctx context.Context, names ...string) ([]*model.Namespace, error) {
 	resources, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err

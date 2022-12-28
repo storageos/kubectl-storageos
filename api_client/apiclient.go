@@ -2,9 +2,12 @@ package apiclient
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/storageos/kubectl-storageos/api_client/openapi"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 // Client wraps the openAPI client providing a collection of useful methods such
@@ -16,20 +19,37 @@ import (
 // fails, it will continue as normal and then cache the new token.
 // This cache is used until Authenticate is called again (manually or when the
 // reauth wrapper is triggered).
-type Client struct {
+type client struct {
 	*openapi.OpenAPI
 
 	cacheSessionToken     string
 	cacheSessionExpiresAt time.Time
 }
 
-func NewClient(openapiClient *openapi.OpenAPI) Client {
-	return Client{
-		OpenAPI: openapiClient,
+func GetAPIClient() (*ClientWithReauth, error) {
+	userAgent := strings.Join([]string{"ondat kubectl plugin", version.PluginVersion}, "/")
+
+	// TODO retrieve credentials like before
+	username, password := "storageos", "storageos"
+
+	// TODO make endpoints configurable
+	basicOpenAPIClient, err := openapi.NewOpenAPI([]string{consts.DefaultStorageOSEndpoint}, userAgent)
+	if err != nil {
+		return nil, err
 	}
+
+	// client wrapper adding some extra useful methods on top
+	internalClient := client{
+		OpenAPI: basicOpenAPIClient,
+	}
+
+	// client wrapper adding reauth on first failure
+	clientWithReauth := NewClientWithReauth(internalClient, username, password)
+
+	return clientWithReauth, nil
 }
 
-func (c *Client) Authenticate(ctx context.Context, username, password string) (string, time.Time, error) {
+func (c *client) Authenticate(ctx context.Context, username, password string) (string, time.Time, error) {
 	// TODO make configurable if we want to skip this feature of caching the session
 	if c.cacheSessionToken != "" && c.cacheSessionExpiresAt.After(time.Now()) {
 		err := c.UseAuthSession(ctx, c.cacheSessionToken)

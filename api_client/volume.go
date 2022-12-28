@@ -19,7 +19,7 @@ import (
 // Retrieving a volume resource by name involves requesting a list of all
 // volumes in the namespace from the StorageOS API and returning the first one
 // where the name matches.
-func (c *Client) GetVolumeByName(ctx context.Context, namespaceID string, name string) (*model.Volume, error) {
+func (c *client) GetVolumeByName(ctx context.Context, namespaceID string, name string) (*model.Volume, error) {
 	volumes, err := c.ListVolumes(ctx, namespaceID)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (c *Client) GetVolumeByName(ctx context.Context, namespaceID string, name s
 //
 // The returned list is filtered using uids so that it contains only those
 // resources which have a matching ID. Omitting uids will skip the filtering.
-func (c *Client) GetNamespaceVolumesByUID(ctx context.Context, namespaceID string, uids ...string) ([]*model.Volume, error) {
+func (c *client) GetNamespaceVolumesByUID(ctx context.Context, namespaceID string, uids ...string) ([]*model.Volume, error) {
 	volumes, err := c.ListVolumes(ctx, namespaceID)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (c *Client) GetNamespaceVolumesByUID(ctx context.Context, namespaceID strin
 //
 // The returned list is filtered using names so that it contains only those
 // resources which have a matching name. Omitting names will skip the filtering.
-func (c *Client) GetNamespaceVolumesByName(ctx context.Context, namespaceID string, names ...string) ([]*model.Volume, error) {
+func (c *client) GetNamespaceVolumesByName(ctx context.Context, namespaceID string, names ...string) ([]*model.Volume, error) {
 	volumes, err := c.ListVolumes(ctx, namespaceID)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *Client) GetNamespaceVolumesByName(ctx context.Context, namespaceID stri
 
 // GetAllVolumes requests basic information for each volume resource in every
 // namespace exposed by the StorageOS API to the authenticated user.
-func (c *Client) GetAllVolumes(ctx context.Context) ([]*model.Volume, error) {
+func (c *client) GetAllVolumes(ctx context.Context) ([]*model.Volume, error) {
 	return c.fetchAllVolumesParallel(ctx)
 }
 
@@ -80,7 +80,7 @@ func (c *Client) GetAllVolumes(ctx context.Context) ([]*model.Volume, error) {
 // If any of the call returns an error:
 //   - the context is canceled so all pending requests are cut
 //   - this method returns an error
-func (c *Client) fetchAllVolumesParallel(ctx context.Context) ([]*model.Volume, error) {
+func (c *client) fetchAllVolumesParallel(ctx context.Context) ([]*model.Volume, error) {
 	namespaces, err := c.ListNamespaces(ctx)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func filterVolumesForNames(volumes []*model.Volume, names ...string) ([]*model.V
 //		unconditional
 //		- If params.CASVersion is set, the request is conditional upon it matching
 //		the volume entity's version as seen by the server.
-func (c *Client) SetReplicas(ctx context.Context, nsID string, volID string, numReplicas uint64, params *openapi.SetReplicasRequestParams) error {
+func (c *client) SetReplicas(ctx context.Context, nsID string, volID string, numReplicas uint64, params *openapi.SetReplicasRequestParams) error {
 	if params == nil || params.CASVersion == "" {
 		v, err := c.GetVolume(ctx, nsID, volID)
 		if err != nil {
@@ -228,7 +228,7 @@ func (c *Client) SetReplicas(ctx context.Context, nsID string, volID string, num
 //	 - If params.AsyncMax is set, the request is performed asynchronously using
 //	 the duration given as the maximum amount of time allowed for the request
 //	 before it times out.
-func (c *Client) UpdateVolumeDescription(ctx context.Context, nsID string, volID string, description string, params *openapi.UpdateVolumeRequestParams) (*model.Volume, error) {
+func (c *client) UpdateVolumeDescription(ctx context.Context, nsID string, volID string, description string, params *openapi.UpdateVolumeRequestParams) (*model.Volume, error) {
 	v, err := c.GetVolume(ctx, nsID, volID)
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (c *Client) UpdateVolumeDescription(ctx context.Context, nsID string, volID
 //	- If params.AsyncMax is set, the request is performed asynchronously using
 //	the duration given as the maximum amount of time allowed for the request
 //	before it times out.
-func (c *Client) UpdateVolumeLabels(ctx context.Context, nsID string, volID string, labels map[string]string, params *openapi.UpdateVolumeRequestParams) (*model.Volume, error) {
+func (c *client) UpdateVolumeLabels(ctx context.Context, nsID string, volID string, labels map[string]string, params *openapi.UpdateVolumeRequestParams) (*model.Volume, error) {
 	v, err := c.GetVolume(ctx, nsID, volID)
 	if err != nil {
 		return nil, err
@@ -301,7 +301,7 @@ func (c *Client) UpdateVolumeLabels(ctx context.Context, nsID string, volID stri
 //		unconditional
 //		- If params.CASVersion is set, the request is conditional upon it matching
 //		the volume entity's version as seen by the server.
-func (c *Client) ResizeVolume(ctx context.Context, nsID string, volID string, sizeBytes uint64, params *openapi.ResizeVolumeRequestParams) (*model.Volume, error) {
+func (c *client) ResizeVolume(ctx context.Context, nsID string, volID string, sizeBytes uint64, params *openapi.ResizeVolumeRequestParams) (*model.Volume, error) {
 
 	newParams := &openapi.ResizeVolumeRequestParams{}
 
@@ -331,7 +331,7 @@ func (c *Client) ResizeVolume(ctx context.Context, nsID string, volID string, si
 //		unconditional
 //		- If params.CASVersion is set, the request is conditional upon it matching
 //		the volume entity's version as seen by the server.
-func (c *Client) AttachNFSVolume(ctx context.Context, namespaceID string, volumeID string, params *openapi.AttachNFSVolumeRequestParams) error {
+func (c *client) AttachNFSVolume(ctx context.Context, namespaceID string, volumeID string, params *openapi.AttachNFSVolumeRequestParams) error {
 
 	newParams := &openapi.AttachNFSVolumeRequestParams{}
 
@@ -361,7 +361,7 @@ func (c *Client) AttachNFSVolume(ctx context.Context, namespaceID string, volume
 //	  unconditional
 //	- If params.CASVersion is set, the request is conditional upon it matching
 //	  the volume entity's version as seen by the server.
-func (c *Client) UpdateNFSVolumeExports(
+func (c *client) UpdateNFSVolumeExports(
 	ctx context.Context,
 	namespaceID string,
 	volumeID string,
@@ -398,7 +398,7 @@ func (c *Client) UpdateNFSVolumeExports(
 //	  unconditional
 //	- If params.CASVersion is set, the request is conditional upon it matching
 //	  the volume entity's version as seen by the server.
-func (c *Client) UpdateNFSVolumeMountEndpoint(
+func (c *client) UpdateNFSVolumeMountEndpoint(
 	ctx context.Context,
 	namespaceID string,
 	volumeID string,
@@ -435,7 +435,7 @@ func (c *Client) UpdateNFSVolumeMountEndpoint(
 //	  unconditional
 //	- If params.CASVersion is set, the request is conditional upon it matching
 //	  the volume entity's version as seen by the server.
-func (c *Client) SetFailureModeIntent(
+func (c *client) SetFailureModeIntent(
 	ctx context.Context,
 	namespaceID string,
 	volumeID string,
@@ -467,7 +467,7 @@ func (c *Client) SetFailureModeIntent(
 //	  unconditional
 //	- If params.CASVersion is set, the request is conditional upon it matching
 //	  the volume entity's version as seen by the server.
-func (c *Client) SetFailureThreshold(
+func (c *client) SetFailureThreshold(
 	ctx context.Context,
 	namespaceID string,
 	volumeID string,

@@ -17,7 +17,7 @@ import (
 // Retrieving a node resource by name involves requesting a list of all nodes
 // in the cluster from the StorageOS API and returning the first node where the
 // name matches.
-func (c *Client) GetNodeByName(ctx context.Context, name string) (*model.Node, error) {
+func (c *client) GetNodeByName(ctx context.Context, name string) (*model.Node, error) {
 	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (c *Client) GetNodeByName(ctx context.Context, name string) (*model.Node, e
 //
 // The returned list is filtered using uids so that it contains only those
 // resources which have a matching ID. Omitting uids will skip the filtering.
-func (c *Client) GetListNodesByUID(ctx context.Context, uids ...string) ([]*model.Node, error) {
+func (c *client) GetListNodesByUID(ctx context.Context, uids ...string) ([]*model.Node, error) {
 	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c *Client) GetListNodesByUID(ctx context.Context, uids ...string) ([]*mode
 //
 // The returned list is filtered using names so that it contains only those
 // resources which have a matching name. Omitting names will skip the filtering.
-func (c *Client) GetListNodesByName(ctx context.Context, names ...string) ([]*model.Node, error) {
+func (c *client) GetListNodesByName(ctx context.Context, names ...string) ([]*model.Node, error) {
 	nodes, err := c.ListNodes(ctx)
 	if err != nil {
 		return nil, err

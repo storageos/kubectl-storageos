@@ -12,7 +12,7 @@ import (
 //
 // The returned list is filtered using gids so that it contains  only those
 // resources which have a matching GID. Omitting gids  will skip the filtering.
-func (c *Client) GetListPolicyGroupsByUID(ctx context.Context, gids ...string) ([]*model.PolicyGroup, error) {
+func (c *client) GetListPolicyGroupsByUID(ctx context.Context, gids ...string) ([]*model.PolicyGroup, error) {
 	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (c *Client) GetListPolicyGroupsByUID(ctx context.Context, gids ...string) (
 }
 
 // GetPolicyGroupByName requests a policy group given its name
-func (c *Client) GetPolicyGroupByName(ctx context.Context, name string) (*model.PolicyGroup, error) {
+func (c *client) GetPolicyGroupByName(ctx context.Context, name string) (*model.PolicyGroup, error) {
 	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (c *Client) GetPolicyGroupByName(ctx context.Context, name string) (*model.
 //
 // The returned list is filtered using name so that it contains  only those
 // resources which have a matching name. Omitting gids  will skip the filtering.
-func (c *Client) GetListPolicyGroupsByName(ctx context.Context, names ...string) ([]*model.PolicyGroup, error) {
+func (c *client) GetListPolicyGroupsByName(ctx context.Context, names ...string) ([]*model.PolicyGroup, error) {
 	policyGroups, err := c.ListPolicyGroups(ctx)
 	if err != nil {
 		return nil, err

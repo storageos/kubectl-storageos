@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-func (c *Client) GetSingleNodeDiagnosticsByName(ctx context.Context, name string) (io.ReadCloser, string, error) {
+func (c *client) GetSingleNodeDiagnosticsByName(ctx context.Context, name string) (io.ReadCloser, string, error) {
 	node, err := c.GetNodeByName(ctx, name)
 	if err != nil {
 		return nil, "", err

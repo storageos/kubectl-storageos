@@ -7,7 +7,7 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-func (c *Client) GetUserByName(ctx context.Context, username string) (*model.User, error) {
+func (c *client) GetUserByName(ctx context.Context, username string) (*model.User, error) {
 	list, err := c.ListUsers(ctx)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (c *Client) GetUserByName(ctx context.Context, username string) (*model.Use
 	return nil, openapi.NewUserNameNotFoundError(username)
 }
 
-func (c *Client) GetListUsersByUID(ctx context.Context, uids []string) ([]*model.User, error) {
+func (c *client) GetListUsersByUID(ctx context.Context, uids []string) ([]*model.User, error) {
 	list, err := c.ListUsers(ctx)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (c *Client) GetListUsersByUID(ctx context.Context, uids []string) ([]*model
 	return filtered, nil
 }
 
-func (c *Client) GetListUsersByUsername(ctx context.Context, usernames []string) ([]*model.User, error) {
+func (c *client) GetListUsersByUsername(ctx context.Context, usernames []string) ([]*model.User, error) {
 	list, err := c.ListUsers(ctx)
 	if err != nil {
 		return nil, err
