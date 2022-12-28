@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 	apiclient "github.com/storageos/kubectl-storageos/api_client"
-	"github.com/storageos/kubectl-storageos/api_client/cache"
 	"github.com/storageos/kubectl-storageos/api_client/openapi"
 )
 
@@ -23,12 +22,6 @@ func TestAPICmd() *cobra.Command {
 		DisableFlagParsing: true,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// f, err := forwarder.NewForwarder(logger.NewLogger())
-			// if err != nil {
-			// 	return err
-			// }
-
-			// return f.ForwardToCLIPod(storageosCommand(cmd, args))
 			client, err := Test()
 			if err != nil {
 				return err
@@ -46,7 +39,7 @@ func TestAPICmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("DEBUG: got volumes back: %+v", vols)
+			fmt.Printf("Got %d volumes back\n", len(vols))
 			return nil
 		},
 	}
@@ -92,11 +85,7 @@ func Test() (*apiclient.Client, error) {
 			return nil, err
 		}
 
-		// Only wrap with caching if desired
-		return apiclient.NewAuthCachedTransport(
-			transport,
-			cache.NewSessionCache([]string{"http://localhost:5705"}, time.Now, 5*time.Second), // TODO get address from env vars
-		), nil
+		return apiclient.NewAuthCachedTransport(transport), nil
 	}()
 	if err != nil {
 		return nil, err

@@ -2,14 +2,8 @@ package apiclient
 
 import (
 	"context"
+	"time"
 )
-
-// AuthCache describes a type that provides a key-value cache mapping usernames
-// to cached auth sessions.
-type AuthCache interface {
-	Get(forUsername string) (AuthSession, error)
-	Put(username string, session AuthSession) error
-}
 
 // AuthCachedTransport decorates the embedded transport with cached auth
 // capabilities, modifying the Authenticate() behaviour. An instance will
@@ -19,8 +13,7 @@ type AuthCache interface {
 type AuthCachedTransport struct {
 	Transport
 
-	cache              AuthCache
-	lastAuthedUsername string
+	cacheSession AuthSession
 }
 
 // Authenticate attempts to fetch an authentication session for username from
@@ -28,7 +21,7 @@ type AuthCachedTransport struct {
 // call is a re-attempted auth then this authenticates as normal but caches
 // the result.
 func (co *AuthCachedTransport) Authenticate(ctx context.Context, username, password string) (AuthSession, error) {
-	if username != co.lastAuthedUsername {
+	if co.cacheSession.Token != "" && co.cacheSession.ExpiresAt.After(time.Now()) {
 		session, err := co.authenticateFromCache(ctx, username)
 		if err == nil {
 			return session, nil
@@ -44,28 +37,21 @@ func (co *AuthCachedTransport) Authenticate(ctx context.Context, username, passw
 		return session, err
 	}
 
-	_ = co.cache.Put(username, session)
-	co.lastAuthedUsername = username
+	co.cacheSession = session
 
 	return session, nil
 }
 
-// authenticateFromCache sets the inner transport to use the auth session found
-// for username, if present.
+// authenticateFromCache sets the inner transport to use the auth session
+// previously created and stored in-memory.
 func (co *AuthCachedTransport) authenticateFromCache(ctx context.Context, username string) (AuthSession, error) {
-	session, err := co.cache.Get(username)
-	if err != nil {
-		return AuthSession{}, err
-	}
-
-	return session, co.UseAuthSession(ctx, session)
+	return co.cacheSession, co.UseAuthSession(ctx, co.cacheSession)
 }
 
 // NewAuthCachedTransport decorates inner with use of an authentication session
 // cache.
-func NewAuthCachedTransport(inner Transport, cache AuthCache) *AuthCachedTransport {
+func NewAuthCachedTransport(inner Transport) *AuthCachedTransport {
 	return &AuthCachedTransport{
 		Transport: inner,
-		cache:     cache,
 	}
 }
