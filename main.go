@@ -57,6 +57,7 @@ func RootCmd() *cobra.Command {
 	cobracmd.AddCommand(cmd.NfsCmd())
 	cobracmd.AddCommand(cmd.CordonCmd())
 	cobracmd.AddCommand(cmd.UncordonCmd())
+	cobracmd.AddCommand(cmd.TestAPICmd())
 	cobracmd.AddCommand(cmd.CompletionCmd)
 
 	return cobracmd

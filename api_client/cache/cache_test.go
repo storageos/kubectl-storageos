@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -13,22 +12,6 @@ import (
 
 	apiclient "github.com/storageos/kubectl-storageos/api_client"
 )
-
-type mockConfigProvider struct {
-	APIEndpointsGiveValue []string
-	APIEndpointsGiveErr   error
-
-	CacheDirGiveValue string
-	CacheDirGiveErr   error
-}
-
-func (m *mockConfigProvider) APIEndpoints() ([]string, error) {
-	return m.APIEndpointsGiveValue, m.APIEndpointsGiveErr
-}
-
-func (m *mockConfigProvider) CacheDir() (string, error) {
-	return m.CacheDirGiveValue, m.CacheDirGiveErr
-}
 
 func TestSessionCacheGet(t *testing.T) {
 	t.Parallel()
@@ -40,19 +23,18 @@ func TestSessionCacheGet(t *testing.T) {
 		}
 		fuzzFactor = time.Second
 
-		newTmpDir = func() string {
-			dir, err := os.MkdirTemp("", "ondat-*")
-			if err != nil {
-				t.Fatalf("failed to set up test case: %v", err)
-			}
-			return dir
-		}
+		// newTmpDir = func() string {
+		// 	dir, err := os.MkdirTemp("", "ondat-*")
+		// 	if err != nil {
+		// 		t.Fatalf("failed to set up test case: %v", err)
+		// 	}
+		// 	return dir
+		// }
 	)
 
 	tests := []struct {
 		name string
 
-		config        *mockConfigProvider
 		setupCacheDir func(t *testing.T, forCache *SessionCache) error
 
 		lookupUsername string
@@ -63,10 +45,6 @@ func TestSessionCacheGet(t *testing.T) {
 		{
 			name: "valid session exists for username",
 
-			config: &mockConfigProvider{
-				APIEndpointsGiveValue: []string{"endpoint-a", "endpoint-b"},
-				CacheDirGiveValue:     newTmpDir(),
-			},
 			setupCacheDir: func(t *testing.T, forCache *SessionCache) error {
 				session := apiclient.NewAuthSession(
 					"i am token",
@@ -99,10 +77,6 @@ func TestSessionCacheGet(t *testing.T) {
 		{
 			name: "expired session exists for username",
 
-			config: &mockConfigProvider{
-				APIEndpointsGiveValue: []string{"endpoint-a", "endpoint-b"},
-				CacheDirGiveValue:     newTmpDir(),
-			},
 			setupCacheDir: func(t *testing.T, forCache *SessionCache) error {
 				session := apiclient.NewAuthSession(
 					"i am token",
@@ -132,10 +106,6 @@ func TestSessionCacheGet(t *testing.T) {
 		{
 			name: "no session for username",
 
-			config: &mockConfigProvider{
-				APIEndpointsGiveValue: []string{"endpoint-a", "endpoint-b"},
-				CacheDirGiveValue:     newTmpDir(),
-			},
 			setupCacheDir: func(t *testing.T, forCache *SessionCache) error {
 				return nil
 			},
@@ -152,11 +122,7 @@ func TestSessionCacheGet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if strings.HasPrefix(tt.config.CacheDirGiveValue, os.TempDir()) {
-				defer os.RemoveAll(tt.config.CacheDirGiveValue)
-			}
-
-			cache := NewSessionCache(tt.config, timeProvider, fuzzFactor)
+			cache := NewSessionCache([]string{"endpoint-a", "endpoint-b"}, timeProvider, fuzzFactor)
 
 			err := tt.setupCacheDir(t, cache)
 			if err != nil {
@@ -185,19 +151,17 @@ func TestSessionCachePut(t *testing.T) {
 		}
 		fuzzFactor = time.Second
 
-		newTmpDir = func() string {
-			dir, err := os.MkdirTemp("", "storageos-cli-test-*")
-			if err != nil {
-				t.Fatalf("failed to set up test case: %v", err)
-			}
-			return dir
-		}
+		// newTmpDir = func() string {
+		// 	dir, err := os.MkdirTemp("", "storageos-cli-test-*")
+		// 	if err != nil {
+		// 		t.Fatalf("failed to set up test case: %v", err)
+		// 	}
+		// 	return dir
+		// }
 	)
 
 	tests := []struct {
 		name string
-
-		config *mockConfigProvider
 
 		checkUsername string
 		session       apiclient.AuthSession
@@ -207,11 +171,6 @@ func TestSessionCachePut(t *testing.T) {
 	}{
 		{
 			name: "ok",
-
-			config: &mockConfigProvider{
-				APIEndpointsGiveValue: []string{"endpoint-a", "endpoint-b"},
-				CacheDirGiveValue:     newTmpDir(),
-			},
 
 			checkUsername: "i-am-user",
 			session: apiclient.NewAuthSession(
@@ -227,11 +186,6 @@ func TestSessionCachePut(t *testing.T) {
 		},
 		{
 			name: "empty username rejected",
-
-			config: &mockConfigProvider{
-				APIEndpointsGiveValue: []string{"endpoint-a", "endpoint-b"},
-				CacheDirGiveValue:     newTmpDir(),
-			},
 
 			checkUsername: "",
 			session: apiclient.NewAuthSession(
@@ -249,7 +203,7 @@ func TestSessionCachePut(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			cache := NewSessionCache(tt.config, timeProvider, fuzzFactor)
+			cache := NewSessionCache([]string{"endpoint-a", "endpoint-b"}, timeProvider, fuzzFactor)
 
 			gotErr := cache.Put(tt.checkUsername, tt.session)
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
@@ -266,7 +220,6 @@ func TestSessionCachePut(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unexpected failure checking results: %v", err)
 				}
-				defer os.RemoveAll(tt.config.CacheDirGiveValue)
 
 				dec := json.NewDecoder(f)
 

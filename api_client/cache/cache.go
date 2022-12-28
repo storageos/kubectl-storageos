@@ -15,22 +15,14 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/atomicfile"
 )
 
-// ConfigProvider defines the configuration settings required by the
-// SessionCache.
-type ConfigProvider interface {
-	APIEndpoints() ([]string, error)
-	CacheDir() (string, error)
-}
-
 // SessionCache implements a lookup cache which maps usernames to auth sessions,
 // loosely tracking expected expiration times.
 type SessionCache struct {
-	config ConfigProvider
+	mu *sync.RWMutex
 
+	endpoints   []string
 	currentTime func() time.Time
 	fuzzFactor  time.Duration
-
-	mu *sync.RWMutex
 }
 
 // Get looks up the session cache file forUsername. If there is a valid
@@ -112,41 +104,35 @@ func (c *SessionCache) Put(username string, session apiclient.AuthSession) error
 }
 
 func (c *SessionCache) getFilepath(forUsername string) (string, error) {
-	cacheDir, err := c.config.CacheDir()
-	if err != nil {
-		return "", err
-	}
-
-	endpoints, err := c.config.APIEndpoints()
+	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
 
 	// Sort the endpoints for consistency
-	sort.Strings(endpoints)
+	sort.Strings(c.endpoints)
 
 	// Hash the username and the target endpoints to get cache file name
 	hash := sha512.New()
 
 	_, _ = hash.Write([]byte(forUsername))
-	for _, endpoint := range endpoints {
+	for _, endpoint := range c.endpoints {
 		_, _ = hash.Write([]byte(endpoint))
 	}
 
 	return filepath.Join(
-		cacheDir,                         // dir
-		fmt.Sprintf("%x", hash.Sum(nil)), // file name
+		cacheDir,
+		fmt.Sprintf("%x", hash.Sum(nil)),
 	), nil
 }
 
 // NewSessionCache instantiates an empty session cache.
-func NewSessionCache(config ConfigProvider, timeProvider func() time.Time, fuzzFactor time.Duration) *SessionCache {
+func NewSessionCache(endpoints []string, timeProvider func() time.Time, fuzzFactor time.Duration) *SessionCache {
 	return &SessionCache{
-		config: config,
+		mu: &sync.RWMutex{},
 
+		endpoints:   endpoints,
 		currentTime: timeProvider,
 		fuzzFactor:  fuzzFactor,
-
-		mu: &sync.RWMutex{},
 	}
 }

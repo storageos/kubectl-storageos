@@ -91,9 +91,8 @@ func (o *OpenAPI) UseAuthSession(ctx context.Context, session apiclient.AuthSess
 
 // NewOpenAPI initialises a new OpenAPI transport using config to source the
 // target host endpoints and userAgent as the HTTP user agent string.
-func NewOpenAPI(config ConfigProvider, userAgent string) (*OpenAPI, error) {
-	hosts, err := config.APIEndpoints()
-	if err != nil || len(hosts) == 0 {
+func NewOpenAPI(hosts []string, userAgent string) (*OpenAPI, error) {
+	if len(hosts) == 0 {
 		return nil, errors.New("unable to determine target host")
 	}
 
@@ -127,7 +126,6 @@ func NewOpenAPI(config ConfigProvider, userAgent string) (*OpenAPI, error) {
 	return &OpenAPI{
 		mu: &sync.RWMutex{},
 
-		config: config,
 		client: client,
 		codec:  codec{},
 	}, nil

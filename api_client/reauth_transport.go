@@ -8,20 +8,13 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// CredentialsProvider defines a type which provides a configured username and
-// password that can be used for authentication against the StorageOS API.
-type CredentialsProvider interface {
-	Username() (string, error)
-	Password() (string, error)
-}
-
 // TransportWithReauth wraps calls to an inner transport implementation with a
 // re-authenticate and retry mechanism when an authentication error is
 // encountered.
 type TransportWithReauth struct {
 	inner Transport
 
-	credentials CredentialsProvider
+	username, password string
 }
 
 // Authenticate is passed through and does not try to reauth. An
@@ -313,6 +306,21 @@ func (tr *TransportWithReauth) CreateNamespace(ctx context.Context, name string,
 	return resource, err
 }
 
+// UpdateCluster wraps the inner transport's call with a reauthenticate and
+// retry upon encountering an authentication error.
+func (tr *TransportWithReauth) UpdateCluster(ctx context.Context, c *model.Cluster, params *UpdateClusterRequestParams) (*model.Cluster, error) {
+
+	var updated *model.Cluster
+	err := tr.doWithReauth(ctx, func() error {
+		var err error
+		updated, err = tr.inner.UpdateCluster(ctx, c, params)
+
+		return err
+	})
+
+	return updated, err
+}
+
 // UpdateLicence wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateLicence(ctx context.Context, lic []byte, params *UpdateLicenceRequestParams) (*model.License, error) {
@@ -565,18 +573,8 @@ func (tr *TransportWithReauth) doWithReauth(ctx context.Context, fn func() error
 	//
 	// This will reliably catch a cached auth session expiring.
 	if errors.As(originalErr, &AuthenticationError{}) {
-
-		username, err := tr.credentials.Username()
-		if err != nil {
-			return err
-		}
-		password, err := tr.credentials.Password()
-		if err != nil {
-			return err
-		}
-
 		// Attempt to reauth with credentials from the provider.
-		_, err = tr.Authenticate(ctx, username, password)
+		_, err := tr.Authenticate(ctx, tr.username, tr.password)
 		if err != nil {
 			return err
 		}
@@ -589,9 +587,10 @@ func (tr *TransportWithReauth) doWithReauth(ctx context.Context, fn func() error
 
 // NewTransportWithReauth wraps calls to transport with a retry on
 // authentication failure, sourcing username and password from credentials.
-func NewTransportWithReauth(transport Transport, credentials CredentialsProvider) *TransportWithReauth {
+func NewTransportWithReauth(transport Transport, username, password string) *TransportWithReauth {
 	return &TransportWithReauth{
-		inner:       transport,
-		credentials: credentials,
+		inner:    transport,
+		username: username,
+		password: password,
 	}
 }
