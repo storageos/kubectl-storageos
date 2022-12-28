@@ -26,7 +26,7 @@ func BundleCmd() *cobra.Command {
 from a server that can be used to assist when troubleshooting a StorageOS cluster.`,
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.BindPFlags(cmd.Flags())
+			_ = viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
@@ -51,9 +51,9 @@ from a server that can be used to assist when troubleshooting a StorageOS cluste
 
 	// hidden in favor of the `insecure-skip-tls-verify` flag
 	cmd.Flags().Bool("allow-insecure-connections", false, "when set, do not verify TLS certs when retrieving spec and reporting results")
-	cmd.Flags().MarkHidden("allow-insecure-connections")
+	_ = cmd.Flags().MarkHidden("allow-insecure-connections")
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 

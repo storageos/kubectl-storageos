@@ -3,7 +3,6 @@ package atomicfile
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -32,7 +31,7 @@ type Write struct {
 func NewWrite(targetPath string) (*Write, error) {
 	targetDir, fileName := filepath.Split(targetPath)
 
-	tempFile, err := ioutil.TempFile(targetDir, fileName+"-txn-*.json")
+	tempFile, err := os.CreateTemp(targetDir, fileName+"-txn-*.json")
 	if err != nil {
 		return nil, err
 	}

@@ -107,7 +107,7 @@ func mapOpenAPIError(err error, resp *http.Response) error {
 		case openapi.Error:
 			details = model.Error
 		default:
-			details = fmt.Sprintf("%s", v.Body())
+			details = string(v.Body())
 		}
 	case openAPIError:
 		details = v.Error()

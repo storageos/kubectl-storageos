@@ -15,9 +15,7 @@ import (
 func (o *OpenAPI) CreateUser(ctx context.Context, username, password string, withAdmin bool, groups ...string) (*model.User, error) {
 
 	gs := make([]string, len(groups))
-	for i, g := range groups {
-		gs[i] = g
-	}
+	copy(gs, groups)
 
 	createData := openapi.CreateUserData{
 		Username: username,

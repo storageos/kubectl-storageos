@@ -28,7 +28,6 @@ type ConfigProvider interface {
 type OpenAPI struct {
 	mu *sync.RWMutex
 
-	config ConfigProvider
 	client *openapi.APIClient
 	codec  codec
 }

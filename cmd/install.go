@@ -101,9 +101,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.EnableNodeGuardFlag, false, "enable node guard")
 	cmd.Flags().String(installer.NodeGuardEnvFlag, "", "comma delimited string of environment variables for node guard - eg: \"MINIMUM_REPLICAS=2,WATCH_ALL_VOLUMES=true\"")
 
-	cmd.Flags().MarkHidden(installer.TestClusterFlag)
+	_ = cmd.Flags().MarkHidden(installer.TestClusterFlag)
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -214,7 +214,7 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 }
 
 func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

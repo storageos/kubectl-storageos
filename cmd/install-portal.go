@@ -65,7 +65,7 @@ func InstallPortalCmd() *cobra.Command {
 	cmd.Flags().String(installer.PortalHTTPSProxyFlag, "", "HTTPS proxy of portal manager")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "install portal manger in an air gapped environment")
 
-	viper.BindPFlags(cmd.Flags())
+	_ = viper.BindPFlags(cmd.Flags())
 
 	return cmd
 }
@@ -118,7 +118,7 @@ func installPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 }
 
 func setInstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
-	viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
+	_ = viper.BindPFlag(installer.StosConfigPathFlag, cmd.Flags().Lookup(installer.StosConfigPathFlag))
 	v := viper.GetViper()
 	viper.SetConfigName("kubectl-storageos-config")
 	viper.SetConfigType("yaml")

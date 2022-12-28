@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -119,7 +118,7 @@ func (o *OpenAPI) getFileFromResp(resp *http.Response) (io.ReadCloser, string, e
 	default:
 		defer resp.Body.Close()
 		// Try to read the response body and unmarshal it into an openapi.Error
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, "", err
 		}

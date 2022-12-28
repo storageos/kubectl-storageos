@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"sync"
 
 	"github.com/storageos/kubectl-storageos/model"
 )
@@ -231,8 +230,6 @@ type Transport interface {
 // StorageOS API.
 type Client struct {
 	Transport
-
-	configureOnce *sync.Once
 }
 
 // New initialises a new Client which will source configuration settings using

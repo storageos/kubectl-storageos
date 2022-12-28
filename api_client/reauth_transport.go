@@ -31,7 +31,6 @@ func (tr *TransportWithReauth) UseAuthSession(ctx context.Context, session AuthS
 // GetUser wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) GetUser(ctx context.Context, uid string) (*model.User, error) {
-
 	var resource *model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -46,7 +45,6 @@ func (tr *TransportWithReauth) GetUser(ctx context.Context, uid string) (*model.
 // GetCluster wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) GetCluster(ctx context.Context) (*model.Cluster, error) {
-
 	var resource *model.Cluster
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -61,7 +59,6 @@ func (tr *TransportWithReauth) GetCluster(ctx context.Context) (*model.Cluster, 
 // GetLicence wraps the inner transport'call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) GetLicence(ctx context.Context) (*model.License, error) {
-
 	var resource *model.License
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -76,7 +73,6 @@ func (tr *TransportWithReauth) GetLicence(ctx context.Context) (*model.License, 
 // GetNode wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) GetNode(ctx context.Context, nodeID string) (*model.Node, error) {
-
 	var resource *model.Node
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -91,7 +87,6 @@ func (tr *TransportWithReauth) GetNode(ctx context.Context, nodeID string) (*mod
 // GetVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) GetVolume(ctx context.Context, namespaceID string, volumeID string) (*model.Volume, error) {
-
 	var resource *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -150,7 +145,6 @@ func (tr *TransportWithReauth) GetSingleNodeDiagnostics(ctx context.Context, nod
 // GetPolicyGroup wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) GetPolicyGroup(ctx context.Context, uid string) (*model.PolicyGroup, error) {
-
 	var resource *model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -165,7 +159,6 @@ func (tr *TransportWithReauth) GetPolicyGroup(ctx context.Context, uid string) (
 // ListNodes wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) ListNodes(ctx context.Context) ([]*model.Node, error) {
-
 	var resources []*model.Node
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -180,7 +173,6 @@ func (tr *TransportWithReauth) ListNodes(ctx context.Context) ([]*model.Node, er
 // ListVolumes wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) ListVolumes(ctx context.Context, namespaceID string) ([]*model.Volume, error) {
-
 	var resources []*model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -195,7 +187,6 @@ func (tr *TransportWithReauth) ListVolumes(ctx context.Context, namespaceID stri
 // ListNamespaces wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) ListNamespaces(ctx context.Context) ([]*model.Namespace, error) {
-
 	var resources []*model.Namespace
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -210,7 +201,6 @@ func (tr *TransportWithReauth) ListNamespaces(ctx context.Context) ([]*model.Nam
 // ListPolicyGroups wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) ListPolicyGroups(ctx context.Context) ([]*model.PolicyGroup, error) {
-
 	var resources []*model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -225,7 +215,6 @@ func (tr *TransportWithReauth) ListPolicyGroups(ctx context.Context) ([]*model.P
 // ListUsers wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) ListUsers(ctx context.Context) ([]*model.User, error) {
-
 	var resources []*model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -240,7 +229,6 @@ func (tr *TransportWithReauth) ListUsers(ctx context.Context) ([]*model.User, er
 // CreateUser wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) CreateUser(ctx context.Context, username, password string, withAdmin bool, groups ...string) (*model.User, error) {
-
 	var resource *model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -255,7 +243,6 @@ func (tr *TransportWithReauth) CreateUser(ctx context.Context, username, passwor
 // CreateVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) CreateVolume(ctx context.Context, namespaceID string, name, description string, fs model.FsType, sizeBytes uint64, labels map[string]string, params *CreateVolumeRequestParams) (*model.Volume, error) {
-
 	var resource *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -279,7 +266,6 @@ func (tr *TransportWithReauth) CreateVolume(ctx context.Context, namespaceID str
 // CreatePolicyGroup wraps the inner transport's call with a reauthenticate
 // and retry upon encountering an authentication error.
 func (tr *TransportWithReauth) CreatePolicyGroup(ctx context.Context, name string, specs []*model.PolicyGroupSpec) (*model.PolicyGroup, error) {
-
 	var resource *model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -294,7 +280,6 @@ func (tr *TransportWithReauth) CreatePolicyGroup(ctx context.Context, name strin
 // CreateNamespace wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) CreateNamespace(ctx context.Context, name string, labels map[string]string) (*model.Namespace, error) {
-
 	var resource *model.Namespace
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -309,7 +294,6 @@ func (tr *TransportWithReauth) CreateNamespace(ctx context.Context, name string,
 // UpdateCluster wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateCluster(ctx context.Context, c *model.Cluster, params *UpdateClusterRequestParams) (*model.Cluster, error) {
-
 	var updated *model.Cluster
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -324,7 +308,6 @@ func (tr *TransportWithReauth) UpdateCluster(ctx context.Context, c *model.Clust
 // UpdateLicence wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateLicence(ctx context.Context, lic []byte, params *UpdateLicenceRequestParams) (*model.License, error) {
-
 	var updated *model.License
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -339,7 +322,6 @@ func (tr *TransportWithReauth) UpdateLicence(ctx context.Context, lic []byte, pa
 // DeleteNode wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) DeleteNode(ctx context.Context, nodeID string, params *DeleteNodeRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DeleteNode(ctx, nodeID, params)
 	})
@@ -350,7 +332,6 @@ func (tr *TransportWithReauth) DeleteNode(ctx context.Context, nodeID string, pa
 // SetReplicas wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) SetReplicas(ctx context.Context, nsID string, volID string, numReplicas uint64, params *SetReplicasRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.SetReplicas(ctx, nsID, volID, numReplicas, params)
 	})
@@ -361,7 +342,6 @@ func (tr *TransportWithReauth) SetReplicas(ctx context.Context, nsID string, vol
 // UpdateVolume wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateVolume(ctx context.Context, nsID string, volID string, description string, labels map[string]string, params *UpdateVolumeRequestParams) (*model.Volume, error) {
-
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -375,7 +355,6 @@ func (tr *TransportWithReauth) UpdateVolume(ctx context.Context, nsID string, vo
 // ResizeVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) ResizeVolume(ctx context.Context, nsID string, volID string, sizeBytes uint64, params *ResizeVolumeRequestParams) (*model.Volume, error) {
-
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -389,7 +368,6 @@ func (tr *TransportWithReauth) ResizeVolume(ctx context.Context, nsID string, vo
 // UpdateNFSVolumeExports wraps the inner transport's call with a reauthenticate
 // and retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateNFSVolumeExports(ctx context.Context, namespaceID string, volumeID string, exports []model.NFSExportConfig, params *UpdateNFSVolumeExportsRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.UpdateNFSVolumeExports(ctx, namespaceID, volumeID, exports, params)
 	})
@@ -400,7 +378,6 @@ func (tr *TransportWithReauth) UpdateNFSVolumeExports(ctx context.Context, names
 // UpdateNFSVolumeMountEndpoint wraps the inner transport's call with a
 // reauthenticate and retry upon encountering an authentication error.
 func (tr *TransportWithReauth) UpdateNFSVolumeMountEndpoint(ctx context.Context, namespaceID string, volumeID string, endpoint string, params *UpdateNFSVolumeMountEndpointRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.UpdateNFSVolumeMountEndpoint(ctx, namespaceID, volumeID, endpoint, params)
 	})
@@ -411,7 +388,6 @@ func (tr *TransportWithReauth) UpdateNFSVolumeMountEndpoint(ctx context.Context,
 // SetFailureModeIntent wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) SetFailureModeIntent(ctx context.Context, nsID string, volID string, intent string, params *SetFailureModeRequestParams) (*model.Volume, error) {
-
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -425,7 +401,6 @@ func (tr *TransportWithReauth) SetFailureModeIntent(ctx context.Context, nsID st
 // SetFailureThreshold wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) SetFailureThreshold(ctx context.Context, nsID string, volID string, intent uint64, params *SetFailureModeRequestParams) (*model.Volume, error) {
-
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
@@ -439,7 +414,6 @@ func (tr *TransportWithReauth) SetFailureThreshold(ctx context.Context, nsID str
 // DeleteVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) DeleteVolume(ctx context.Context, namespaceID string, volumeID string, params *DeleteVolumeRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DeleteVolume(ctx, namespaceID, volumeID, params)
 	})
@@ -450,7 +424,6 @@ func (tr *TransportWithReauth) DeleteVolume(ctx context.Context, namespaceID str
 // DeleteNamespace wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) DeleteNamespace(ctx context.Context, uid string, params *DeleteNamespaceRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DeleteNamespace(ctx, uid, params)
 	})
@@ -461,7 +434,6 @@ func (tr *TransportWithReauth) DeleteNamespace(ctx context.Context, uid string, 
 // DeleteUser wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) DeleteUser(ctx context.Context, uid string, params *DeleteUserRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DeleteUser(ctx, uid, params)
 	})
@@ -472,7 +444,6 @@ func (tr *TransportWithReauth) DeleteUser(ctx context.Context, uid string, param
 // DeletePolicyGroup wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) DeletePolicyGroup(ctx context.Context, uid string, params *DeletePolicyGroupRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DeletePolicyGroup(ctx, uid, params)
 	})
@@ -483,7 +454,6 @@ func (tr *TransportWithReauth) DeletePolicyGroup(ctx context.Context, uid string
 // AttachVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) AttachVolume(ctx context.Context, namespaceID string, volumeID string, nodeID string) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.AttachVolume(ctx, namespaceID, volumeID, nodeID)
 	})
@@ -494,7 +464,6 @@ func (tr *TransportWithReauth) AttachVolume(ctx context.Context, namespaceID str
 // AttachNFSVolume wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) AttachNFSVolume(ctx context.Context, namespaceID string, volumeID string, params *AttachNFSVolumeRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.AttachNFSVolume(ctx, namespaceID, volumeID, params)
 	})
@@ -505,7 +474,6 @@ func (tr *TransportWithReauth) AttachNFSVolume(ctx context.Context, namespaceID 
 // SetCordoned wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) SetCordoned(ctx context.Context, nodeID string, params *SetCordonedRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.SetCordoned(ctx, nodeID, params)
 	})
@@ -528,7 +496,6 @@ func (tr *TransportWithReauth) AttemptPromotion(ctx context.Context, namespaceID
 // DetachVolume wraps the inner transport's call with a reauthenticate and retry
 // upon encountering an authentication error.
 func (tr *TransportWithReauth) DetachVolume(ctx context.Context, namespaceID string, volumeID string, params *DetachVolumeRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.DetachVolume(ctx, namespaceID, volumeID, params)
 	})
@@ -539,7 +506,6 @@ func (tr *TransportWithReauth) DetachVolume(ctx context.Context, namespaceID str
 // AddDeploymentOnNode wraps the inner transport's call with a reauthenticate and
 // retry upon encountering an authentication error.
 func (tr *TransportWithReauth) AddDeploymentOnNode(ctx context.Context, namespaceID string, volumeID string, params *AddDeploymentOnNodeRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.AddDeploymentOnNode(ctx, namespaceID, volumeID, params)
 	})
@@ -550,7 +516,6 @@ func (tr *TransportWithReauth) AddDeploymentOnNode(ctx context.Context, namespac
 // SetPreferredEvictionCandidates wraps the inner transport's call with a
 // reauthenticate and retry upon encountering an authentication error.
 func (tr *TransportWithReauth) SetPreferredEvictionCandidates(ctx context.Context, namespaceID string, volID string, params *SetPreferredEvictionCandidatesRequestParams) error {
-
 	err := tr.doWithReauth(ctx, func() error {
 		return tr.client.SetPreferredEvictionCandidates(ctx, namespaceID, volID, params)
 	})
