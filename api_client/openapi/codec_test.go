@@ -84,9 +84,7 @@ func TestDecodeLicence(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeLicence(tt.model)
+			gotResource, gotErr := DecodeLicence(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
@@ -159,9 +157,7 @@ func TestDecodeCluster(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeCluster(tt.model)
+			gotResource, gotErr := DecodeCluster(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
@@ -235,9 +231,7 @@ func TestDecodeNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeNode(tt.model)
+			gotResource, gotErr := DecodeNode(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
@@ -499,9 +493,7 @@ func TestDecodeVolume(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeVolume(tt.model)
+			gotResource, gotErr := DecodeVolume(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
@@ -563,9 +555,7 @@ func TestDecodeNamespace(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeNamespace(tt.model)
+			gotResource, gotErr := DecodeNamespace(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
@@ -678,9 +668,7 @@ func TestDecodePolicyGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := codec{}
-
-			gotResource, gotErr := c.decodePolicyGroup(tt.model)
+			gotResource, gotErr := DecodePolicyGroup(tt.model)
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)
 			}
@@ -772,9 +760,7 @@ func TestDecodeUser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := &codec{}
-
-			gotResource, gotErr := c.decodeUser(tt.model)
+			gotResource, gotErr := DecodeUser(tt.model)
 
 			if !reflect.DeepEqual(gotErr, tt.wantErr) {
 				t.Errorf("got error %v, want %v", gotErr, tt.wantErr)

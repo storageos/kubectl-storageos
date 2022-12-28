@@ -39,7 +39,7 @@ func (o *OpenAPI) CreatePolicyGroup(ctx context.Context, name string, specs []*m
 		}
 	}
 
-	return o.codec.decodePolicyGroup(model)
+	return DecodePolicyGroup(model)
 }
 
 // GetPolicyGroup requests the policy group with uid from the StorageOS API,
@@ -58,7 +58,7 @@ func (o *OpenAPI) GetPolicyGroup(ctx context.Context, uid string) (*model.Policy
 		}
 	}
 
-	return o.codec.decodePolicyGroup(model)
+	return DecodePolicyGroup(model)
 }
 
 // ListPolicyGroups returns a list of all policy groups from the StorageOS API,
@@ -74,7 +74,7 @@ func (o *OpenAPI) ListPolicyGroups(ctx context.Context) ([]*model.PolicyGroup, e
 
 	policyGroups := make([]*model.PolicyGroup, 0, len(models))
 	for _, m := range models {
-		g, err := o.codec.decodePolicyGroup(m)
+		g, err := DecodePolicyGroup(m)
 		if err != nil {
 			return nil, err
 		}

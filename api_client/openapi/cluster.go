@@ -21,7 +21,7 @@ func (o *OpenAPI) GetCluster(ctx context.Context) (*model.Cluster, error) {
 		return nil, mapOpenAPIError(err, resp)
 	}
 
-	return o.codec.decodeCluster(model)
+	return DecodeCluster(model)
 }
 
 // UpdateCluster attempts to perform an update of the cluster configuration
@@ -30,12 +30,12 @@ func (o *OpenAPI) UpdateCluster(ctx context.Context, resource *model.Cluster, pa
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	level, err := o.codec.encodeLogLevel(resource.LogLevel)
+	level, err := EncodeLogLevel(resource.LogLevel)
 	if err != nil {
 		return nil, err
 	}
 
-	format, err := o.codec.encodeLogFormat(resource.LogFormat)
+	format, err := EncodeLogFormat(resource.LogFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -63,5 +63,5 @@ func (o *OpenAPI) UpdateCluster(ctx context.Context, resource *model.Cluster, pa
 		return nil, mapOpenAPIError(err, resp)
 	}
 
-	return o.codec.decodeCluster(model)
+	return DecodeCluster(model)
 }

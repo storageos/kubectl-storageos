@@ -11,9 +11,8 @@ import (
 
 // codec provides functionality to encode/decode openapi models, translating
 // them to/from internal types.
-type codec struct{}
 
-func (c codec) decodeCluster(cluster openapi.Cluster) (*model.Cluster, error) {
+func DecodeCluster(cluster openapi.Cluster) (*model.Cluster, error) {
 	return &model.Cluster{
 		ID: cluster.Id,
 
@@ -30,7 +29,7 @@ func (c codec) decodeCluster(cluster openapi.Cluster) (*model.Cluster, error) {
 	}, nil
 }
 
-func (c codec) decodeLicence(license openapi.Licence) (*model.License, error) {
+func DecodeLicence(license openapi.Licence) (*model.License, error) {
 	features := make([]string, 0)
 	if license.Features != nil {
 		features = append(features, *license.Features...)
@@ -48,19 +47,19 @@ func (c codec) decodeLicence(license openapi.Licence) (*model.License, error) {
 	}, nil
 }
 
-func (c codec) decodeCapacityStats(stats openapi.CapacityStats) model.Stats {
+func DecodeCapacityStats(stats openapi.CapacityStats) model.Stats {
 	return model.Stats{
 		Total: stats.Total,
 		Free:  stats.Free,
 	}
 }
 
-func (c codec) decodeNode(node openapi.Node) (*model.Node, error) {
+func DecodeNode(node openapi.Node) (*model.Node, error) {
 	return &model.Node{
 		ID:       string(node.Id),
 		Name:     node.Name,
 		Health:   health.NodeFromString(string(node.Health)),
-		Capacity: c.decodeCapacityStats(node.Capacity),
+		Capacity: DecodeCapacityStats(node.Capacity),
 
 		Labels: node.Labels,
 
@@ -78,7 +77,7 @@ func (c codec) decodeNode(node openapi.Node) (*model.Node, error) {
 	}, nil
 }
 
-func (c codec) decodeVolume(vol openapi.Volume) (*model.Volume, error) {
+func DecodeVolume(vol openapi.Volume) (*model.Volume, error) {
 	v := &model.Volume{
 		ID:             string(vol.Id),
 		Name:           vol.Name,
@@ -86,7 +85,7 @@ func (c codec) decodeVolume(vol openapi.Volume) (*model.Volume, error) {
 		SizeBytes:      vol.SizeBytes,
 		AttachedOn:     string(vol.AttachedOn),
 		AttachmentType: model.AttachTypeFromString(string(vol.AttachmentType)),
-		Nfs:            c.decodeNFSConfig(vol.Nfs),
+		Nfs:            DecodeNFSConfig(vol.Nfs),
 
 		Namespace:      string(vol.NamespaceID),
 		Labels:         vol.Labels,
@@ -135,7 +134,7 @@ func (c codec) decodeVolume(vol openapi.Volume) (*model.Volume, error) {
 	return v, nil
 }
 
-func (c codec) decodeNamespace(ns openapi.Namespace) (*model.Namespace, error) {
+func DecodeNamespace(ns openapi.Namespace) (*model.Namespace, error) {
 	return &model.Namespace{
 		ID:     string(ns.Id),
 		Name:   ns.Name,
@@ -147,7 +146,7 @@ func (c codec) decodeNamespace(ns openapi.Namespace) (*model.Namespace, error) {
 	}, nil
 }
 
-func (c codec) decodePolicyGroup(policyGroup openapi.PolicyGroup) (*model.PolicyGroup, error) {
+func DecodePolicyGroup(policyGroup openapi.PolicyGroup) (*model.PolicyGroup, error) {
 	users := []*model.PolicyGroupMember{}
 	if policyGroup.Users != nil {
 		users = make([]*model.PolicyGroupMember, 0, len(policyGroup.Users))
@@ -182,7 +181,7 @@ func (c codec) decodePolicyGroup(policyGroup openapi.PolicyGroup) (*model.Policy
 	}, nil
 }
 
-func (c codec) decodeUser(user openapi.User) (*model.User, error) {
+func DecodeUser(user openapi.User) (*model.User, error) {
 
 	groups := []string{}
 
@@ -206,7 +205,7 @@ func (c codec) decodeUser(user openapi.User) (*model.User, error) {
 	}, nil
 }
 
-func (c codec) decodeNFSConfig(nfsConfig openapi.NfsConfig) model.NFSConfig {
+func DecodeNFSConfig(nfsConfig openapi.NfsConfig) model.NFSConfig {
 	cfg := model.NFSConfig{
 		Exports:         make([]model.NFSExportConfig, 0),
 		ServiceEndpoint: "",
@@ -218,14 +217,14 @@ func (c codec) decodeNFSConfig(nfsConfig openapi.NfsConfig) model.NFSConfig {
 
 	if nfsConfig.Exports != nil {
 		for _, e := range *nfsConfig.Exports {
-			cfg.Exports = append(cfg.Exports, c.decodeNFSExportConfig(e))
+			cfg.Exports = append(cfg.Exports, DecodeNFSExportConfig(e))
 		}
 	}
 
 	return cfg
 }
 
-func (c codec) decodeNFSExportConfig(nfsExportConfig openapi.NfsExportConfig) model.NFSExportConfig {
+func DecodeNFSExportConfig(nfsExportConfig openapi.NfsExportConfig) model.NFSExportConfig {
 	cfg := model.NFSExportConfig{
 		ExportID:   uint(nfsExportConfig.ExportID),
 		Path:       nfsExportConfig.Path,
@@ -250,7 +249,7 @@ func (c codec) decodeNFSExportConfig(nfsExportConfig openapi.NfsExportConfig) mo
 	return cfg
 }
 
-func (c codec) encodeNFSExport(export model.NFSExportConfig) openapi.NfsExportConfig {
+func EncodeNFSExport(export model.NFSExportConfig) openapi.NfsExportConfig {
 	cfg := openapi.NfsExportConfig{
 		ExportID:   uint64(export.ExportID),
 		Path:       export.Path,
@@ -276,7 +275,7 @@ func (c codec) encodeNFSExport(export model.NFSExportConfig) openapi.NfsExportCo
 	return cfg
 }
 
-func (c codec) encodeFsType(filesystem model.FsType) (openapi.FsType, error) {
+func EncodeFsType(filesystem model.FsType) (openapi.FsType, error) {
 	v := openapi.FsType(filesystem.String())
 	switch v {
 	case openapi.FSTYPE_EXT2, openapi.FSTYPE_EXT3,
@@ -292,7 +291,7 @@ func (c codec) encodeFsType(filesystem model.FsType) (openapi.FsType, error) {
 	}
 }
 
-func (c codec) encodeLogLevel(level model.LogLevel) (openapi.LogLevel, error) {
+func EncodeLogLevel(level model.LogLevel) (openapi.LogLevel, error) {
 	v := openapi.LogLevel(level.String())
 	switch v {
 	case openapi.LOGLEVEL_DEBUG, openapi.LOGLEVEL_INFO,
@@ -307,7 +306,7 @@ func (c codec) encodeLogLevel(level model.LogLevel) (openapi.LogLevel, error) {
 	}
 }
 
-func (c codec) encodeLogFormat(format model.LogFormat) (openapi.LogFormat, error) {
+func EncodeLogFormat(format model.LogFormat) (openapi.LogFormat, error) {
 	v := openapi.LogFormat(format.String())
 	switch v {
 	case openapi.LOGFORMAT_DEFAULT, openapi.LOGFORMAT_JSON:

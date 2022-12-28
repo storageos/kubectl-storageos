@@ -29,7 +29,6 @@ type OpenAPI struct {
 	mu *sync.RWMutex
 
 	client *openapi.APIClient
-	codec  codec
 }
 
 // Authenticate attempts to authenticate against the target API using username
@@ -126,6 +125,5 @@ func NewOpenAPI(hosts []string, userAgent string) (*OpenAPI, error) {
 		mu: &sync.RWMutex{},
 
 		client: client,
-		codec:  codec{},
 	}, nil
 }

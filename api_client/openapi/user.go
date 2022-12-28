@@ -36,7 +36,7 @@ func (o *OpenAPI) CreateUser(ctx context.Context, username, password string, wit
 		}
 	}
 
-	return o.codec.decodeUser(model)
+	return DecodeUser(model)
 }
 
 // GetUser requests all the details of a StorageOS user account, starting from
@@ -52,7 +52,7 @@ func (o *OpenAPI) GetUser(ctx context.Context, uID string) (*model.User, error) 
 		}
 	}
 
-	return o.codec.decodeUser(model)
+	return DecodeUser(model)
 }
 
 // ListUsers requests the list of all users accounts.
@@ -68,7 +68,7 @@ func (o *OpenAPI) ListUsers(ctx context.Context) ([]*model.User, error) {
 	users := make([]*model.User, 0, len(list))
 
 	for _, u := range list {
-		u, err := o.codec.decodeUser(u)
+		u, err := DecodeUser(u)
 		if err != nil {
 			return nil, err
 		}

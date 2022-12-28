@@ -25,7 +25,7 @@ func (o *OpenAPI) CreateVolume(ctx context.Context, namespace string, name, desc
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	fsType, err := o.codec.encodeFsType(fs)
+	fsType, err := EncodeFsType(fs)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (o *OpenAPI) CreateVolume(ctx context.Context, namespace string, name, desc
 		}
 	}
 
-	return o.codec.decodeVolume(model)
+	return DecodeVolume(model)
 }
 
 // GetVolume requests the volume with uid from the StorageOS API, translating
@@ -85,7 +85,7 @@ func (o *OpenAPI) GetVolume(ctx context.Context, namespaceID string, uid string)
 		}
 	}
 
-	return o.codec.decodeVolume(model)
+	return DecodeVolume(model)
 }
 
 // ListVolumes requests a list of all volume in namespace from the StorageOS
@@ -106,7 +106,7 @@ func (o *OpenAPI) ListVolumes(ctx context.Context, namespaceID string) ([]*model
 
 	volumes := make([]*model.Volume, len(models))
 	for i, m := range models {
-		v, err := o.codec.decodeVolume(m)
+		v, err := DecodeVolume(m)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +287,7 @@ func (o *OpenAPI) UpdateNFSVolumeExports(
 
 	openapiExports := make([]openapi.NfsExportConfig, 0, len(exports))
 	for _, e := range exports {
-		openapiExports = append(openapiExports, o.codec.encodeNFSExport(e))
+		openapiExports = append(openapiExports, EncodeNFSExport(e))
 	}
 
 	resp, err := o.client.DefaultApi.UpdateNFSVolumeExports(
@@ -423,7 +423,7 @@ func (o *OpenAPI) setFailureMode(ctx context.Context, namespaceID string, volume
 		}
 	}
 
-	return o.codec.decodeVolume(model)
+	return DecodeVolume(model)
 }
 
 // DetachVolume makes a detach request for volumeID in namespaceID.
@@ -567,7 +567,7 @@ func (o *OpenAPI) UpdateVolume(
 		}
 	}
 
-	return o.codec.decodeVolume(model)
+	return DecodeVolume(model)
 }
 
 // ResizeVolume changes the size of a specified volume.
@@ -618,7 +618,7 @@ func (o *OpenAPI) ResizeVolume(
 		}
 	}
 
-	return o.codec.decodeVolume(model)
+	return DecodeVolume(model)
 }
 
 func (o *OpenAPI) EvictReplica(ctx context.Context, namespaceID string, id string, deploymentID string) error {

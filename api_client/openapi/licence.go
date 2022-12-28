@@ -21,7 +21,7 @@ func (o *OpenAPI) GetLicence(ctx context.Context) (*model.License, error) {
 		return nil, mapOpenAPIError(err, resp)
 	}
 
-	return o.codec.decodeLicence(model)
+	return DecodeLicence(model)
 }
 
 // UpdateLicence sends a new version of the licence to apply to the current
@@ -49,5 +49,5 @@ func (o *OpenAPI) UpdateLicence(ctx context.Context, licence []byte, params *api
 		return nil, mapOpenAPIError(err, resp)
 	}
 
-	return o.codec.decodeLicence(lic)
+	return DecodeLicence(lic)
 }

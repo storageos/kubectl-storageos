@@ -26,7 +26,7 @@ func (o *OpenAPI) GetNamespace(ctx context.Context, uid string) (*model.Namespac
 		}
 	}
 
-	return o.codec.decodeNamespace(model)
+	return DecodeNamespace(model)
 }
 
 // ListNamespaces requests a list of all namespaces from the StorageOS API,
@@ -42,7 +42,7 @@ func (o *OpenAPI) ListNamespaces(ctx context.Context) ([]*model.Namespace, error
 
 	namespaces := make([]*model.Namespace, len(models))
 	for i, m := range models {
-		ns, err := o.codec.decodeNamespace(m)
+		ns, err := DecodeNamespace(m)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func (o *OpenAPI) CreateNamespace(ctx context.Context, name string, labels map[s
 		}
 	}
 
-	return o.codec.decodeNamespace(model)
+	return DecodeNamespace(model)
 }
 
 // DeleteNamespace makes a delete request for a namespace given its ID.

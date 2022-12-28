@@ -26,7 +26,7 @@ func (o *OpenAPI) GetNode(ctx context.Context, uid string) (*model.Node, error) 
 		}
 	}
 
-	return o.codec.decodeNode(model)
+	return DecodeNode(model)
 }
 
 // ListNodes requests a list of all nodes from the StorageOS API, translating
@@ -42,7 +42,7 @@ func (o *OpenAPI) ListNodes(ctx context.Context) ([]*model.Node, error) {
 
 	nodes := make([]*model.Node, len(models))
 	for i, m := range models {
-		n, err := o.codec.decodeNode(m)
+		n, err := DecodeNode(m)
 		if err != nil {
 			return nil, err
 		}
