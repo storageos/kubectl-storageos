@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+// AuthSession encapsulates a re-usable auth session.
+type AuthSession struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
 // authCachedTransport decorates the embedded transport with cached auth
 // capabilities, modifying the Authenticate() behaviour and instead reusing an
 // in-memory session if exists.
@@ -15,9 +21,6 @@ type authCachedTransport struct {
 	cacheSession AuthSession
 }
 
-// Authenticate first attempts to reuse the previous authentication session
-// (stored in-memory) and if none is found, creates one and then stores it so it
-// can be used on the next api call
 func (co *authCachedTransport) Authenticate(ctx context.Context, username, password string) (AuthSession, error) {
 	if co.cacheSession.Token != "" && co.cacheSession.ExpiresAt.After(time.Now()) {
 		err := co.UseAuthSession(ctx, co.cacheSession)
@@ -27,11 +30,7 @@ func (co *authCachedTransport) Authenticate(ctx context.Context, username, passw
 		// failed to setup auth with in-memory session, proceed to create a new one
 	}
 
-	session, err := co.Transport.Authenticate(
-		ctx,
-		username,
-		password,
-	)
+	session, err := co.Transport.Authenticate(ctx, username, password)
 	if err != nil {
 		return session, err
 	}

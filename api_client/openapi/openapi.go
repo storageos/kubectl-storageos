@@ -68,7 +68,10 @@ func (o *OpenAPI) Authenticate(ctx context.Context, username, password string) (
 		expiresIn = time.Duration(userSession.Session.ExpiresInSeconds) * time.Second
 	}
 
-	return apiclient.NewAuthSession(token, time.Now().Add(expiresIn)), nil
+	return apiclient.AuthSession{
+		Token:     token,
+		ExpiresAt: time.Now().Add(expiresIn),
+	}, nil
 }
 
 // UseAuthSession configures o to use the provided authentication session for
@@ -79,7 +82,7 @@ func (o *OpenAPI) UseAuthSession(ctx context.Context, session apiclient.AuthSess
 	defer o.mu.Unlock()
 
 	if session.Token == "" {
-		return apiclient.ErrAuthSessionNoToken
+		return errors.New("auth session has no token")
 	}
 
 	// Set the authorization header to use the token.

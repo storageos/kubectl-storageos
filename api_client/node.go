@@ -22,15 +22,11 @@ type SetCordonedRequestParams struct {
 	CASVersion string
 }
 
-// NodeNotFoundError indicates that the API could not find the StorageOS node
-// specified.
 type NodeNotFoundError struct {
 	uid  string
 	name string
 }
 
-// Error returns an error message indicating that the node with a given
-// ID or name was not found, as configured.
 func (e NodeNotFoundError) Error() string {
 	switch {
 	case e.uid != "":
@@ -42,14 +38,12 @@ func (e NodeNotFoundError) Error() string {
 	return "node not found"
 }
 
-// NewNodeNotFoundError returns a NodeNotFoundError for the node with uid.
 func NewNodeNotFoundError(uid string) NodeNotFoundError {
 	return NodeNotFoundError{
 		uid: uid,
 	}
 }
 
-// NewNodeNameNotFoundError returns a NodeNotFoundError for the node with name.
 func NewNodeNameNotFoundError(name string) NodeNotFoundError {
 	return NodeNotFoundError{
 		name: name,

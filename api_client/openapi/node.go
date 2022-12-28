@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// GetNode requests the node with uid from the StorageOS API, translating it
-// into a *model.Node.
 func (o *OpenAPI) GetNode(ctx context.Context, uid string) (*model.Node, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -29,8 +27,6 @@ func (o *OpenAPI) GetNode(ctx context.Context, uid string) (*model.Node, error) 
 	return DecodeNode(model)
 }
 
-// ListNodes requests a list of all nodes from the StorageOS API, translating
-// each one to a *model.Node.
 func (o *OpenAPI) ListNodes(ctx context.Context) ([]*model.Node, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

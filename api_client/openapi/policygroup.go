@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// CreatePolicyGroup requests the creation of a new policy group through the
-// StorageOS API using the provided parameters.
 func (o *OpenAPI) CreatePolicyGroup(ctx context.Context, name string, specs []*model.PolicyGroupSpec) (*model.PolicyGroup, error) {
 	slice := make([]openapi.PoliciesSpecs, 0, len(specs))
 	for _, s := range specs {
@@ -42,8 +40,6 @@ func (o *OpenAPI) CreatePolicyGroup(ctx context.Context, name string, specs []*m
 	return DecodePolicyGroup(model)
 }
 
-// GetPolicyGroup requests the policy group with uid from the StorageOS API,
-// translating it into a *model.PolicyGroup.
 func (o *OpenAPI) GetPolicyGroup(ctx context.Context, uid string) (*model.PolicyGroup, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -61,8 +57,6 @@ func (o *OpenAPI) GetPolicyGroup(ctx context.Context, uid string) (*model.Policy
 	return DecodePolicyGroup(model)
 }
 
-// ListPolicyGroups returns a list of all policy groups from the StorageOS API,
-// translating each one to a *model.PolicyGroup.
 func (o *OpenAPI) ListPolicyGroups(ctx context.Context) ([]*model.PolicyGroup, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

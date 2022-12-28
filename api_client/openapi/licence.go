@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// GetLicence requests the current cluster licence from the StorageOS API,
-// translating it into a *model.License.
 func (o *OpenAPI) GetLicence(ctx context.Context) (*model.License, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// GetNamespace requests the namespace with uid from the StorageOS API,
-// translating it into a *model.Namespace.
 func (o *OpenAPI) GetNamespace(ctx context.Context, uid string) (*model.Namespace, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -29,8 +27,6 @@ func (o *OpenAPI) GetNamespace(ctx context.Context, uid string) (*model.Namespac
 	return DecodeNamespace(model)
 }
 
-// ListNamespaces requests a list of all namespaces from the StorageOS API,
-// translating each one to a *model.Namespace.
 func (o *OpenAPI) ListNamespaces(ctx context.Context) ([]*model.Namespace, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -53,8 +49,6 @@ func (o *OpenAPI) ListNamespaces(ctx context.Context) ([]*model.Namespace, error
 	return namespaces, nil
 }
 
-// CreateNamespace requests the creation of a new namespace through the
-// StorageOS API using the provided parameters.
 func (o *OpenAPI) CreateNamespace(ctx context.Context, name string, labels map[string]string) (*model.Namespace, error) {
 	createData := openapi.CreateNamespaceData{
 		Name:   name,

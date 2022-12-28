@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// GetCluster requests the cluster configuration from the StorageOS API,
-// translating it into a *model.Cluster.
 func (o *OpenAPI) GetCluster(ctx context.Context) (*model.Cluster, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -24,8 +22,6 @@ func (o *OpenAPI) GetCluster(ctx context.Context) (*model.Cluster, error) {
 	return DecodeCluster(model)
 }
 
-// UpdateCluster attempts to perform an update of the cluster configuration
-// through the StorageOS API using resource as the update value.
 func (o *OpenAPI) UpdateCluster(ctx context.Context, resource *model.Cluster, params *apiclient.UpdateClusterRequestParams) (*model.Cluster, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

@@ -56,8 +56,6 @@ func NewInvalidUserCreationError(details string) InvalidUserCreationError {
 	}
 }
 
-// UserNotFoundError indicates that the API could not find the StorageOS user
-// specified.
 type UserNotFoundError struct {
 	msg string
 
@@ -65,8 +63,6 @@ type UserNotFoundError struct {
 	name string
 }
 
-// Error returns an error message indicating that the user with a given
-// ID or name was not found, as configured.
 func (e UserNotFoundError) Error() string {
 	return e.msg
 }
@@ -91,8 +87,6 @@ func NewUserNameNotFoundError(name string) UserNotFoundError {
 	}
 }
 
-// GetUserByName requests the details of a StorageOS user account with username
-// and returns it to the caller.
 func (c *Client) GetUserByName(ctx context.Context, username string) (*model.User, error) {
 	list, err := c.Transport.ListUsers(ctx)
 	if err != nil {
@@ -108,7 +102,6 @@ func (c *Client) GetUserByName(ctx context.Context, username string) (*model.Use
 	return nil, NewUserNameNotFoundError(username)
 }
 
-// GetListUsersByUID returns all the users with the ID listed in the uids parameter.
 func (c *Client) GetListUsersByUID(ctx context.Context, uids []string) ([]*model.User, error) {
 	list, err := c.Transport.ListUsers(ctx)
 	if err != nil {
@@ -132,8 +125,6 @@ func (c *Client) GetListUsersByUID(ctx context.Context, uids []string) ([]*model
 	return filtered, nil
 }
 
-// GetListUsersByUsername returns all the users with the username listed in the
-// usernames parameter.
 func (c *Client) GetListUsersByUsername(ctx context.Context, usernames []string) ([]*model.User, error) {
 	list, err := c.Transport.ListUsers(ctx)
 	if err != nil {

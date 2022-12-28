@@ -19,8 +19,6 @@ func (e AuthenticationError) Error() string {
 	return e.msg
 }
 
-// NewAuthenticationError returns a new AuthenticationError using msg as an
-// optional error message if given.
 func NewAuthenticationError(msg string) AuthenticationError {
 	return AuthenticationError{
 		msg: msg,
@@ -40,8 +38,6 @@ func (e UnauthorisedError) Error() string {
 	return e.msg
 }
 
-// NewUnauthorisedError returns a new UnauthorisedError using msg as an
-// optional error message if given.
 func NewUnauthorisedError(msg string) UnauthorisedError {
 	return UnauthorisedError{
 		msg: msg,
@@ -63,8 +59,6 @@ func (e StaleWriteError) Error() string {
 	return e.msg
 }
 
-// NewStaleWriteError returns a new StaleWriteError using msg as an optional
-// error message if given.
 func NewStaleWriteError(msg string) StaleWriteError {
 	return StaleWriteError{
 		msg: msg,
@@ -84,8 +78,6 @@ func (e InvalidStateTransitionError) Error() string {
 	return e.msg
 }
 
-// NewInvalidStateTransitionError returns a new InvalidStateTransitionError
-// using msg as an optional error message if given.
 func NewInvalidStateTransitionError(msg string) InvalidStateTransitionError {
 	return InvalidStateTransitionError{
 		msg: msg,
@@ -105,8 +97,6 @@ func (e LockedError) Error() string {
 	return e.msg
 }
 
-// NewLockedError returns a new LockedError using msg as an optional error
-// message if given.
 func NewLockedError(msg string) LockedError {
 	return LockedError{
 		msg: msg,
@@ -126,8 +116,6 @@ func (e LicenceCapabilityError) Error() string {
 	return e.msg
 }
 
-// NewLicenceCapabilityError returns a new LicenceCapabilityError using msg as
-// an optional error message if given.
 func NewLicenceCapabilityError(msg string) LicenceCapabilityError {
 	return LicenceCapabilityError{
 		msg: msg,
@@ -147,8 +135,6 @@ func (e ServerError) Error() string {
 	return e.msg
 }
 
-// NewServerError returns a new ServerError using msg as an optional error
-// message if given.
 func NewServerError(msg string) ServerError {
 	return ServerError{
 		msg: msg,
@@ -168,8 +154,6 @@ func (e StoreError) Error() string {
 	return e.msg
 }
 
-// NewStoreError returns a new StoreError using msg as an optional error
-// message if given.
 func NewStoreError(msg string) StoreError {
 	return StoreError{
 		msg: msg,
@@ -198,7 +182,6 @@ func NewEncodingError(err error, targetType, value interface{}) EncodingError {
 	}
 }
 
-// IncompleteDiagnosticsError provides an error type
 type IncompleteDiagnosticsError struct {
 	bundleReadCloser io.ReadCloser
 	bundleName       string

@@ -13,15 +13,11 @@ type DeleteNamespaceRequestParams struct {
 	CASVersion string
 }
 
-// NamespaceNotFoundError indicates that the API could not find the StorageOS
-// namespace specified.
 type NamespaceNotFoundError struct {
 	uid  string
 	name string
 }
 
-// Error returns an error message indicating that the namespace with a given
-// ID or name was not found, as configured.
 func (e NamespaceNotFoundError) Error() string {
 	switch {
 	case e.uid != "":
@@ -33,16 +29,12 @@ func (e NamespaceNotFoundError) Error() string {
 	return "namespace not found"
 }
 
-// NewNamespaceNotFoundError returns a NamespaceNotFoundError for the namespace
-// with uid.
 func NewNamespaceNotFoundError(uid string) NamespaceNotFoundError {
 	return NamespaceNotFoundError{
 		uid: uid,
 	}
 }
 
-// NewNamespaceNameNotFoundError returns a NamespaceNotFoundError for the
-// namespace with name.
 func NewNamespaceNameNotFoundError(name string) NamespaceNotFoundError {
 	return NamespaceNotFoundError{
 		name: name,
@@ -55,22 +47,16 @@ type NamespaceExistsError struct {
 	name string
 }
 
-// Error returns an error message indicating that a namespace name is already in
-// use.
 func (e NamespaceExistsError) Error() string {
 	return fmt.Sprintf("namespace name %s is already in use", e.name)
 }
 
-// NewNamespaceExistsError returns an error indicating that a namespace with
-// that name already exists.
 func NewNamespaceExistsError(name string) NamespaceExistsError {
 	return NamespaceExistsError{
 		name: name,
 	}
 }
 
-// InvalidNamespaceCreationError is returned when a namespace creation request
-// sent to the StorageOS API is invalid.
 type InvalidNamespaceCreationError struct {
 	details string
 }

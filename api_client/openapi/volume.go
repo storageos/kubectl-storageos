@@ -69,8 +69,6 @@ func (o *OpenAPI) CreateVolume(ctx context.Context, namespace string, name, desc
 	return DecodeVolume(model)
 }
 
-// GetVolume requests the volume with uid from the StorageOS API, translating
-// it into a *model.Volume.
 func (o *OpenAPI) GetVolume(ctx context.Context, namespaceID string, uid string) (*model.Volume, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -88,8 +86,6 @@ func (o *OpenAPI) GetVolume(ctx context.Context, namespaceID string, uid string)
 	return DecodeVolume(model)
 }
 
-// ListVolumes requests a list of all volume in namespace from the StorageOS
-// API, translating each one to a *model.Volume.
 func (o *OpenAPI) ListVolumes(ctx context.Context, namespaceID string) ([]*model.Volume, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -369,8 +365,6 @@ func (o *OpenAPI) UpdateNFSVolumeMountEndpoint(
 	return nil
 }
 
-// SetFailureModeIntent attempts to perform an update of the failure mode
-// for the target volume to the provided intent-based behaviour.
 func (o *OpenAPI) SetFailureModeIntent(ctx context.Context, namespaceID string, volumeID string, intent string, params *apiclient.SetFailureModeRequestParams) (*model.Volume, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -382,8 +376,6 @@ func (o *OpenAPI) SetFailureModeIntent(ctx context.Context, namespaceID string, 
 	return o.setFailureMode(ctx, namespaceID, volumeID, partialRequest, params)
 }
 
-// SetFailureThreshold attempts to perform an update of the failure mode
-// for the target volume to the provided numerical threshold.
 func (o *OpenAPI) SetFailureThreshold(ctx context.Context, namespaceID string, volumeID string, threshold uint64, params *apiclient.SetFailureModeRequestParams) (*model.Volume, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -395,8 +387,6 @@ func (o *OpenAPI) SetFailureThreshold(ctx context.Context, namespaceID string, v
 	return o.setFailureMode(ctx, namespaceID, volumeID, partialRequest, params)
 }
 
-// setFailureMode takes the partial request provided to it, completing it as
-// appropriate for the given params.
 func (o *OpenAPI) setFailureMode(ctx context.Context, namespaceID string, volumeID string, partialRequest openapi.SetFailureModeRequest, params *apiclient.SetFailureModeRequestParams) (*model.Volume, error) {
 	opts := &openapi.SetFailureModeOpts{
 		IgnoreVersion: optional.NewBool(true),

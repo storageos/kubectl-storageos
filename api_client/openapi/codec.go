@@ -9,9 +9,6 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/health"
 )
 
-// codec provides functionality to encode/decode openapi models, translating
-// them to/from internal types.
-
 func DecodeCluster(cluster openapi.Cluster) (*model.Cluster, error) {
 	return &model.Cluster{
 		ID: cluster.Id,

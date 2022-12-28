@@ -10,8 +10,6 @@ import (
 	"github.com/storageos/kubectl-storageos/model"
 )
 
-// CreateUser requests the creation of a new StorageOS user account using the
-// provided parameters.
 func (o *OpenAPI) CreateUser(ctx context.Context, username, password string, withAdmin bool, groups ...string) (*model.User, error) {
 
 	gs := make([]string, len(groups))
@@ -39,8 +37,6 @@ func (o *OpenAPI) CreateUser(ctx context.Context, username, password string, wit
 	return DecodeUser(model)
 }
 
-// GetUser requests all the details of a StorageOS user account, starting from
-// its id.
 func (o *OpenAPI) GetUser(ctx context.Context, uID string) (*model.User, error) {
 	model, resp, err := o.client.DefaultApi.GetUser(ctx, uID)
 	if err != nil {
@@ -55,7 +51,6 @@ func (o *OpenAPI) GetUser(ctx context.Context, uID string) (*model.User, error) 
 	return DecodeUser(model)
 }
 
-// ListUsers requests the list of all users accounts.
 func (o *OpenAPI) ListUsers(ctx context.Context) ([]*model.User, error) {
 	list, resp, err := o.client.DefaultApi.ListUsers(ctx)
 	if err != nil {
