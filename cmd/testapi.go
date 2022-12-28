@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	apiclient "github.com/storageos/kubectl-storageos/api_client"
 	"github.com/storageos/kubectl-storageos/api_client/openapi"
+	"github.com/storageos/kubectl-storageos/pkg/consts"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 func TestAPICmd() *cobra.Command {
@@ -48,8 +50,10 @@ func TestAPICmd() *cobra.Command {
 }
 
 func Test() (*apiclient.Client, error) {
-	// TODO get version of plugin
-	userAgent := strings.Join([]string{"ondat plugin", "version.String()"}, "/")
+	userAgent := strings.Join([]string{"ondat kubectl plugin", version.PluginVersion}, "/")
+
+	// TODO get from somewhere
+	username, password := "storageos", "storageos"
 
 	// disabledAuthCache, err := config.AuthCacheDisabled()
 	// if err != nil {
@@ -57,42 +61,40 @@ func Test() (*apiclient.Client, error) {
 	// }
 	disabledAuthCache := true
 
-	transport, err := func() (apiclient.Transport, error) {
-		// TODO get from env vars
-		transport, err := openapi.NewOpenAPI([]string{"http://localhost:5705"}, userAgent)
-		if err != nil {
-			return nil, err
-		}
-
-		if disabledAuthCache {
-			return transport, nil
-		}
-
-		// Ensure that the cache dir exists
-		// TODO get from env vars?
-		cacheDir, err := os.UserCacheDir()
-		if err != nil {
-			return transport, nil
-		}
-
-		err = os.Mkdir(cacheDir, 0700)
-		switch {
-		case err == nil, os.IsExist(err):
-			// This is ok
-		default:
-			return nil, err
-		}
-
-		return apiclient.NewAuthCachedTransport(transport), nil
-	}()
+	// TODO make endpoints configurable
+	// get the OpenAPI client
+	var client apiclient.Transport
+	client, err := openapi.NewOpenAPI([]string{consts.DefaultStorageOSEndpoint}, userAgent)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO get from somewhere
-	username, password := "storageos", "storageos"
+	clientWithReauth := apiclient.NewTransportWithReauth(client, username, password)
 
-	client := apiclient.New(apiclient.NewTransportWithReauth(transport, username, password))
+	// internal client wrapper
+	internalClient := &apiclient.Client{
+		Transport: clientWithReauth,
+	}
 
-	return client, nil
+	if disabledAuthCache {
+		return internalClient, nil
+	}
+
+	// TODO make dir configurable
+	// Ensure that the cache dir exists
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return internalClient, nil
+	}
+
+	err = os.Mkdir(cacheDir, 0700)
+	if err != nil && !os.IsExist(err) {
+		return nil, err
+	}
+
+	// wrap transport with authentication chaching capacilities
+	clientWithReauthAndCaching := apiclient.NewAuthCachedTransport(client)
+	internalClient.Transport = clientWithReauthAndCaching
+
+	return internalClient, nil
 }

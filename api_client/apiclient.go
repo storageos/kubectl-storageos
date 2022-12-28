@@ -231,12 +231,3 @@ type Transport interface {
 type Client struct {
 	Transport
 }
-
-// New initialises a new Client which will source configuration settings using
-// config. The returned client must be configured with a Transport before it is
-// used.
-func New(transport Transport) *Client {
-	return &Client{
-		Transport: transport,
-	}
-}
