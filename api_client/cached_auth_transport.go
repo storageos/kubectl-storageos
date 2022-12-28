@@ -5,27 +5,26 @@ import (
 	"time"
 )
 
-// AuthCachedTransport decorates the embedded transport with cached auth
-// capabilities, modifying the Authenticate() behaviour. An instance will
-// try to authenticate from the cache if the requested username is not the
-// previous username requested for auth. If that fails, it will continue as
-// normal, caching the result.
-type AuthCachedTransport struct {
+// authCachedTransport decorates the embedded transport with cached auth
+// capabilities, modifying the Authenticate() behaviour and instead reusing an
+// in-memory session if exists.
+// If that fails, it will continue as normal and then cache the new session.
+type authCachedTransport struct {
 	Transport
 
 	cacheSession AuthSession
 }
 
-// Authenticate attempts to fetch an authentication session for username from
-// its cache, unless it is a repeated attempt. If the cache lookup fails or the
-// call is a re-attempted auth then this authenticates as normal but caches
-// the result.
-func (co *AuthCachedTransport) Authenticate(ctx context.Context, username, password string) (AuthSession, error) {
+// Authenticate first attempts to reuse the previous authentication session
+// (stored in-memory) and if none is found, creates one and then stores it so it
+// can be used on the next api call
+func (co *authCachedTransport) Authenticate(ctx context.Context, username, password string) (AuthSession, error) {
 	if co.cacheSession.Token != "" && co.cacheSession.ExpiresAt.After(time.Now()) {
-		session, err := co.authenticateFromCache(ctx, username)
+		err := co.UseAuthSession(ctx, co.cacheSession)
 		if err == nil {
-			return session, nil
+			return co.cacheSession, nil
 		}
+		// failed to setup auth with in-memory session, proceed to create a new one
 	}
 
 	session, err := co.Transport.Authenticate(
@@ -37,21 +36,16 @@ func (co *AuthCachedTransport) Authenticate(ctx context.Context, username, passw
 		return session, err
 	}
 
+	// store new session in-memory
 	co.cacheSession = session
 
 	return session, nil
 }
 
-// authenticateFromCache sets the inner transport to use the auth session
-// previously created and stored in-memory.
-func (co *AuthCachedTransport) authenticateFromCache(ctx context.Context, username string) (AuthSession, error) {
-	return co.cacheSession, co.UseAuthSession(ctx, co.cacheSession)
-}
-
 // NewAuthCachedTransport decorates inner with use of an authentication session
 // cache.
-func NewAuthCachedTransport(inner Transport) *AuthCachedTransport {
-	return &AuthCachedTransport{
+func NewAuthCachedTransport(inner Transport) *authCachedTransport {
+	return &authCachedTransport{
 		Transport: inner,
 	}
 }
