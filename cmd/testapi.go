@@ -48,8 +48,6 @@ func TestAPICmd() *cobra.Command {
 }
 
 func Test() (*apiclient.Client, error) {
-	client := apiclient.New()
-
 	// TODO get version of plugin
 	userAgent := strings.Join([]string{"ondat plugin", "version.String()"}, "/")
 
@@ -94,8 +92,7 @@ func Test() (*apiclient.Client, error) {
 	// TODO get from somewhere
 	username, password := "storageos", "storageos"
 
-	// Wrap the transport implementation in a re-authenticate layer.
-	return client, client.ConfigureTransport(
-		apiclient.NewTransportWithReauth(transport, username, password),
-	)
+	client := apiclient.New(apiclient.NewTransportWithReauth(transport, username, password))
+
+	return client, nil
 }

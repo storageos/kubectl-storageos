@@ -12,7 +12,7 @@ import (
 // re-authenticate and retry mechanism when an authentication error is
 // encountered.
 type TransportWithReauth struct {
-	inner Transport
+	client Transport
 
 	username, password string
 }
@@ -20,12 +20,12 @@ type TransportWithReauth struct {
 // Authenticate is passed through and does not try to reauth. An
 // authentication error here cannot be due to a session timeout.
 func (tr *TransportWithReauth) Authenticate(ctx context.Context, username, password string) (AuthSession, error) {
-	return tr.inner.Authenticate(ctx, username, password)
+	return tr.client.Authenticate(ctx, username, password)
 }
 
 // UseAuthSession is passed through and does not try to reauth.
 func (tr *TransportWithReauth) UseAuthSession(ctx context.Context, session AuthSession) error {
-	return tr.inner.UseAuthSession(ctx, session)
+	return tr.client.UseAuthSession(ctx, session)
 }
 
 // GetUser wraps the inner transport's call with a reauthenticate and retry
@@ -35,7 +35,7 @@ func (tr *TransportWithReauth) GetUser(ctx context.Context, uid string) (*model.
 	var resource *model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetUser(ctx, uid)
+		resource, err = tr.client.GetUser(ctx, uid)
 
 		return err
 	})
@@ -50,7 +50,7 @@ func (tr *TransportWithReauth) GetCluster(ctx context.Context) (*model.Cluster, 
 	var resource *model.Cluster
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetCluster(ctx)
+		resource, err = tr.client.GetCluster(ctx)
 
 		return err
 	})
@@ -65,7 +65,7 @@ func (tr *TransportWithReauth) GetLicence(ctx context.Context) (*model.License, 
 	var resource *model.License
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetLicence(ctx)
+		resource, err = tr.client.GetLicence(ctx)
 
 		return err
 	})
@@ -80,7 +80,7 @@ func (tr *TransportWithReauth) GetNode(ctx context.Context, nodeID string) (*mod
 	var resource *model.Node
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetNode(ctx, nodeID)
+		resource, err = tr.client.GetNode(ctx, nodeID)
 
 		return err
 	})
@@ -95,7 +95,7 @@ func (tr *TransportWithReauth) GetVolume(ctx context.Context, namespaceID string
 	var resource *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetVolume(ctx, namespaceID, volumeID)
+		resource, err = tr.client.GetVolume(ctx, namespaceID, volumeID)
 
 		return err
 	})
@@ -109,7 +109,7 @@ func (tr *TransportWithReauth) GetNamespace(ctx context.Context, namespaceID str
 	var resource *model.Namespace
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetNamespace(ctx, namespaceID)
+		resource, err = tr.client.GetNamespace(ctx, namespaceID)
 
 		return err
 	})
@@ -124,7 +124,7 @@ func (tr *TransportWithReauth) GetDiagnostics(ctx context.Context) (io.ReadClose
 	var diagnosticsName string
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		diagnosticsReadCloser, diagnosticsName, err = tr.inner.GetDiagnostics(ctx)
+		diagnosticsReadCloser, diagnosticsName, err = tr.client.GetDiagnostics(ctx)
 
 		return err
 	})
@@ -139,7 +139,7 @@ func (tr *TransportWithReauth) GetSingleNodeDiagnostics(ctx context.Context, nod
 	var diagnosticsName string
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		diagnosticsReadCloser, diagnosticsName, err = tr.inner.GetSingleNodeDiagnostics(ctx, nodeID)
+		diagnosticsReadCloser, diagnosticsName, err = tr.client.GetSingleNodeDiagnostics(ctx, nodeID)
 
 		return err
 	})
@@ -154,7 +154,7 @@ func (tr *TransportWithReauth) GetPolicyGroup(ctx context.Context, uid string) (
 	var resource *model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.GetPolicyGroup(ctx, uid)
+		resource, err = tr.client.GetPolicyGroup(ctx, uid)
 
 		return err
 	})
@@ -169,7 +169,7 @@ func (tr *TransportWithReauth) ListNodes(ctx context.Context) ([]*model.Node, er
 	var resources []*model.Node
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resources, err = tr.inner.ListNodes(ctx)
+		resources, err = tr.client.ListNodes(ctx)
 
 		return err
 	})
@@ -184,7 +184,7 @@ func (tr *TransportWithReauth) ListVolumes(ctx context.Context, namespaceID stri
 	var resources []*model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resources, err = tr.inner.ListVolumes(ctx, namespaceID)
+		resources, err = tr.client.ListVolumes(ctx, namespaceID)
 
 		return err
 	})
@@ -199,7 +199,7 @@ func (tr *TransportWithReauth) ListNamespaces(ctx context.Context) ([]*model.Nam
 	var resources []*model.Namespace
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resources, err = tr.inner.ListNamespaces(ctx)
+		resources, err = tr.client.ListNamespaces(ctx)
 
 		return err
 	})
@@ -214,7 +214,7 @@ func (tr *TransportWithReauth) ListPolicyGroups(ctx context.Context) ([]*model.P
 	var resources []*model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resources, err = tr.inner.ListPolicyGroups(ctx)
+		resources, err = tr.client.ListPolicyGroups(ctx)
 
 		return err
 	})
@@ -229,7 +229,7 @@ func (tr *TransportWithReauth) ListUsers(ctx context.Context) ([]*model.User, er
 	var resources []*model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resources, err = tr.inner.ListUsers(ctx)
+		resources, err = tr.client.ListUsers(ctx)
 
 		return err
 	})
@@ -244,7 +244,7 @@ func (tr *TransportWithReauth) CreateUser(ctx context.Context, username, passwor
 	var resource *model.User
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.CreateUser(ctx, username, password, withAdmin, groups...)
+		resource, err = tr.client.CreateUser(ctx, username, password, withAdmin, groups...)
 
 		return err
 	})
@@ -259,7 +259,7 @@ func (tr *TransportWithReauth) CreateVolume(ctx context.Context, namespaceID str
 	var resource *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.CreateVolume(
+		resource, err = tr.client.CreateVolume(
 			ctx,
 			namespaceID,
 			name,
@@ -283,7 +283,7 @@ func (tr *TransportWithReauth) CreatePolicyGroup(ctx context.Context, name strin
 	var resource *model.PolicyGroup
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.CreatePolicyGroup(ctx, name, specs)
+		resource, err = tr.client.CreatePolicyGroup(ctx, name, specs)
 
 		return err
 	})
@@ -298,7 +298,7 @@ func (tr *TransportWithReauth) CreateNamespace(ctx context.Context, name string,
 	var resource *model.Namespace
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		resource, err = tr.inner.CreateNamespace(ctx, name, labels)
+		resource, err = tr.client.CreateNamespace(ctx, name, labels)
 
 		return err
 	})
@@ -313,7 +313,7 @@ func (tr *TransportWithReauth) UpdateCluster(ctx context.Context, c *model.Clust
 	var updated *model.Cluster
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.UpdateCluster(ctx, c, params)
+		updated, err = tr.client.UpdateCluster(ctx, c, params)
 
 		return err
 	})
@@ -328,7 +328,7 @@ func (tr *TransportWithReauth) UpdateLicence(ctx context.Context, lic []byte, pa
 	var updated *model.License
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.UpdateLicence(ctx, lic, params)
+		updated, err = tr.client.UpdateLicence(ctx, lic, params)
 
 		return err
 	})
@@ -341,7 +341,7 @@ func (tr *TransportWithReauth) UpdateLicence(ctx context.Context, lic []byte, pa
 func (tr *TransportWithReauth) DeleteNode(ctx context.Context, nodeID string, params *DeleteNodeRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DeleteNode(ctx, nodeID, params)
+		return tr.client.DeleteNode(ctx, nodeID, params)
 	})
 
 	return err
@@ -352,7 +352,7 @@ func (tr *TransportWithReauth) DeleteNode(ctx context.Context, nodeID string, pa
 func (tr *TransportWithReauth) SetReplicas(ctx context.Context, nsID string, volID string, numReplicas uint64, params *SetReplicasRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.SetReplicas(ctx, nsID, volID, numReplicas, params)
+		return tr.client.SetReplicas(ctx, nsID, volID, numReplicas, params)
 	})
 
 	return err
@@ -365,7 +365,7 @@ func (tr *TransportWithReauth) UpdateVolume(ctx context.Context, nsID string, vo
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.UpdateVolume(ctx, nsID, volID, description, labels, params)
+		updated, err = tr.client.UpdateVolume(ctx, nsID, volID, description, labels, params)
 		return err
 	})
 
@@ -379,7 +379,7 @@ func (tr *TransportWithReauth) ResizeVolume(ctx context.Context, nsID string, vo
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.ResizeVolume(ctx, nsID, volID, sizeBytes, params)
+		updated, err = tr.client.ResizeVolume(ctx, nsID, volID, sizeBytes, params)
 		return err
 	})
 
@@ -391,7 +391,7 @@ func (tr *TransportWithReauth) ResizeVolume(ctx context.Context, nsID string, vo
 func (tr *TransportWithReauth) UpdateNFSVolumeExports(ctx context.Context, namespaceID string, volumeID string, exports []model.NFSExportConfig, params *UpdateNFSVolumeExportsRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.UpdateNFSVolumeExports(ctx, namespaceID, volumeID, exports, params)
+		return tr.client.UpdateNFSVolumeExports(ctx, namespaceID, volumeID, exports, params)
 	})
 
 	return err
@@ -402,7 +402,7 @@ func (tr *TransportWithReauth) UpdateNFSVolumeExports(ctx context.Context, names
 func (tr *TransportWithReauth) UpdateNFSVolumeMountEndpoint(ctx context.Context, namespaceID string, volumeID string, endpoint string, params *UpdateNFSVolumeMountEndpointRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.UpdateNFSVolumeMountEndpoint(ctx, namespaceID, volumeID, endpoint, params)
+		return tr.client.UpdateNFSVolumeMountEndpoint(ctx, namespaceID, volumeID, endpoint, params)
 	})
 
 	return err
@@ -415,7 +415,7 @@ func (tr *TransportWithReauth) SetFailureModeIntent(ctx context.Context, nsID st
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.SetFailureModeIntent(ctx, nsID, volID, intent, params)
+		updated, err = tr.client.SetFailureModeIntent(ctx, nsID, volID, intent, params)
 		return err
 	})
 
@@ -429,7 +429,7 @@ func (tr *TransportWithReauth) SetFailureThreshold(ctx context.Context, nsID str
 	var updated *model.Volume
 	err := tr.doWithReauth(ctx, func() error {
 		var err error
-		updated, err = tr.inner.SetFailureThreshold(ctx, nsID, volID, intent, params)
+		updated, err = tr.client.SetFailureThreshold(ctx, nsID, volID, intent, params)
 		return err
 	})
 
@@ -441,7 +441,7 @@ func (tr *TransportWithReauth) SetFailureThreshold(ctx context.Context, nsID str
 func (tr *TransportWithReauth) DeleteVolume(ctx context.Context, namespaceID string, volumeID string, params *DeleteVolumeRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DeleteVolume(ctx, namespaceID, volumeID, params)
+		return tr.client.DeleteVolume(ctx, namespaceID, volumeID, params)
 	})
 
 	return err
@@ -452,7 +452,7 @@ func (tr *TransportWithReauth) DeleteVolume(ctx context.Context, namespaceID str
 func (tr *TransportWithReauth) DeleteNamespace(ctx context.Context, uid string, params *DeleteNamespaceRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DeleteNamespace(ctx, uid, params)
+		return tr.client.DeleteNamespace(ctx, uid, params)
 	})
 
 	return err
@@ -463,7 +463,7 @@ func (tr *TransportWithReauth) DeleteNamespace(ctx context.Context, uid string, 
 func (tr *TransportWithReauth) DeleteUser(ctx context.Context, uid string, params *DeleteUserRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DeleteUser(ctx, uid, params)
+		return tr.client.DeleteUser(ctx, uid, params)
 	})
 
 	return err
@@ -474,7 +474,7 @@ func (tr *TransportWithReauth) DeleteUser(ctx context.Context, uid string, param
 func (tr *TransportWithReauth) DeletePolicyGroup(ctx context.Context, uid string, params *DeletePolicyGroupRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DeletePolicyGroup(ctx, uid, params)
+		return tr.client.DeletePolicyGroup(ctx, uid, params)
 	})
 
 	return err
@@ -485,7 +485,7 @@ func (tr *TransportWithReauth) DeletePolicyGroup(ctx context.Context, uid string
 func (tr *TransportWithReauth) AttachVolume(ctx context.Context, namespaceID string, volumeID string, nodeID string) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.AttachVolume(ctx, namespaceID, volumeID, nodeID)
+		return tr.client.AttachVolume(ctx, namespaceID, volumeID, nodeID)
 	})
 
 	return err
@@ -496,7 +496,7 @@ func (tr *TransportWithReauth) AttachVolume(ctx context.Context, namespaceID str
 func (tr *TransportWithReauth) AttachNFSVolume(ctx context.Context, namespaceID string, volumeID string, params *AttachNFSVolumeRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.AttachNFSVolume(ctx, namespaceID, volumeID, params)
+		return tr.client.AttachNFSVolume(ctx, namespaceID, volumeID, params)
 	})
 
 	return err
@@ -507,7 +507,7 @@ func (tr *TransportWithReauth) AttachNFSVolume(ctx context.Context, namespaceID 
 func (tr *TransportWithReauth) SetCordoned(ctx context.Context, nodeID string, params *SetCordonedRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.SetCordoned(ctx, nodeID, params)
+		return tr.client.SetCordoned(ctx, nodeID, params)
 	})
 
 	return err
@@ -515,13 +515,13 @@ func (tr *TransportWithReauth) SetCordoned(ctx context.Context, nodeID string, p
 
 func (tr *TransportWithReauth) EvictReplica(ctx context.Context, namespaceID string, id string, deploymentID string) error {
 	return tr.doWithReauth(ctx, func() error {
-		return tr.inner.EvictReplica(ctx, namespaceID, id, deploymentID)
+		return tr.client.EvictReplica(ctx, namespaceID, id, deploymentID)
 	})
 }
 
 func (tr *TransportWithReauth) AttemptPromotion(ctx context.Context, namespaceID string, id string, deploymentID string) error {
 	return tr.doWithReauth(ctx, func() error {
-		return tr.inner.AttemptPromotion(ctx, namespaceID, id, deploymentID)
+		return tr.client.AttemptPromotion(ctx, namespaceID, id, deploymentID)
 	})
 }
 
@@ -530,7 +530,7 @@ func (tr *TransportWithReauth) AttemptPromotion(ctx context.Context, namespaceID
 func (tr *TransportWithReauth) DetachVolume(ctx context.Context, namespaceID string, volumeID string, params *DetachVolumeRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.DetachVolume(ctx, namespaceID, volumeID, params)
+		return tr.client.DetachVolume(ctx, namespaceID, volumeID, params)
 	})
 
 	return err
@@ -541,7 +541,7 @@ func (tr *TransportWithReauth) DetachVolume(ctx context.Context, namespaceID str
 func (tr *TransportWithReauth) AddDeploymentOnNode(ctx context.Context, namespaceID string, volumeID string, params *AddDeploymentOnNodeRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.AddDeploymentOnNode(ctx, namespaceID, volumeID, params)
+		return tr.client.AddDeploymentOnNode(ctx, namespaceID, volumeID, params)
 	})
 
 	return err
@@ -552,7 +552,7 @@ func (tr *TransportWithReauth) AddDeploymentOnNode(ctx context.Context, namespac
 func (tr *TransportWithReauth) SetPreferredEvictionCandidates(ctx context.Context, namespaceID string, volID string, params *SetPreferredEvictionCandidatesRequestParams) error {
 
 	err := tr.doWithReauth(ctx, func() error {
-		return tr.inner.SetPreferredEvictionCandidates(ctx, namespaceID, volID, params)
+		return tr.client.SetPreferredEvictionCandidates(ctx, namespaceID, volID, params)
 	})
 
 	return err
@@ -589,7 +589,7 @@ func (tr *TransportWithReauth) doWithReauth(ctx context.Context, fn func() error
 // authentication failure, sourcing username and password from credentials.
 func NewTransportWithReauth(transport Transport, username, password string) *TransportWithReauth {
 	return &TransportWithReauth{
-		inner:    transport,
+		client:   transport,
 		username: username,
 		password: password,
 	}

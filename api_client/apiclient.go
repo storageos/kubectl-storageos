@@ -235,28 +235,11 @@ type Client struct {
 	configureOnce *sync.Once
 }
 
-// ConfigureTransport must be called with a valid transport before any methods
-// are called on c.
-//
-// The client's transport may only be set once through this method.
-func (c *Client) ConfigureTransport(transport Transport) error {
-	err := ErrTransportAlreadyConfigured
-
-	c.configureOnce.Do(func() {
-		c.Transport = transport
-		err = nil
-	})
-
-	return err
-}
-
 // New initialises a new Client which will source configuration settings using
 // config. The returned client must be configured with a Transport before it is
 // used.
-func New() *Client {
+func New(transport Transport) *Client {
 	return &Client{
-		Transport: &noTransport{},
-
-		configureOnce: &sync.Once{},
+		Transport: transport,
 	}
 }
