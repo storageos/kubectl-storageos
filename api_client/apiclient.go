@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/storageos/kubectl-storageos/api_client/openapi"
-	"github.com/storageos/kubectl-storageos/pkg/consts"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
+	"k8s.io/client-go/rest"
 )
 
 // Client wraps the openAPI client providing a collection of useful methods such
@@ -26,14 +27,15 @@ type client struct {
 	cacheSessionExpiresAt time.Time
 }
 
-func GetAPIClient() (*ClientWithReauth, error) {
+func GetAPIClient(restConfig *rest.Config) (*ClientWithReauth, error) {
 	userAgent := strings.Join([]string{"ondat kubectl plugin", version.PluginVersion}, "/")
 
-	// TODO retrieve credentials like before
-	username, password := "storageos", "storageos"
+	endpoint, err := utils.GetFirstStorageOSAPIEndpoint(restConfig)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO make endpoints configurable
-	basicOpenAPIClient, err := openapi.NewOpenAPI([]string{consts.DefaultStorageOSEndpoint}, userAgent)
+	basicOpenAPIClient, err := openapi.NewOpenAPI([]string{endpoint}, userAgent)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +43,11 @@ func GetAPIClient() (*ClientWithReauth, error) {
 	// client wrapper adding some extra useful methods on top
 	internalClient := client{
 		OpenAPI: basicOpenAPIClient,
+	}
+
+	username, password, err := utils.GetAPICredentialsFromSecret(restConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	// client wrapper adding reauth on first failure

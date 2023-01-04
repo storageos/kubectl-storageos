@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	apiclient "github.com/storageos/kubectl-storageos/api_client"
+	"github.com/storageos/kubectl-storageos/pkg/utils"
 )
 
 func TestAPICmd() *cobra.Command {
@@ -21,8 +22,12 @@ func TestAPICmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Example of usage of the new api client
 
+			cfg, err := utils.NewClientConfig()
+			if err != nil {
+				return err
+			}
 			// 1 - get client
-			client, err := apiclient.GetAPIClient()
+			client, err := apiclient.GetAPIClient(cfg)
 			if err != nil {
 				return err
 			}
@@ -30,7 +35,12 @@ func TestAPICmd() *cobra.Command {
 			// 2 - authenticate
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 			defer cancel()
-			_, _, err = client.Authenticate(ctx, "storageos", "storageos")
+
+			username, password, err := utils.GetAPICredentialsFromSecret(cfg)
+			if err != nil {
+				return err
+			}
+			_, _, err = client.Authenticate(ctx, username, password)
 			if err != nil {
 				return err
 			}
@@ -51,7 +61,7 @@ func TestAPICmd() *cobra.Command {
 			fmt.Printf("Got %d volumes back\n", len(vols))
 
 			// testing the use of the cached token
-			_, _, err = client.Authenticate(ctx, "storageos", "storageos")
+			_, _, err = client.Authenticate(ctx, username, password)
 			if err != nil {
 				return err
 			}

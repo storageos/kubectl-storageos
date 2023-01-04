@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -566,6 +568,69 @@ func GetFirstStorageOSCluster(config *rest.Config) (*operatorapi.StorageOSCluste
 
 	stosCluster = &stosClusterList.Items[0]
 	return stosCluster, nil
+}
+
+func GetFirstStorageOSNodePod(config *rest.Config, namespace string) (*corev1.Pod, error) {
+	nodePodList, err := ListPods(config, namespace, "app.kubernetes.io/component=control-plane")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(nodePodList.Items) == 0 {
+		return nil, errors.WithStack(fmt.Errorf("no storageos-node pods found"))
+	}
+
+	for _, pod := range nodePodList.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			return &pod, nil
+		}
+	}
+
+	return nil, errors.WithStack(fmt.Errorf("no storageos-node pod in running phase"))
+}
+
+func GetFirstStorageOSAPIEndpoint(config *rest.Config) (string, error) {
+	stosCluster, err := GetFirstStorageOSCluster(config)
+	if err != nil {
+		return "", err
+	}
+
+	// the cluster namespace can be used to fetch the storageos-node pods as they are always the same.
+	pod, err := GetFirstStorageOSNodePod(config, stosCluster.Namespace)
+	if err != nil {
+		return "", err
+	}
+
+	for _, container := range pod.Spec.Containers {
+		if container.Name == "storageos" {
+			for _, port := range container.Ports {
+				if port.Name == "api" {
+					endpoint, err := url.Parse("http://" + pod.Status.HostIP + ":" + strconv.Itoa(int(port.HostPort)))
+					if err != nil {
+						return "", fmt.Errorf("error parsing storageos api endpoint url")
+					}
+					return endpoint.String(), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("unable to get storageos api endpoint")
+}
+
+func GetAPICredentialsFromSecret(config *rest.Config) (string, string, error) {
+	stosCluster, err := GetFirstStorageOSCluster(config)
+	if err != nil {
+		return "", "", err
+	}
+
+	// the cluster namespace can be used to fetch the secret as they are always the same.
+	secret, err := GetSecret(config, stosCluster.Spec.SecretRefName, stosCluster.Namespace)
+	if err != nil {
+		return "", "", err
+	}
+
+	return string(secret.Data["username"]), string(secret.Data["password"]), nil
 }
 
 func storageOSOperatorClient(config *rest.Config) (client.Client, error) {
