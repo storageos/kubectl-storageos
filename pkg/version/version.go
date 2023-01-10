@@ -39,7 +39,9 @@ const (
 
 	etcdOperatorManifestsImageUrl = "docker.io/storageos/etcd-cluster-operator-manifests"
 
-	etcdClusterYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/v0.3.1/storageos-etcd-cluster.yaml"
+	etcdOperatorYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/%s/storageos-etcd-cluster-operator.yaml"
+
+	etcdClusterYamlUrl = "https://github.com/storageos/etcd-cluster-operator/releases/download/%s/storageos-etcd-cluster.yaml"
 )
 
 var (
@@ -304,8 +306,12 @@ func EtcdOperatorLatestSupportedImageURL() string {
 	return fmt.Sprintf("%s:%s", etcdOperatorManifestsImageUrl, EtcdOperatorLatestSupportedVersion())
 }
 
+func EtcdOperatorLatestSupportedURL() string {
+	return fmt.Sprintf(etcdOperatorYamlUrl, EtcdOperatorLatestSupportedVersion())
+}
+
 func EtcdClusterLatestSupportedURL() string {
-	return etcdClusterYamlUrl
+	return fmt.Sprintf(etcdClusterYamlUrl, EtcdOperatorLatestSupportedVersion())
 }
 
 // IsSupported takes two versions, current version (haveVersion) and a

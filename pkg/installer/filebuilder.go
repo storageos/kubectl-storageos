@@ -13,17 +13,6 @@ import (
 	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
-const errManifestNotFoundFromImage = `
-   An error occurred attempting to fetch the manifest image "%s" with manifest "%s" from the docker daemon. 
-   Possible causes:
-      - The manifest image is not stored locally (please ensure you have specified the correct version).
-      - The docker daemon is not running.
-      - Some other error occurred while retrieving the manifest from the image.
-
-   Alternatively, the manifest itself can be saved locally and passed to kubectl-storageos using the flag:
-   
-      --%s=/path/to/%s
-`
 const errNoURLForAirGap = `
    Air gapped operation - the source of the manifest "%s" passed to "--%s" cannot be a URL.
 
@@ -420,7 +409,7 @@ func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (strin
 	// pulling a remote image requires an internet connection, so return at this point if
 	// --air-gap flag has been set.
 	if airGap {
-		return "", errors.WithStack(fmt.Errorf(errManifestNotFoundFromImage, location, fb.fileName, fb.flagToFile[fb.fileName], fb.fileName))
+		return "", errors.WithStack(fmt.Errorf(fb.buildManifestNotFoundFromImageErr(location)))
 	}
 
 	// attempt to pull image remotely
@@ -430,4 +419,86 @@ func (fb *fileBuilder) getManifestFromImage(airGap bool, location string) (strin
 	}
 
 	return extractFileFromImage(image, fb.fileName)
+}
+
+func (fb *fileBuilder) buildManifestNotFoundFromImageErr(manifestLocation string) string {
+	errStr := `
+   An error occurred attempting to fetch the manifest image ` + manifestLocation + ` with manifest ` + fb.fileName + ` from the docker daemon. 
+   Possible causes:
+      - The manifest image is not stored locally (please ensure you have specified the correct version).
+      - The docker daemon is not running.
+      - Some other error occurred while retrieving the manifest from the image.
+
+   If you do not have a docker daemon running on your local machine, the necessary manifests can be acquired via podman or a provided URL.
+`
+	switch fb.fileName {
+	case stosOperatorFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+
+      "podman run --name storageos_manifests ` + manifestLocation + ` > ./` + fb.fileName + ` ; podman rm storageos_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+      
+      "wget ` + pluginversion.OperatorLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+
+	case stosClusterFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+     
+      "podman run --name storageos_manifests ` + manifestLocation + ` > /dev/null ; podman cp storageos_manifests:` + fb.fileName + ` ./` + fb.fileName + ` ; podman rm storageos_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+      
+      "wget ` + pluginversion.ClusterLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+
+	case etcdOperatorFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+      
+      "podman run --name etcd_manifests ` + manifestLocation + ` > ./` + fb.fileName + ` ; podman rm etcd_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+      
+      "wget ` + pluginversion.EtcdOperatorLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+
+	case etcdClusterFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+     
+      "podman run --name etcd_manifests ` + manifestLocation + ` > /dev/null ; podman cp etcd_manifests:` + fb.fileName + ` ./` + fb.fileName + ` ; podman rm etcd_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+      
+      "wget ` + pluginversion.EtcdClusterLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+
+	case stosPortalClientFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+      
+      "podman run --name portal_manifests ` + manifestLocation + ` > /dev/null ; podman cp portal_manifests:` + fb.fileName + ` ./` + fb.fileName + ` ; podman rm portal_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+      
+      "wget ` + pluginversion.PortalClientLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+
+	case stosPortalConfigFile:
+		errStr += `
+   Download ` + fb.fileName + ` using podman:
+      
+      "podman run --name portal_manifests ` + manifestLocation + ` > /dev/null ; podman cp portal_manifests:` + fb.fileName + ` ./` + fb.fileName + ` ; podman rm portal_manifests"
+
+   Alternatively, download ` + fb.fileName + ` from URL:
+   
+      "wget ` + pluginversion.PortalConfigLatestSupportedURL() + ` -O ./` + fb.fileName + `"`
+	}
+
+	errStr += `
+   
+   Once stored locally, pass the manifest to kubectl-storageos via flag:
+
+      --` + fb.flagToFile[fb.fileName] + `=./` + fb.fileName + `
+	  
+`
+	return errStr
 }
