@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 	operatorapi "github.com/storageos/operator/api/v1"
 )
 
@@ -305,6 +306,15 @@ func FlagsAreSet(flags map[string]string) error {
 	missingFlags := make([]string, 0)
 	for flagName, flagValue := range flags {
 		if flagValue == "" {
+			// if any version flags are missing, add a message to the output string pointing
+			// the user to the releases for the missing version flag.
+			if flagName == StosVersionFlag {
+				flagName += " (See " + pluginversion.OperatorReleasesURL() + " for StorageOS Versions)."
+			} else if flagName == EtcdOperatorVersionFlag {
+				flagName += " (See " + pluginversion.EtcdOperatorReleasesURL() + " for ETCD Operator Versions)."
+			} else if flagName == PortalManagerVersionFlag {
+				flagName += " (See " + pluginversion.PortalManagerReleasesURL() + " for Portal Manager Versions)."
+			}
 			missingFlags = append(missingFlags, flagName)
 		}
 	}

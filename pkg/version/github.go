@@ -11,9 +11,12 @@ import (
 )
 
 const (
-	operatorReleasesUrl      = "https://api.github.com/repos/storageos/operator/releases"
-	etcdOperatorReleasesUrl  = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
-	portalManagerReleasesUrl = "https://api.github.com/repos/storageos/portal-manager/releases"
+	operatorReleasesUrl         = "https://github.com/storageos/operator/releases"
+	operatorReleasesApiUrl      = "https://api.github.com/repos/storageos/operator/releases"
+	etcdOperatorReleasesUrl     = "https://github.com/storageos/etcd-cluster-operator/releases"
+	etcdOperatorReleasesApiUrl  = "https://api.github.com/repos/storageos/etcd-cluster-operator/releases"
+	portalManagerReleasesUrl    = "https://github.com/storageos/portal-manager/releases"
+	portalManagerReleasesApiUrl = "https://api.github.com/repos/storageos/portal-manager/releases"
 )
 
 var (
@@ -71,7 +74,7 @@ func OperatorLatestSupportedVersion() string {
 		if operatorLatestVersion != "" {
 			return
 		}
-		releases := fetchVersionsOrPanic(operatorReleasesUrl)
+		releases := fetchVersionsOrPanic(operatorReleasesApiUrl)
 		operatorLatestVersion = selectLatestVersionOrPanic(releases)
 	})
 
@@ -83,7 +86,7 @@ func EtcdOperatorLatestSupportedVersion() string {
 		if etcdOperatorLatestVersion != "" {
 			return
 		}
-		releases := fetchVersionsOrPanic(etcdOperatorReleasesUrl)
+		releases := fetchVersionsOrPanic(etcdOperatorReleasesApiUrl)
 		etcdOperatorLatestVersion = selectLatestVersionOrPanic(releases)
 	})
 
@@ -95,11 +98,23 @@ func PortalManagerLatestSupportedVersion() string {
 		if portalManagerLatestVersion != "" {
 			return
 		}
-		releases := fetchVersionsOrPanic(portalManagerReleasesUrl)
+		releases := fetchVersionsOrPanic(portalManagerReleasesApiUrl)
 		portalManagerLatestVersion = selectLatestVersionOrPanic(releases)
 	})
 
 	return portalManagerLatestVersion
+}
+
+func OperatorReleasesURL() string {
+	return operatorReleasesUrl
+}
+
+func EtcdOperatorReleasesURL() string {
+	return etcdOperatorReleasesUrl
+}
+
+func PortalManagerReleasesURL() string {
+	return portalManagerReleasesUrl
 }
 
 func LocalPathProvisionerLatestSupportVersion() string {
