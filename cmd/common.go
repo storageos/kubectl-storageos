@@ -104,11 +104,12 @@ func storageClassPrompt(log *logger.Logger) (string, error) {
 
 // k8sVersionPrompt uses promptui the user to enter the kubernetes version of the target cluster
 func k8sVersionPrompt(log *logger.Logger) (string, error) {
-	log.Prompt("Please enter the version of the target Kubernetes cluster.")
+	log.Prompt("Please enter the version of the target Kubernetes cluster, enter version string in the format `vX.X.X`.")
+	log.Prompt("Example: v1.25.0")
 	validate := func(input string) error {
 		match, _ := regexp.MatchString("v[0-9]+.[0-9]+.[0-9]+", input)
 		if !match {
-			return errors.New("invalid entry, example of valid entry: 'v1.23.0'")
+			return errors.New("invalid entry, example of valid entry: 'v1.25.0'")
 		}
 		return nil
 	}
