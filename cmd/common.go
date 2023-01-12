@@ -218,7 +218,7 @@ func installFlagsFilter(config *apiv1.KubectlStorageOSConfig, upgrade bool) map[
 		return requiredFlags
 	}
 
-	requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
+	requiredFlags[installStosVersionFlag] = config.Spec.Install.StorageOSVersion
 
 	if config.Spec.IncludeEtcd {
 		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
