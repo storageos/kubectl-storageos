@@ -27,7 +27,7 @@ const (
 	`
 )
 
-func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string, log *logger.Logger) error {
+func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	// create new installer with in-mem fs of operator and cluster to be installed
 	// use installer to validate etcd-endpoints before going any further
 	installer, err := NewInstaller(installConfig, log)
@@ -66,12 +66,12 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 		return err
 	}
 
-	if err = uninstaller.prepareForUpgrade(installConfig, versionToUninstall, installer); err != nil {
+	if err = uninstaller.prepareForUpgrade(installConfig, uninstallConfig.Spec.Uninstall.StorageOSVersion, installer); err != nil {
 		return err
 	}
 
 	// uninstall existing storageos operator and cluster
-	if err = uninstaller.Uninstall(true, versionToUninstall); err != nil {
+	if err = uninstaller.Uninstall(true); err != nil {
 		return err
 	}
 

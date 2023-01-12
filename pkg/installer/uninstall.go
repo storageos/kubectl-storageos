@@ -62,7 +62,7 @@ var protectedNamespaces = map[string]bool{
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
 // indicates whether or not this uninstallation is part of an upgrade.
-func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
+func (in *Installer) Uninstall(upgrade bool) error {
 	stosPVCs := &corev1.PersistentVolumeClaimList{}
 	var err error
 	if !in.stosConfig.Spec.SkipExistingWorkloadCheck {
@@ -82,7 +82,7 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	go func() {
 		defer wg.Done()
 
-		errChan <- in.uninstallStorageOS(upgrade, currentVersion)
+		errChan <- in.uninstallStorageOS(upgrade)
 	}()
 
 	// serialInstall can be set via a build flag, whereas Spec.Serial is
@@ -117,7 +117,7 @@ func (in *Installer) Uninstall(upgrade bool, currentVersion string) error {
 	return collectErrors(errChan)
 }
 
-func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) error {
+func (in *Installer) uninstallStorageOS(upgrade bool) error {
 	storageOSClusterNamespace := in.storageOSCluster.Namespace
 	if storageOSClusterNamespace == "" {
 		storageOSClusterNamespace = in.stosConfig.Spec.GetOperatorNamespace()
@@ -143,7 +143,7 @@ func (in *Installer) uninstallStorageOS(upgrade bool, currentVersion string) err
 	}
 
 	if !upgrade && in.installerOptions.resourceQuota {
-		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(currentVersion, version.ClusterOperatorLastVersion())
+		lessThanOrEqual, err := version.VersionIsLessThanOrEqual(in.stosConfig.Spec.Uninstall.StorageOSVersion, version.ClusterOperatorLastVersion())
 		if err != nil {
 			return err
 		}

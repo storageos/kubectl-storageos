@@ -124,13 +124,11 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 	if config.Spec.Install.StorageOSVersion == "" {
 		config.Spec.Install.StorageOSVersion = version.OperatorLatestSupportedVersion()
 	}
-	version.SetOperatorLatestSupportedVersion(config.Spec.Install.StorageOSVersion)
 
 	if config.Spec.IncludeEtcd {
 		if config.Spec.Install.EtcdOperatorVersion == "" {
 			config.Spec.Install.EtcdOperatorVersion = version.EtcdOperatorLatestSupportedVersion()
 		}
-		version.SetEtcdOperatorLatestSupportedVersion(config.Spec.Install.EtcdOperatorVersion)
 		if config.Spec.Install.EtcdMemoryLimit != "" {
 			if err := validateResourceLimit(config.Spec.Install.EtcdMemoryLimit); err != nil {
 				return err
@@ -341,8 +339,8 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.DryRun = viper.GetBool(installer.DryRunConfig)
 	config.Spec.Install.EnableMetrics = GetBoolIfConfigSet(installer.EnableMetricsConfig)
-	config.Spec.Install.StorageOSVersion = viper.GetString(installer.StosVersionConfig)
-	config.Spec.Install.EtcdOperatorVersion = viper.GetString(installer.EtcdOperatorVersionConfig)
+	config.Spec.Install.StorageOSVersion = viper.GetString(installer.InstallStosVersionConfig)
+	config.Spec.Install.EtcdOperatorVersion = viper.GetString(installer.InstallEtcdOperatorVersionConfig)
 	config.Spec.Install.KubernetesVersion = viper.GetString(installer.K8sVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.InstallStosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.InstallStosClusterYamlConfig)

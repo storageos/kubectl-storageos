@@ -52,7 +52,7 @@ func UninstallCmd() *cobra.Command {
 	}
 	cmd.Flags().Bool(installer.StackTraceFlag, false, "print stack trace of error")
 	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
-	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
+	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leave namespaces untouched")
 	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during uninstall")
 	cmd.Flags().Bool(installer.SkipStosClusterFlag, false, "skip storageos cluster uninstallation")
 	cmd.Flags().Bool(installer.IncludeEtcdFlag, false, "uninstall etcd (only applicable to github.com/storageos/etcd-cluster-operator etcd cluster)")
@@ -70,6 +70,8 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().String(installer.LocalPathProvisionerYamlFlag, "", "local-path-provisioner.yaml path or url")
 	cmd.Flags().Bool(installer.SerialFlag, false, "uninstall components serially")
 	cmd.Flags().Bool(installer.AirGapFlag, false, "uninstall in an air gapped environment")
+	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator to uninstall")
+	cmd.Flags().String(installer.EtcdOperatorVersionFlag, "", "version of etcd operator to uninstall")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -83,6 +85,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 		return err
 	}
 
+	var err error
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !config.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
 		var err error
@@ -92,23 +95,25 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 		}
 	}
 
-	operatorVersion, err := pluginversion.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
-	if err != nil {
-		return err
-	}
-	log.Successf("Discovered StorageOS cluster and operator version '%s'.", operatorVersion)
-	pluginversion.SetOperatorLatestSupportedVersion(operatorVersion)
-
-	if config.Spec.IncludeEtcd {
-		etcdOperatorVersion, err := pluginversion.GetExistingEtcdOperatorVersion(config.Spec.Uninstall.EtcdNamespace)
+	if config.Spec.Uninstall.StorageOSVersion == "" {
+		config.Spec.Uninstall.StorageOSVersion, err = pluginversion.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
 		if err != nil {
 			return err
 		}
-
-		pluginversion.SetEtcdOperatorLatestSupportedVersion(etcdOperatorVersion)
+		log.Successf("Discovered StorageOS cluster and operator version '%s'.", config.Spec.Uninstall.StorageOSVersion)
 	}
 
-	if err = setVersionSpecificValues(config, operatorVersion); err != nil {
+	if config.Spec.IncludeEtcd {
+		if config.Spec.Uninstall.EtcdOperatorVersion == "" {
+			config.Spec.Uninstall.EtcdOperatorVersion, err = pluginversion.GetExistingEtcdOperatorVersion(config.Spec.Uninstall.EtcdNamespace)
+			if err != nil {
+				return err
+			}
+			log.Successf("Discovered ETCD cluster and operator version '%s'.", config.Spec.Uninstall.EtcdOperatorVersion)
+		}
+	}
+
+	if err = setVersionSpecificValues(config); err != nil {
 		return err
 	}
 
@@ -118,7 +123,7 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 	}
 
 	log.Commencing(uninstall)
-	return cliInstaller.Uninstall(false, operatorVersion)
+	return cliInstaller.Uninstall(false)
 }
 
 func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {
@@ -181,6 +186,8 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		config.Spec.Uninstall.EtcdClusterYaml = cmd.Flags().Lookup(installer.EtcdClusterYamlFlag).Value.String()
 		config.Spec.Uninstall.ResourceQuotaYaml = cmd.Flags().Lookup(installer.ResourceQuotaYamlFlag).Value.String()
 		config.Spec.Uninstall.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
+		config.Spec.Uninstall.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
+		config.Spec.Uninstall.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
 
 		return nil
 	}
@@ -204,38 +211,40 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.ResourceQuotaYaml = viper.GetString(installer.UninstallResourceQuotaYamlConfig)
 	config.Spec.IncludeLocalPathProvisioner = viper.GetBool(installer.IncludeLocalPathProvisionerConfig)
 	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.UninstallLocalPathProvisionerYamlConfig)
+	config.Spec.Uninstall.StorageOSVersion = viper.GetString(installer.UninstallStosVersionConfig)
+	config.Spec.Uninstall.EtcdOperatorVersion = viper.GetString(installer.UninstallEtcdOperatorVersionConfig)
 
 	return nil
 }
 
-func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig, version string) (err error) {
+func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig) (err error) {
 	// Don't fetch version specific manifests for develop edition
-	if pluginversion.IsDevelop(version) {
+	if pluginversion.IsDevelop(config.Spec.Uninstall.StorageOSVersion) {
 		return
 	}
 
 	// set additional values to be used by Installer for in memory fs build
 	if config.Spec.Uninstall.StorageOSOperatorYaml == "" {
-		config.Spec.Uninstall.StorageOSOperatorYaml, err = pluginversion.OperatorImageUrlByVersion(version)
+		config.Spec.Uninstall.StorageOSOperatorYaml, err = pluginversion.OperatorImageUrlByVersion(config.Spec.Uninstall.StorageOSVersion)
 		if err != nil {
 			return
 		}
 	}
 
 	if config.Spec.Uninstall.StorageOSClusterYaml == "" {
-		config.Spec.Uninstall.StorageOSClusterYaml, err = pluginversion.ClusterUrlByVersion(version)
+		config.Spec.Uninstall.StorageOSClusterYaml, err = pluginversion.ClusterUrlByVersion(config.Spec.Uninstall.StorageOSVersion)
 		if err != nil {
 			return
 		}
 	}
 	if config.Spec.Uninstall.ResourceQuotaYaml == "" {
-		config.Spec.Uninstall.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(version)
+		config.Spec.Uninstall.ResourceQuotaYaml, err = pluginversion.ResourceQuotaUrlByVersion(config.Spec.Uninstall.StorageOSVersion)
 		if err != nil {
 			return
 		}
 	}
 
-	config.InstallerMeta.StorageOSSecretYaml, err = pluginversion.SecretUrlByVersion(version)
+	config.InstallerMeta.StorageOSSecretYaml, err = pluginversion.SecretUrlByVersion(config.Spec.Uninstall.StorageOSVersion)
 	if err != nil {
 		return
 	}

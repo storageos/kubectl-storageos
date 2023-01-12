@@ -155,6 +155,8 @@ spec:
                     type: string
                   etcdNamespace:
                     type: string
+                  etcdOperatorVersion:
+                    type: string
                   etcdOperatorYaml:
                     type: string
                   localPathProvisionerYaml:
@@ -170,6 +172,8 @@ spec:
                   storageOSPortalClientSecretYaml:
                     type: string
                   storageOSPortalConfigYaml:
+                    type: string
+                  storageOSVersion:
                     type: string
                 type: object
               verbose:

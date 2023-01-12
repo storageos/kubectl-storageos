@@ -111,6 +111,8 @@ type Install struct {
 
 // Uninstall defines options for cli uninstall subcommand
 type Uninstall struct {
+	StorageOSVersion                string `json:"storageOSVersion,omitempty"`
+	EtcdOperatorVersion             string `json:"etcdOperatorVersion,omitempty"`
 	StorageOSOperatorNamespace      string `json:"storageOSOperatorNamespace,omitempty"`
 	EtcdNamespace                   string `json:"etcdNamespace,omitempty"`
 	StorageOSOperatorYaml           string `json:"storageOSOperatorYaml,omitempty"`
