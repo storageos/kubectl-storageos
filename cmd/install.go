@@ -111,7 +111,7 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if err := installer.FlagsAreSet(installFlagsFilter(config)); err != nil {
+	if err := installer.FlagsAreSet(installFlagsFilter(config, false)); err != nil {
 		return err
 	}
 
