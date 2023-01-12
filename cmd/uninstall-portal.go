@@ -13,6 +13,7 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
+	pluginversion "github.com/storageos/kubectl-storageos/pkg/version"
 )
 
 const uninstallPortal = "uninstall-portal"
@@ -56,6 +57,9 @@ func UninstallPortalCmd() *cobra.Command {
 	cmd.Flags().BoolP(installer.VerboseFlag, "v", false, "verbose logging")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(installer.StosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator")
+	cmd.Flags().String(installer.PortalManagerVersionFlag, "", "version of portal manager")
+	cmd.Flags().String(installer.StosPortalConfigYamlFlag, "", "storageos-portal-manager-configmap.yaml path or url")
+	cmd.Flags().String(installer.StosPortalClientSecretYamlFlag, "", "storageos-portal-manager-client-secret.yaml path or url")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -64,7 +68,7 @@ func UninstallPortalCmd() *cobra.Command {
 
 func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
-	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Install.StorageOSOperatorNamespace)
+	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
 	}
@@ -73,7 +77,15 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 		return err
 	}
 
-	version.SetPortalManagerLatestSupportedVersion(version.PortalManagerLatestSupportedVersion())
+	if config.Spec.Uninstall.PortalManagerVersion == "" {
+		config.Spec.Uninstall.PortalManagerVersion, err = pluginversion.GetExistingPortalManagerVersion()
+		if err != nil {
+			return err
+		}
+		log.Successf("Discovered Portal Manager version '%s'.", config.Spec.Uninstall.PortalManagerVersion)
+	}
+
+	version.SetPortalManagerLatestSupportedVersion(config.Spec.Uninstall.PortalManagerVersion)
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
@@ -111,12 +123,20 @@ func setUninstallPortalValues(cmd *cobra.Command, config *apiv1.KubectlStorageOS
 		if err != nil {
 			return err
 		}
-		config.Spec.Install.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
+		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(installer.StosOperatorNSFlag).Value.String()
+		config.Spec.Uninstall.PortalManagerVersion = cmd.Flags().Lookup(installer.PortalManagerVersionFlag).Value.String()
+		config.Spec.Uninstall.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installer.StosPortalConfigYamlFlag).Value.String()
+		config.Spec.Uninstall.StorageOSPortalClientSecretYaml = cmd.Flags().Lookup(installer.StosPortalClientSecretYamlFlag).Value.String()
+
 		return nil
 	}
 	// config file read without error, set fields in new config object
 	config.Spec.StackTrace = viper.GetBool(installer.StackTraceConfig)
 	config.Spec.Verbose = viper.GetBool(installer.VerboseConfig)
-	config.Spec.Install.StorageOSOperatorNamespace = viper.GetString(installer.InstallStosOperatorNSConfig)
+	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
+	config.Spec.Uninstall.PortalManagerVersion = viper.GetString(installer.UninstallPortalManagerVersionConfig)
+	config.Spec.Uninstall.StorageOSPortalConfigYaml = viper.GetString(installer.UninstallStosPortalConfigYamlConfig)
+	config.Spec.Uninstall.StorageOSPortalClientSecretYaml = viper.GetString(installer.UninstallStosPortalClientSecretYamlConfig)
+
 	return nil
 }

@@ -17,6 +17,8 @@ const (
 	EtcdOperatorName      = "storageos-etcd-controller-manager"
 	EtcdOperatorNamespace = "storageos-etcd"
 
+	PortalManagerName = "storageos-portal-manager"
+
 	EtcdSecretName = "storageos-etcd-secret"
 
 	VersionRegex    = "v?([0-9]+.[0-9]+.[0-9]+)"

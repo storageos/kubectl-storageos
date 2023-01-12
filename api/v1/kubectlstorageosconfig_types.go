@@ -113,6 +113,7 @@ type Install struct {
 type Uninstall struct {
 	StorageOSVersion                string `json:"storageOSVersion,omitempty"`
 	EtcdOperatorVersion             string `json:"etcdOperatorVersion,omitempty"`
+	PortalManagerVersion            string `json:"portalManagerVersion,omitempty"`
 	StorageOSOperatorNamespace      string `json:"storageOSOperatorNamespace,omitempty"`
 	EtcdNamespace                   string `json:"etcdNamespace,omitempty"`
 	StorageOSOperatorYaml           string `json:"storageOSOperatorYaml,omitempty"`

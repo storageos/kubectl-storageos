@@ -161,6 +161,8 @@ spec:
                     type: string
                   localPathProvisionerYaml:
                     type: string
+                  portalManagerVersion:
+                    type: string
                   resourceQuotaYaml:
                     type: string
                   storageOSClusterYaml:
