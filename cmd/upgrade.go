@@ -430,13 +430,19 @@ func upgradeFlagsFilter(uninstallConfig, installConfig *apiv1.KubectlStorageOSCo
 		return requiredFlags
 	}
 
+	// stos version is a requirement for an air-gap upgrade to avoid querying for
+	// the latest version.
 	requiredFlags[installStosVersionFlag] = installConfig.Spec.Install.StorageOSVersion
 
 	if installConfig.Spec.IncludeLocalPathProvisioner {
+		// local path provisioner spec is pulled from a URL, so it becomes a requirement for
+		// an air-gap install to avoid download attempt.
 		requiredFlags[installer.LocalPathProvisionerYamlFlag] = installConfig.Spec.Install.LocalPathProvisionerYaml
 	}
 
 	if installConfig.Spec.Install.EnablePortalManager {
+		// if portal manager is to be installed during upgrade, portal manager version is a
+		// requirement for an air-gap install to avoid querying for the latest version.
 		requiredFlags[installPortalManagerVersionFlag] = installConfig.Spec.Install.PortalManagerVersion
 	}
 

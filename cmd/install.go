@@ -393,17 +393,25 @@ func installFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string 
 		return requiredFlags
 	}
 
+	// stos version is a requirement for an air-gap install to avoid querying for
+	// the latest version.
 	requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
 
 	if config.Spec.IncludeEtcd {
+		// if etcd is to be installed, etcd operator version is a requirement for an air-gap install
+		// to avoid querying for the latest version.
 		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
 	}
 
 	if config.Spec.IncludeLocalPathProvisioner {
+		// local path provisioner spec is pulled from a URL, so it becomes a requirement for
+		// an air-gap install to avoid download attempt.
 		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
 	}
 
 	if config.Spec.Install.EnablePortalManager {
+		// if portal manager is to be installed, portal manager version is a requirement for
+		// an air-gap install to avoid querying for the latest version.
 		requiredFlags[installer.PortalManagerVersionFlag] = config.Spec.Install.PortalManagerVersion
 	}
 

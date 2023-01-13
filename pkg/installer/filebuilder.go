@@ -429,6 +429,9 @@ func (fb *fileBuilder) buildManifestNotFoundFromImageErr(manifestLocation string
       - The docker daemon is not running.
       - Some other error occurred while retrieving the manifest from the image.
 
+   Pull the image with docker:
+      "docker pull ` + manifestLocation + `"
+
    If you do not have a docker daemon running on your local machine, the necessary manifests can be acquired via podman or a provided URL.
 `
 	switch fb.fileName {
