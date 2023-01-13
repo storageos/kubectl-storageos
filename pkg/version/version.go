@@ -130,6 +130,31 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 	return version, nil
 }
 
+func GetExistingPortalManagerVersion() (string, error) {
+	config, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return "", err
+	}
+
+	stosCluster, err := pluginutils.GetFirstStorageOSCluster(config)
+	if err != nil {
+		return "", err
+	}
+	clientset, err := pluginutils.GetClientsetFromConfig(config)
+	if err != nil {
+		return "", errors.Wrap(err, consts.ErrUnableToContructClientFromConfig)
+	}
+	portalManagerDeployment, err := clientset.AppsV1().Deployments(stosCluster.Namespace).Get(context.TODO(), consts.PortalManagerName, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to detect existing Portal Manager version")
+	}
+	imageName := portalManagerDeployment.Spec.Template.Spec.Containers[0].Image
+	splitImageName := strings.SplitAfter(imageName, ":")
+	version := splitImageName[len(splitImageName)-1]
+
+	return version, nil
+}
+
 func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
 	if namespace == "" {
 		namespace = consts.EtcdOperatorNamespace

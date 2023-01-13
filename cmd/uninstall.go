@@ -72,6 +72,7 @@ func UninstallCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.AirGapFlag, false, "uninstall in an air gapped environment")
 	cmd.Flags().String(installer.StosVersionFlag, "", "version of storageos operator to uninstall")
 	cmd.Flags().String(installer.EtcdOperatorVersionFlag, "", "version of etcd operator to uninstall")
+	cmd.Flags().String(installer.PortalManagerVersionFlag, "", "version of portal manager to uninstall")
 
 	viper.BindPFlags(cmd.Flags())
 
@@ -101,6 +102,15 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 			return err
 		}
 		log.Successf("Discovered StorageOS cluster and operator version '%s'.", config.Spec.Uninstall.StorageOSVersion)
+	}
+
+	if config.Spec.Uninstall.PortalManagerVersion == "" {
+		config.Spec.Uninstall.PortalManagerVersion, err = pluginversion.GetExistingPortalManagerVersion()
+		if err != nil {
+			// unable to get portal manager version. It may not exist, so just log a warning and continue.
+			log.Warnf("%s. Continuing uninstall.", err.Error())
+		}
+		log.Successf("Discovered Portal Manager version '%s'.", config.Spec.Uninstall.PortalManagerVersion)
 	}
 
 	if config.Spec.IncludeEtcd {
@@ -188,6 +198,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 		config.Spec.Uninstall.LocalPathProvisionerYaml = cmd.Flags().Lookup(installer.LocalPathProvisionerYamlFlag).Value.String()
 		config.Spec.Uninstall.StorageOSVersion = cmd.Flags().Lookup(installer.StosVersionFlag).Value.String()
 		config.Spec.Uninstall.EtcdOperatorVersion = cmd.Flags().Lookup(installer.EtcdOperatorVersionFlag).Value.String()
+		config.Spec.Uninstall.PortalManagerVersion = cmd.Flags().Lookup(installer.PortalManagerVersionFlag).Value.String()
 
 		return nil
 	}
@@ -213,6 +224,7 @@ func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig
 	config.Spec.Uninstall.LocalPathProvisionerYaml = viper.GetString(installer.UninstallLocalPathProvisionerYamlConfig)
 	config.Spec.Uninstall.StorageOSVersion = viper.GetString(installer.UninstallStosVersionConfig)
 	config.Spec.Uninstall.EtcdOperatorVersion = viper.GetString(installer.UninstallEtcdOperatorVersionConfig)
+	config.Spec.Uninstall.PortalManagerVersion = viper.GetString(installer.UninstallPortalManagerVersionConfig)
 
 	return nil
 }

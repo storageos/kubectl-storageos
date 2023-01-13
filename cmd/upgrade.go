@@ -38,6 +38,10 @@ const (
 	installStosVersionFlag = installer.InstallPrefix + installer.StosVersionFlag
 
 	uninstallStosVersionFlag = installer.UninstallPrefix + installer.StosVersionFlag
+
+	installPortalManagerVersionFlag = installer.InstallPrefix + installer.PortalManagerVersionFlag
+
+	uninstallPortalManagerVersionFlag = installer.UninstallPrefix + installer.PortalManagerVersionFlag
 )
 
 func UpgradeCmd() *cobra.Command {
@@ -84,10 +88,12 @@ func UpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool(installer.SkipExistingWorkloadCheckFlag, false, "skip check for PVCs using storageos storage class during upgrade")
 	cmd.Flags().String(installer.K8sVersionFlag, "", "version of kubernetes cluster")
 	cmd.Flags().Bool(installer.SkipNamespaceDeletionFlag, false, "leaving namespaces untouched")
-	cmd.Flags().Bool(installer.EnablePortalManagerFlag, false, "enable storageos portal manager during upgrade")
+	cmd.Flags().Bool(installer.EnablePortalManagerFlag, false, "install storageos portal manager during upgrade if it is not already installed")
 	cmd.Flags().String(installer.StosConfigPathFlag, "", "path to look for kubectl-storageos-config.yaml")
 	cmd.Flags().String(uninstallStosVersionFlag, "", "version of storageos operator to uninstall")
 	cmd.Flags().String(installStosVersionFlag, "", "version of storageos operator to install")
+	cmd.Flags().String(uninstallPortalManagerVersionFlag, "", "version of portal manager to uninstall")
+	cmd.Flags().String(installPortalManagerVersionFlag, "", "version of portal manager to install")
 	cmd.Flags().String(uninstallStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be uninstalled")
 	cmd.Flags().String(installStosOperatorNSFlag, consts.NewOperatorNamespace, "namespace of storageos operator to be installed")
 	cmd.Flags().String(installStosClusterNSFlag, "", "namespace of storageos cluster to be installed")
@@ -135,15 +141,13 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 		return err
 	}
 
+	if err := setPortalManagerVersionsInConfigs(uninstallConfig, installConfig, log); err != nil {
+		return err
+	}
+
 	if installConfig.Spec.Install.AdminPassword != "" {
 		if err := validatePassword(installConfig.Spec.Install.AdminPassword); err != nil {
 			return err
-		}
-	}
-
-	if installConfig.Spec.Install.EnablePortalManager {
-		if err := versionSupportsFeature(installConfig.Spec.Install.StorageOSVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
-			return fmt.Errorf("failed to enable portal manager: %w", err)
 		}
 	}
 
@@ -240,6 +244,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 		}
 
 		config.Spec.Install.StorageOSVersion = cmd.Flags().Lookup(installStosVersionFlag).Value.String()
+		config.Spec.Install.PortalManagerVersion = cmd.Flags().Lookup(installPortalManagerVersionFlag).Value.String()
 		config.Spec.Install.StorageOSOperatorYaml = cmd.Flags().Lookup(installStosOperatorYamlFlag).Value.String()
 		config.Spec.Install.StorageOSClusterYaml = cmd.Flags().Lookup(installStosClusterYamlFlag).Value.String()
 		config.Spec.Install.StorageOSPortalConfigYaml = cmd.Flags().Lookup(installStosPortalConfigYamlFlag).Value.String()
@@ -271,6 +276,7 @@ func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSC
 	config.Spec.Install.EnableMetrics = GetBoolIfConfigSet(installer.EnableMetricsConfig)
 	config.Spec.Install.Wait = viper.GetBool(installer.WaitConfig)
 	config.Spec.Install.StorageOSVersion = viper.GetString(installer.InstallStosVersionConfig)
+	config.Spec.Install.PortalManagerVersion = viper.GetString(installer.InstallPortalManagerVersionConfig)
 	config.Spec.Install.StorageOSOperatorYaml = viper.GetString(installer.InstallStosOperatorYamlConfig)
 	config.Spec.Install.StorageOSClusterYaml = viper.GetString(installer.InstallStosClusterYamlConfig)
 	config.Spec.Install.StorageOSPortalConfigYaml = viper.GetString(installer.InstallStosPortalConfigYamlConfig)
@@ -326,6 +332,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 
 		config.Spec.IncludeEtcd = false
 		config.Spec.Uninstall.StorageOSVersion = cmd.Flags().Lookup(uninstallStosVersionFlag).Value.String()
+		config.Spec.Uninstall.PortalManagerVersion = cmd.Flags().Lookup(uninstallPortalManagerVersionFlag).Value.String()
 		config.Spec.Uninstall.StorageOSOperatorNamespace = cmd.Flags().Lookup(uninstallStosOperatorNSFlag).Value.String()
 		config.Spec.Uninstall.StorageOSOperatorYaml = cmd.Flags().Lookup(uninstallStosOperatorYamlFlag).Value.String()
 		config.Spec.Uninstall.StorageOSClusterYaml = cmd.Flags().Lookup(uninstallStosClusterYamlFlag).Value.String()
@@ -342,6 +349,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Serial = viper.GetBool(installer.SerialConfig)
 	config.Spec.Uninstall.StorageOSVersion = viper.GetString(installer.UninstallStosVersionConfig)
+	config.Spec.Uninstall.PortalManagerVersion = viper.GetString(installer.UninstallPortalManagerVersionConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
 	config.Spec.Uninstall.StorageOSOperatorYaml = viper.GetString(installer.UninstallStosOperatorYamlConfig)
 	config.Spec.Uninstall.StorageOSClusterYaml = viper.GetString(installer.UninstallStosClusterYamlConfig)
@@ -379,5 +387,38 @@ func setStorageOSVersionsInConfigs(uninstallConfig *apiv1.KubectlStorageOSConfig
 	if noUpgrade {
 		return fmt.Errorf("Cannot upgrade from version %s to version %s. Aborting upgrade.", uninstallConfig.Spec.Uninstall.StorageOSVersion, installConfig.Spec.Install.StorageOSVersion)
 	}
+	return nil
+}
+
+// setPortalManagerVersionsInConfigs:
+// 1. Ensures that portal manager is supported in the storageos version to be installed.
+// 2. Gets the portal manager version to be installed from github releases if it has not been specified by --install-portal-manager-version.
+// 3. Sets this portal manager version in installConfig.
+// 3. Gets the existing portal manager version to be uninstalled if it has not been specified by --uninstall-portal-manager-version.
+// 4. Sets this portal manager version in uninstallConfig
+// 5. Sets enable portal manager if it already exists.
+func setPortalManagerVersionsInConfigs(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+	// ensure that the storageos version we are upgrading to supports portal manager.
+	if err := versionSupportsFeature(installConfig.Spec.Install.StorageOSVersion, consts.PortalManagerFirstSupportedVersion); err != nil {
+		return fmt.Errorf("failed to enable portal manager: %w", err)
+	}
+
+	if installConfig.Spec.Install.PortalManagerVersion == "" {
+		installConfig.Spec.Install.PortalManagerVersion = version.PortalManagerLatestSupportedVersion()
+	}
+
+	var err error
+	if uninstallConfig.Spec.Uninstall.PortalManagerVersion == "" {
+		uninstallConfig.Spec.Uninstall.PortalManagerVersion, err = pluginversion.GetExistingPortalManagerVersion()
+		if err != nil {
+			// unable to get portal manager version. It may not exist, so just log a warning and continue.
+			log.Warnf("%s. Continuing uninstall.", err.Error())
+			return nil
+		}
+		log.Successf("Discovered Portal Manager version '%s'.", uninstallConfig.Spec.Uninstall.PortalManagerVersion)
+		// the portal manager already exists, so it should be re-installed during the upgrade.
+		installConfig.Spec.Install.EnablePortalManager = true
+	}
+
 	return nil
 }

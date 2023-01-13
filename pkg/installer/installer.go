@@ -116,7 +116,8 @@ const (
 	PortalSecretConfig                        = "spec.install.portalSecret"
 	PortalTenantIDConfig                      = "spec.install.portalTenantID"
 	PortalAPIURLConfig                        = "spec.install.portalAPIURL"
-	PortalManagerVersionConfig                = "spec.install.portalManagerVersion"
+	InstallPortalManagerVersionConfig         = "spec.install.portalManagerVersion"
+	UninstallPortalManagerVersionConfig       = "spec.uninstall.portalManagerVersion"
 	EnablePortalManagerConfig                 = "spec.install.enablePortalManager"
 	UninstallStosVersionConfig                = "spec.uninstall.storageOSVersion"
 	UninstallEtcdOperatorVersionConfig        = "spec.uninstall.etcdOperatorVersion"
@@ -256,6 +257,8 @@ func NewInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*In
 
 // NewPortalManagerInstaller returns an Installer used for all portal manager commands
 func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool, log *logger.Logger) (*Installer, error) {
+	version.SetPortalManagerLatestSupportedVersion(getStringWithDefault(config.Spec.Install.PortalManagerVersion, config.Spec.Uninstall.PortalManagerVersion))
+
 	in, err := newCommonInstaller(config, log)
 	if err != nil {
 		return in, errors.WithStack(err)
@@ -469,6 +472,7 @@ func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*
 func setVersionsForOperation(config *apiv1.KubectlStorageOSConfig) {
 	version.SetOperatorLatestSupportedVersion(getStringWithDefault(config.Spec.Install.StorageOSVersion, config.Spec.Uninstall.StorageOSVersion))
 	version.SetEtcdOperatorLatestSupportedVersion(getStringWithDefault(config.Spec.Install.EtcdOperatorVersion, config.Spec.Uninstall.EtcdOperatorVersion))
+	version.SetPortalManagerLatestSupportedVersion(getStringWithDefault(config.Spec.Install.PortalManagerVersion, config.Spec.Uninstall.PortalManagerVersion))
 }
 
 // kubectlNew returns a new KubectlClient. The client is based on silent direct applier and deleter if verbose
