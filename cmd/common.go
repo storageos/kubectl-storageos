@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
-	"github.com/storageos/kubectl-storageos/pkg/installer"
 	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
@@ -201,58 +199,4 @@ func parseArgs(args []string) []string {
 	}
 
 	return parsedArgs
-}
-
-func installFlagsFilter(config *apiv1.KubectlStorageOSConfig, upgrade bool) map[string]string {
-	requiredFlags := make(map[string]string)
-	if !upgrade {
-		// upgrade does not require portal flags as they are taken from existing portal client secret
-		if config.Spec.Install.EnablePortalManager {
-			requiredFlags[installer.PortalClientIDFlag] = config.Spec.Install.PortalClientID
-			requiredFlags[installer.PortalSecretFlag] = config.Spec.Install.PortalSecret
-			requiredFlags[installer.PortalTenantIDFlag] = config.Spec.Install.PortalTenantID
-			requiredFlags[installer.PortalAPIURLFlag] = config.Spec.Install.PortalAPIURL
-		}
-	}
-	if !config.Spec.AirGap {
-		return requiredFlags
-	}
-
-	requiredFlags[installStosVersionFlag] = config.Spec.Install.StorageOSVersion
-
-	if config.Spec.IncludeEtcd {
-		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
-	}
-
-	if config.Spec.IncludeLocalPathProvisioner {
-		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
-	}
-
-	if config.Spec.Install.EnablePortalManager {
-		requiredFlags[installer.PortalManagerVersionFlag] = config.Spec.Install.PortalManagerVersion
-	}
-
-	return requiredFlags
-}
-
-func uninstallFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string {
-	requiredFlags := make(map[string]string)
-	if !config.Spec.AirGap {
-		return requiredFlags
-	}
-
-	if config.Spec.IncludeLocalPathProvisioner {
-		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
-	}
-
-	return requiredFlags
-}
-
-func upgradeFlagsFilter(uninstallConfig, installConfig *apiv1.KubectlStorageOSConfig) map[string]string {
-	uninstallFlags := uninstallFlagsFilter(uninstallConfig)
-	installFlags := installFlagsFilter(installConfig, true)
-	for k, v := range uninstallFlags {
-		installFlags[k] = v
-	}
-	return installFlags
 }

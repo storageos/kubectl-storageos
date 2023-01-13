@@ -422,3 +422,23 @@ func setPortalManagerVersionsInConfigs(uninstallConfig *apiv1.KubectlStorageOSCo
 
 	return nil
 }
+
+func upgradeFlagsFilter(uninstallConfig, installConfig *apiv1.KubectlStorageOSConfig) map[string]string {
+	requiredFlags := uninstallFlagsFilter(uninstallConfig)
+
+	if !installConfig.Spec.AirGap {
+		return requiredFlags
+	}
+
+	requiredFlags[installStosVersionFlag] = installConfig.Spec.Install.StorageOSVersion
+
+	if installConfig.Spec.IncludeLocalPathProvisioner {
+		requiredFlags[installer.LocalPathProvisionerYamlFlag] = installConfig.Spec.Install.LocalPathProvisionerYaml
+	}
+
+	if installConfig.Spec.Install.EnablePortalManager {
+		requiredFlags[installPortalManagerVersionFlag] = installConfig.Spec.Install.PortalManagerVersion
+	}
+
+	return requiredFlags
+}

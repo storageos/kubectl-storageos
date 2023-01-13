@@ -82,10 +82,6 @@ func UninstallCmd() *cobra.Command {
 func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if err := installer.FlagsAreSet(uninstallFlagsFilter(config)); err != nil {
-		return err
-	}
-
 	var err error
 	// if skip namespace delete was not passed via flag or config, prompt user to enter manually
 	if !config.Spec.SkipNamespaceDeletion && !skipNamespaceDeletionHasSet {
@@ -121,6 +117,10 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 			}
 			log.Successf("Discovered ETCD cluster and operator version '%s'.", config.Spec.Uninstall.EtcdOperatorVersion)
 		}
+	}
+
+	if err := installer.FlagsAreSet(uninstallFlagsFilter(config)); err != nil {
+		return err
 	}
 
 	if err = setVersionSpecificValues(config); err != nil {
@@ -262,4 +262,31 @@ func setVersionSpecificValues(config *apiv1.KubectlStorageOSConfig) (err error) 
 	}
 
 	return
+}
+
+func uninstallFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string {
+	requiredFlags := make(map[string]string)
+	if !config.Spec.AirGap {
+		return requiredFlags
+	}
+
+	if config.Spec.Install.StorageOSVersion == "" {
+		// no stos version was found in the cluster, so it becomes a requirement
+		// for an air-gap install to avoid querying for the latest version.
+		requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
+	}
+
+	if config.Spec.IncludeEtcd && config.Spec.Install.EtcdOperatorVersion == "" {
+		// no etcd-operator version was found in the cluster, so it becomes a requirement
+		// for an air-gap install to avoid querying for the latest version.
+		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
+	}
+
+	if config.Spec.IncludeLocalPathProvisioner {
+		// local path provisioner spec is pulled from a URL, so it becomes a requirement for
+		// an air-gap install to avoid download attempt.
+		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
+	}
+
+	return requiredFlags
 }

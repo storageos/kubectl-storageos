@@ -69,12 +69,6 @@ func UninstallPortalCmd() *cobra.Command {
 func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if config.Spec.AirGap {
-		if err := installer.FlagsAreSet(map[string]string{installer.PortalManagerVersionFlag: config.Spec.Install.PortalManagerVersion}); err != nil {
-			return err
-		}
-	}
-
 	existingOperatorVersion, err := version.GetExistingOperatorVersion(config.Spec.Uninstall.StorageOSOperatorNamespace)
 	if err != nil {
 		return err
@@ -90,6 +84,14 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 			return err
 		}
 		log.Successf("Discovered Portal Manager version '%s'.", config.Spec.Uninstall.PortalManagerVersion)
+	}
+
+	if config.Spec.AirGap && config.Spec.Uninstall.PortalManagerVersion == "" {
+		// if no portal manager version could be discovered, portal-manager-version becomes a required
+		// flag for an air-gap uninstall to avoid querying for the latest version.
+		if err := installer.FlagsAreSet(map[string]string{installer.PortalManagerVersionFlag: config.Spec.Install.PortalManagerVersion}); err != nil {
+			return err
+		}
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {

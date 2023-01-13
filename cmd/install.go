@@ -111,7 +111,7 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
-	if err := installer.FlagsAreSet(installFlagsFilter(config, false)); err != nil {
+	if err := installer.FlagsAreSet(installFlagsFilter(config)); err != nil {
 		return err
 	}
 
@@ -379,4 +379,33 @@ func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) 
 	config.Spec.Install.NodeGuardEnv = viper.GetString(installer.NodeGuardEnvConfig)
 
 	return nil
+}
+
+func installFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]string {
+	requiredFlags := make(map[string]string)
+	if config.Spec.Install.EnablePortalManager {
+		requiredFlags[installer.PortalClientIDFlag] = config.Spec.Install.PortalClientID
+		requiredFlags[installer.PortalSecretFlag] = config.Spec.Install.PortalSecret
+		requiredFlags[installer.PortalTenantIDFlag] = config.Spec.Install.PortalTenantID
+		requiredFlags[installer.PortalAPIURLFlag] = config.Spec.Install.PortalAPIURL
+	}
+	if !config.Spec.AirGap {
+		return requiredFlags
+	}
+
+	requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
+
+	if config.Spec.IncludeEtcd {
+		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
+	}
+
+	if config.Spec.IncludeLocalPathProvisioner {
+		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
+	}
+
+	if config.Spec.Install.EnablePortalManager {
+		requiredFlags[installer.PortalManagerVersionFlag] = config.Spec.Install.PortalManagerVersion
+	}
+
+	return requiredFlags
 }
