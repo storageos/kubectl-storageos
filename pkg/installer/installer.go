@@ -26,18 +26,6 @@ import (
 	operatorapi "github.com/storageos/operator/api/v1"
 )
 
-var (
-	// SerialInstall allows the installer to install operators serially not parallel.
-	// This could be change with build flag:
-	// -X github.com/storageos/kubectl-storageos/pkg/installer.SerialInstall=ANY_VALUE
-	SerialInstall string
-	serialInstall bool
-)
-
-func init() {
-	serialInstall = SerialInstall != ""
-}
-
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
 	distribution      pluginutils.Distribution

@@ -38,9 +38,7 @@ func (in *Installer) Install(upgrade bool) error {
 		}
 	}
 
-	// serialInstall can be set via a build flag, whereas Serial is
-	// passed to the plugin via cli flag or config.
-	if serialInstall || in.stosConfig.Spec.Serial || in.stosConfig.Spec.Install.DryRun {
+	if in.stosConfig.Spec.Serial || in.stosConfig.Spec.Install.DryRun {
 		wg.Wait()
 	}
 
@@ -352,9 +350,7 @@ func (in *Installer) installStorageOSOperator() error {
 		}
 	}
 
-	// if serial install has been set either by build flag or by cli config,
-	// set the operator's execution strategy to serial also.
-	if in.stosConfig.Spec.Serial || serialInstall {
+	if in.stosConfig.Spec.Serial {
 		if err := in.setExecutionStrategyForOperatorConfigMap(); err != nil {
 			return err
 		}
