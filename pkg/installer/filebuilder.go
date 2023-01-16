@@ -19,6 +19,10 @@ const errNoURLForAirGap = `
    It must be a local file or locally stored manifest image.
 `
 
+// fsData represents dir name, subdir name, file name and file data.
+// It is used to create the Installer's in-memory file system.
+type fsData map[string]map[string]map[string][]byte
+
 type installerOptions struct {
 	storageosOperator    bool
 	storageosCluster     bool

@@ -47,10 +47,6 @@ func (me multipleErrors) Error() string {
 	return "Multiple errors: \n" + strings.Join(me.errors, "\n---\n")
 }
 
-// fsData represents dir name, subdir name, file name and file data.
-// It is used to create the Installer's in-memory file system.
-type fsData map[string]map[string]map[string][]byte
-
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
 	distribution      pluginutils.Distribution
