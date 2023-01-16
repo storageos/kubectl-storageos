@@ -95,17 +95,17 @@ func uninstallPortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cliInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
+		portalManagerInstaller, err := installer.NewPortalManagerInstaller(config, true, log)
 		if err != nil {
 			return err
 		}
 
-		if err = cliInstaller.EnablePortalManager(false); err != nil {
+		if err = portalManagerInstaller.EnablePortalManager(false); err != nil {
 			return err
 		}
 
 		log.Commencing(uninstallPortal)
-		return cliInstaller.UninstallPortalManager()
+		return portalManagerInstaller.UninstallPortalManager()
 	})
 }
 

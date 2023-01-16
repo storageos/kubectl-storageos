@@ -11,7 +11,10 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
@@ -58,6 +61,70 @@ var protectedNamespaces = map[string]bool{
 	"kube-node-lease": true,
 	"kube-public":     true,
 	"default":         true,
+}
+
+func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
+	setVersionsForOperation(config)
+
+	clientConfig, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	distribution := pluginutils.DetermineDistribution(currentVersion.String())
+
+	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	uninstallPortal := false
+	if stosCluster != nil {
+		uninstallPortal = stosCluster.Spec.EnablePortalManager
+	}
+
+	uninstallerOptions := &installerOptions{
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         uninstallPortal,
+		portalConfig:         uninstallPortal,
+		resourceQuota:        distribution == pluginutils.DistributionGKE,
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
+	}
+
+	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	uninstaller := &Installer{
+		distribution:     distribution,
+		kubectlClient:    kubectlNew(log),
+		clientConfig:     clientConfig,
+		kubeClusterID:    kubesystemNS.GetUID(),
+		stosConfig:       config,
+		fileSys:          fileSys,
+		onDiskFileSys:    filesys.MakeFsOnDisk(),
+		installerOptions: uninstallerOptions,
+		storageOSCluster: stosCluster,
+		log:              log,
+	}
+
+	return uninstaller, nil
 }
 
 // Uninstall performs storageos and etcd uninstallation for kubectl-storageos. Bool 'upgrade'
@@ -218,7 +285,7 @@ func (in *Installer) uninstallStorageOSCluster(upgrade bool) error {
 
 	// if this is not an upgrade, write manifests to disk before deletion
 	if !upgrade {
-		if err = in.writeBackupFileSystem(in.storageOSCluster); err != nil {
+		if err = in.writeBackupFileSystem(); err != nil {
 			return errors.WithStack(err)
 		}
 	}

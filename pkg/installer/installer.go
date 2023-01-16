@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -39,73 +38,6 @@ type Installer struct {
 	dryRunFileCounter int
 	storageOSCluster  *operatorapi.StorageOSCluster
 	log               *logger.Logger
-}
-
-// NewInstaller returns an Installer used for install command
-func NewInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	in, err := newCommonInstaller(config, log)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (in.distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-	in.installerOptions = installerOptions
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.fileSys = fileSys
-
-	return in, nil
-}
-
-// NewPortalManagerInstaller returns an Installer used for all portal manager commands
-func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool, log *logger.Logger) (*Installer, error) {
-	version.SetPortalManagerLatestSupportedVersion(getStringWithDefault(config.Spec.Install.PortalManagerVersion, config.Spec.Uninstall.PortalManagerVersion))
-
-	in, err := newCommonInstaller(config, log)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	installerOptions := &installerOptions{
-		storageosOperator:    false,
-		storageosCluster:     false,
-		portalClient:         manifestsRequired, // manifests are required for install-portal, and uninstall-portal
-		portalConfig:         manifestsRequired, // but not for enable-portal and disable-portal
-		resourceQuota:        false,
-		etcdOperator:         false,
-		etcdCluster:          false,
-		localPathProvisioner: false,
-	}
-	in.installerOptions = installerOptions
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.fileSys = fileSys
-
-	stosCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.storageOSCluster = stosCluster
-
-	return in, nil
 }
 
 // newCommonInstaller contains logic that is common to NewInstaller and NewPortalManagerInstaller
@@ -171,117 +103,6 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 	}
 
 	return installer, nil
-}
-
-// NewDryRunInstaller returns a lightweight Installer object for '--dry-run' enabled commands
-func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	setVersionsForOperation(config)
-
-	installer := &Installer{}
-
-	clientConfig, err := pluginutils.NewClientConfig()
-	if err != nil {
-		return installer, errors.WithStack(err)
-	}
-
-	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
-
-	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
-	if err != nil {
-		return installer, errors.WithStack(err)
-	}
-
-	installer = &Installer{
-		distribution:      distribution,
-		clientConfig:      clientConfig,
-		stosConfig:        config,
-		fileSys:           fileSys,
-		onDiskFileSys:     filesys.MakeFsOnDisk(),
-		installerOptions:  installerOptions,
-		dryRunFileCounter: 0,
-		log:               log,
-	}
-
-	return installer, nil
-}
-
-// NewUninstaller returns an Installer used for uninstall command
-func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	setVersionsForOperation(config)
-
-	uninstaller := &Installer{}
-
-	clientConfig, err := pluginutils.NewClientConfig()
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	distribution := pluginutils.DetermineDistribution(currentVersion.String())
-
-	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return uninstaller, errors.WithStack(err)
-		}
-	}
-
-	uninstallPortal := false
-	if stosCluster != nil {
-		uninstallPortal = stosCluster.Spec.EnablePortalManager
-	}
-
-	uninstallerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         uninstallPortal,
-		portalConfig:         uninstallPortal,
-		resourceQuota:        distribution == pluginutils.DistributionGKE,
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-	uninstaller.installerOptions = uninstallerOptions
-
-	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	uninstaller = &Installer{
-		distribution:     distribution,
-		kubectlClient:    kubectlNew(log),
-		clientConfig:     clientConfig,
-		kubeClusterID:    kubesystemNS.GetUID(),
-		stosConfig:       config,
-		fileSys:          fileSys,
-		onDiskFileSys:    filesys.MakeFsOnDisk(),
-		installerOptions: uninstallerOptions,
-		storageOSCluster: stosCluster,
-		log:              log,
-	}
-
-	return uninstaller, nil
 }
 
 func setVersionsForOperation(config *apiv1.KubectlStorageOSConfig) {
@@ -427,7 +248,7 @@ func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]strin
 }
 
 // writeBackupFileSystem writes manifests of uninstalled secrets, configmaps, storageoscluster and storageclass to disk
-func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.StorageOSCluster) error {
+func (in *Installer) writeBackupFileSystem() error {
 	backupPath, err := in.getBackupPath()
 	if err != nil {
 		return err
@@ -436,7 +257,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return errors.WithStack(err)
 	}
 
-	storageOSClusterManifest, err := storageOSClusterToManifest(storageOSCluster)
+	storageOSClusterManifest, err := storageOSClusterToManifest(in.storageOSCluster)
 	if err != nil {
 		return err
 	}

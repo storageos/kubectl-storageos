@@ -27,51 +27,60 @@ const (
 	`
 )
 
-func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
+type Upgrader struct {
+	installer   *Installer
+	uninstaller *Installer
+}
+
+func NewUpgrader(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Upgrader, error) {
 	// create new installer with in-mem fs of operator and cluster to be installed
-	// use installer to validate etcd-endpoints before going any further
 	installer, err := NewInstaller(installConfig, log)
 	if err != nil {
-		return err
-	}
-	storageOSCluster, err := pluginutils.GetFirstStorageOSCluster(installer.clientConfig)
-	if err != nil {
-		return err
-	}
-
-	// if etcdEndpoints was not passed via config, use that of existing cluster
-	if installConfig.Spec.Install.EtcdEndpoints == "" {
-		installConfig.Spec.Install.EtcdEndpoints = storageOSCluster.Spec.KVBackend.Address
-	}
-
-	// if storageOSClusterNamespace was not passed via config, use that of existing cluster
-	if installConfig.Spec.Install.StorageOSClusterNamespace == "" {
-		// First, check spec.namespace which defines the namespace for storageos installation by storageos/cluster-operator,
-		// (this field is deprecated in storageos/operator). Otherwise, use metadata.Namespace for storageos installation
-		// (default behaviour for storageos/operator).
-		if storageOSCluster.Spec.Namespace != "" {
-			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Spec.Namespace
-		} else {
-			installConfig.Spec.Install.StorageOSClusterNamespace = storageOSCluster.Namespace
-		}
-	}
-
-	if err = installer.handleEndpointsInput(installConfig.Spec); err != nil {
-		return err
+		return nil, err
 	}
 
 	// create uninstaller with in-mem fs of operator and cluster to be uninstalled
 	uninstaller, err := NewUninstaller(uninstallConfig, log)
 	if err != nil {
+		return nil, err
+	}
+
+	upgrader := &Upgrader{
+		installer:   installer,
+		uninstaller: uninstaller,
+	}
+
+	return upgrader, nil
+}
+
+func (u *Upgrader) Upgrade() error {
+	// if etcdEndpoints was not passed via config, use that of existing cluster
+	if u.installer.stosConfig.Spec.Install.EtcdEndpoints == "" {
+		u.installer.stosConfig.Spec.Install.EtcdEndpoints = u.uninstaller.storageOSCluster.Spec.KVBackend.Address
+	}
+
+	// if storageOSClusterNamespace was not passed via config, use that of existing cluster
+	if u.installer.stosConfig.Spec.Install.StorageOSClusterNamespace == "" {
+		// First, check spec.namespace which defines the namespace for storageos installation by storageos/cluster-operator,
+		// (this field is deprecated in storageos/operator). Otherwise, use metadata.Namespace for storageos installation
+		// (default behaviour for storageos/operator).
+		if u.installer.storageOSCluster.Spec.Namespace != "" {
+			u.installer.stosConfig.Spec.Install.StorageOSClusterNamespace = u.uninstaller.storageOSCluster.Spec.Namespace
+		} else {
+			u.installer.stosConfig.Spec.Install.StorageOSClusterNamespace = u.uninstaller.storageOSCluster.Namespace
+		}
+	}
+
+	if err := u.installer.handleEndpointsInput(u.installer.stosConfig.Spec); err != nil {
 		return err
 	}
 
-	if err = uninstaller.prepareForUpgrade(installConfig, uninstallConfig.Spec.Uninstall.StorageOSVersion, installer); err != nil {
+	if err := u.prepareForUpgrade(); err != nil {
 		return err
 	}
 
 	// uninstall existing storageos operator and cluster
-	if err = uninstaller.Uninstall(true); err != nil {
+	if err := u.uninstaller.Uninstall(true); err != nil {
 		return err
 	}
 
@@ -80,45 +89,43 @@ func Upgrade(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1
 	time.Sleep(30 * time.Second)
 
 	// install new storageos operator and cluster
-	err = installer.Install(true)
-
-	return err
+	return u.installer.Install(true)
 }
 
 // prepareForUpgrade performs necessary steps before upgrade commences
-func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConfig, versionToUninstall string, installer *Installer) error {
+func (u *Upgrader) prepareForUpgrade() error {
 	// write storageoscluster, secret and storageclass manifests to disk
-	if err := in.writeBackupFileSystem(in.storageOSCluster); err != nil {
+	if err := u.uninstaller.writeBackupFileSystem(); err != nil {
 		return errors.WithStack(err)
 	}
 
 	// apply the storageclass manifest written to disk (now with finalizer to prevent deletion by operator)
-	if err := in.applyBackupManifestWithFinalizer(stosStorageClassFile); err != nil {
+	if err := u.applyBackupManifestWithFinalizer(stosStorageClassFile); err != nil {
 		return err
 	}
 
 	// if the version being uninstalled during upgrade is that of the 'old' operator (pre v2.5) existing
 	// CSI secrets are applied with finalizer to prevent deletion by operator
-	oldVersion, err := pluginversion.VersionIsLessThanOrEqual(versionToUninstall, pluginversion.ClusterOperatorLastVersion())
+	oldVersion, err := pluginversion.VersionIsLessThanOrEqual(u.uninstaller.stosConfig.Spec.Uninstall.StorageOSVersion, pluginversion.ClusterOperatorLastVersion())
 	if err != nil {
 		return err
 	}
-	if !pluginversion.IsDevelop(versionToUninstall) && oldVersion {
-		if err = in.applyBackupManifestWithFinalizer(csiSecretsFile); err != nil {
+	if !pluginversion.IsDevelop(u.uninstaller.stosConfig.Spec.Uninstall.StorageOSVersion) && oldVersion {
+		if err = u.applyBackupManifestWithFinalizer(csiSecretsFile); err != nil {
 			return err
 		}
 	}
 
-	// if no storageos-cluster.yaml has been passed to the cli, use the backed-up storageos cluster.
-	if installConfig.Spec.Install.StorageOSClusterYaml == "" {
-		if err := in.copyStorageOSClusterToMemory(installer); err != nil {
+	// if no storageos-cluster.yaml has been passed to the cli for installation, use the backed-up storageos cluster.
+	if u.installer.stosConfig.Spec.Install.StorageOSClusterYaml == "" {
+		if err := u.copyStorageOSClusterToMemory(); err != nil {
 			return err
 		}
 	}
 	// discover uninstalled secret username and password for upgrade. Here we use (1) the (un)installer
 	// as it contains the on-disk FS of the uninstalled secrets and (2) the installConfig so we can
 	// set secret username and password in the secret manifest to be installed later
-	err = in.copyStorageOSSecretData(installConfig)
+	err = u.copyStorageOSSecretData()
 
 	return err
 }
@@ -126,18 +133,18 @@ func (in *Installer) prepareForUpgrade(installConfig *apiv1.KubectlStorageOSConf
 // copyStorageOSClusterToMemory takes the (uninstalled) on-disk storageos-cluster manifest and combines it with
 // the installer's in-memory storageos-api secret to create a multi-doc storageos-cluster.yaml. This manifest
 // is written to the installer's in-memory fs for installation. Thus maintaining the original cluster's specs.
-func (in *Installer) copyStorageOSClusterToMemory(installer *Installer) error {
-	backupPath, err := in.getBackupPath()
+func (u *Upgrader) copyStorageOSClusterToMemory() error {
+	backupPath, err := u.uninstaller.getBackupPath()
 	if err != nil {
 		return err
 	}
 
-	onDiskStosClusterManifest, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosClusterFile))
+	onDiskStosClusterManifest, err := u.uninstaller.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosClusterFile))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	inMemStosClusterManifest, err := in.fileSys.ReadFile(filepath.Join(stosDir, clusterDir, stosClusterFile))
+	inMemStosClusterManifest, err := u.uninstaller.fileSys.ReadFile(filepath.Join(stosDir, clusterDir, stosClusterFile))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -150,7 +157,7 @@ func (in *Installer) copyStorageOSClusterToMemory(installer *Installer) error {
 	stosClusterManifest := makeMultiDoc(string(onDiskStosClusterManifest), inMemStosAPISecret)
 
 	// write uninstalled manifest to installer filesystem
-	if err = installer.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest)); err != nil {
+	if err = u.installer.fileSys.WriteFile(filepath.Join(stosDir, clusterDir, stosClusterFile), []byte(stosClusterManifest)); err != nil {
 		return err
 	}
 
@@ -164,13 +171,13 @@ func (in *Installer) copyStorageOSClusterToMemory(installer *Installer) error {
 		Path: "/spec/images",
 	}
 
-	return installer.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, clusterName, []pluginutils.KustomizePatch{removeImagesPatch})
+	return u.installer.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, clusterName, []pluginutils.KustomizePatch{removeImagesPatch})
 }
 
-// copyStorageOSAPIData uses the (un)installer's on-disk filesystem to read the username and password
-// of the storageos secret which is to be uninstalled. This data is then copied to the installConfig so
-// that it can be added to the new storageos secret to be created during the install phase of the upgrade
-func (in *Installer) copyStorageOSAPIData(installConfig *apiv1.KubectlStorageOSConfig, stosSecrets string) error {
+// copyStorageOSAPIData reads the username and password of the storageos secret which is to be uninstalled.
+// This data is then copied to the installConfig so that it can be added to the new storageos secret to be
+// created during the install phase of the upgrade
+func (u *Upgrader) copyStorageOSAPIData(stosSecrets string) error {
 	storageosAPISecret, err := pluginutils.GetManifestFromMultiDocByName(stosSecrets, "storageos-api")
 	if err != nil {
 		return err
@@ -184,8 +191,8 @@ func (in *Installer) copyStorageOSAPIData(installConfig *apiv1.KubectlStorageOSC
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.AdminUsername == "" {
-		installConfig.Spec.Install.AdminUsername = decodedAdminUsername
+	if u.installer.stosConfig.Spec.Install.AdminUsername == "" {
+		u.installer.stosConfig.Spec.Install.AdminUsername = decodedAdminUsername
 	}
 
 	// need to search both apiPassword (pre 2.5.0) and password
@@ -196,18 +203,18 @@ func (in *Installer) copyStorageOSAPIData(installConfig *apiv1.KubectlStorageOSC
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.AdminPassword == "" {
-		installConfig.Spec.Install.AdminPassword = decodedAdminPassword
+	if u.installer.stosConfig.Spec.Install.AdminPassword == "" {
+		u.installer.stosConfig.Spec.Install.AdminPassword = decodedAdminPassword
 	}
 
 	return nil
 }
 
-// copyStorageOSPortalClientData uses the (un)installer's on-disk filesystem to read the portal-username,
-// portal-password, tenant-id and portal-api-url of the portal client secret which is to be uninstalled.
+// copyStorageOSPortalClientData reads the portal-username, portal-password, tenant-id and portal-api-url
+// of the portal client secret which is to be uninstalled.
 // This data is then copied to the installConfig so that it can be added to the new storageos portal client
 // to be created during the install phase of the upgrade
-func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlStorageOSConfig, stosSecrets string) error {
+func (u *Upgrader) copyStorageOSPortalClientData(stosSecrets string) error {
 	storageosPortalClientSecret, err := pluginutils.GetManifestFromMultiDocByName(stosSecrets, "storageos-portal-client")
 	if err != nil {
 		return errors.Wrap(err, errPortalManagerNotFound)
@@ -220,8 +227,8 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalClientID == "" {
-		installConfig.Spec.Install.PortalClientID = decodedPortalClientID
+	if u.installer.stosConfig.Spec.Install.PortalClientID == "" {
+		u.installer.stosConfig.Spec.Install.PortalClientID = decodedPortalClientID
 	}
 
 	decodedPortalSecret, err := pluginutils.GetDecodedManifestField(func() (string, error) {
@@ -231,8 +238,8 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalSecret == "" {
-		installConfig.Spec.Install.PortalSecret = decodedPortalSecret
+	if u.installer.stosConfig.Spec.Install.PortalSecret == "" {
+		u.installer.stosConfig.Spec.Install.PortalSecret = decodedPortalSecret
 	}
 
 	decodedPortalTenantID, err := pluginutils.GetDecodedManifestField(func() (string, error) {
@@ -242,8 +249,8 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalTenantID == "" {
-		installConfig.Spec.Install.PortalTenantID = decodedPortalTenantID
+	if u.installer.stosConfig.Spec.Install.PortalTenantID == "" {
+		u.installer.stosConfig.Spec.Install.PortalTenantID = decodedPortalTenantID
 	}
 
 	decodedPortalAPIURL, err := pluginutils.GetDecodedManifestField(func() (string, error) {
@@ -253,61 +260,61 @@ func (in *Installer) copyStorageOSPortalClientData(installConfig *apiv1.KubectlS
 	if err != nil {
 		return err
 	}
-	if installConfig.Spec.Install.PortalAPIURL == "" {
-		installConfig.Spec.Install.PortalAPIURL = decodedPortalAPIURL
+	if u.installer.stosConfig.Spec.Install.PortalAPIURL == "" {
+		u.installer.stosConfig.Spec.Install.PortalAPIURL = decodedPortalAPIURL
 	}
 
 	return nil
 }
 
-// copyStorageOSSecretData
-func (in *Installer) copyStorageOSSecretData(installConfig *apiv1.KubectlStorageOSConfig) error {
-	backupPath, err := in.getBackupPath()
+// copyStorageOSSecretData discover uninstalled secret username and password for upgrade.
+func (u *Upgrader) copyStorageOSSecretData() error {
+	backupPath, err := u.uninstaller.getBackupPath()
 	if err != nil {
 		return err
 	}
-	stosSecrets, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosSecretsFile))
+	stosSecrets, err := u.uninstaller.onDiskFileSys.ReadFile(filepath.Join(backupPath, stosSecretsFile))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	if err := in.copyStorageOSAPIData(installConfig, string(stosSecrets)); err != nil {
+	if err := u.copyStorageOSAPIData(string(stosSecrets)); err != nil {
 		return err
 	}
 
 	// return early if enable-portal-manager is not set
-	if !installConfig.Spec.Install.EnablePortalManager {
+	if !u.installer.stosConfig.Spec.Install.EnablePortalManager {
 		return nil
 	}
 	// if all portal-manager flags have been set, return without reading back-up secret for portal data
 	// as values passed by flag take precedent
 	if err = FlagsAreSet(map[string]string{
-		PortalClientIDFlag: in.stosConfig.Spec.Install.PortalClientID,
-		PortalSecretFlag:   in.stosConfig.Spec.Install.PortalSecret,
-		PortalTenantIDFlag: in.stosConfig.Spec.Install.PortalTenantID,
-		PortalAPIURLFlag:   in.stosConfig.Spec.Install.PortalAPIURL,
+		PortalClientIDFlag: u.uninstaller.stosConfig.Spec.Install.PortalClientID,
+		PortalSecretFlag:   u.uninstaller.stosConfig.Spec.Install.PortalSecret,
+		PortalTenantIDFlag: u.uninstaller.stosConfig.Spec.Install.PortalTenantID,
+		PortalAPIURLFlag:   u.uninstaller.stosConfig.Spec.Install.PortalAPIURL,
 	}); err == nil {
 		return nil
 	}
 
 	// log this error as a warning only, as the user may have intentionally
 	// not set portal flags so that existing data is used instead.
-	in.log.Warn(err.Error())
+	u.uninstaller.log.Warn(err.Error())
 
 	// warn user that existing portal data will be copied.
-	in.log.Warn(outputCopyingPortalData)
+	u.uninstaller.log.Warn(outputCopyingPortalData)
 
-	return in.copyStorageOSPortalClientData(installConfig, string(stosSecrets))
+	return u.copyStorageOSPortalClientData(string(stosSecrets))
 }
 
-// applyBackupManifest applies file from the (un)installer's on-disk filesystem with finalizer
-func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
-	backupPath, err := in.getBackupPath()
+// applyBackupManifest applies file from the uninstaller's on-disk filesystem with finalizer
+func (u *Upgrader) applyBackupManifestWithFinalizer(file string) error {
+	backupPath, err := u.uninstaller.getBackupPath()
 	if err != nil {
 		return err
 	}
 
-	multidoc, err := in.onDiskFileSys.ReadFile(filepath.Join(backupPath, file))
+	multidoc, err := u.uninstaller.onDiskFileSys.ReadFile(filepath.Join(backupPath, file))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -330,7 +337,7 @@ func (in *Installer) applyBackupManifestWithFinalizer(file string) error {
 			return err
 		}
 
-		if err = in.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true); err != nil {
+		if err = u.uninstaller.kubectlClient.Apply(context.TODO(), "", string(manifestWithFinaliser), true); err != nil {
 			return errors.WithStack(err)
 		}
 	}

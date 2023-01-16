@@ -181,7 +181,12 @@ func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *ap
 	}
 
 	log.Commencing(upgrade)
-	return installer.Upgrade(uninstallConfig, installConfig, log)
+	upgrader, err := installer.NewUpgrader(uninstallConfig, installConfig, log)
+	if err != nil {
+		return err
+	}
+
+	return upgrader.Upgrade()
 }
 
 func setUpgradeInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

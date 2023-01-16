@@ -7,8 +7,44 @@ import (
 
 	"github.com/pkg/errors"
 
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
+	"github.com/storageos/kubectl-storageos/pkg/version"
 )
+
+// NewPortalManagerInstaller returns an Installer used for all portal manager commands
+func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool, log *logger.Logger) (*Installer, error) {
+	version.SetPortalManagerLatestSupportedVersion(getStringWithDefault(config.Spec.Install.PortalManagerVersion, config.Spec.Uninstall.PortalManagerVersion))
+
+	portalManagerInstaller, err := newCommonInstaller(config, log)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	portalManagerInstaller.installerOptions = &installerOptions{
+		storageosOperator:    false,
+		storageosCluster:     false,
+		portalClient:         manifestsRequired, // manifests are required for install-portal, and uninstall-portal
+		portalConfig:         manifestsRequired, // but not for enable-portal and disable-portal
+		resourceQuota:        false,
+		etcdOperator:         false,
+		etcdCluster:          false,
+		localPathProvisioner: false,
+	}
+
+	portalManagerInstaller.fileSys, err = portalManagerInstaller.installerOptions.buildInstallerFileSys(config, portalManagerInstaller.clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	portalManagerInstaller.storageOSCluster, err = pluginutils.GetFirstStorageOSCluster(portalManagerInstaller.clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return portalManagerInstaller, nil
+}
 
 // EnablePortalManager applies the existing storageoscluster with enablePortalManager set to value of 'enable'.
 func (in *Installer) EnablePortalManager(enable bool) error {
@@ -34,6 +70,32 @@ func (in *Installer) EnablePortalManager(enable bool) error {
 	return in.kustomizeAndApply(filepath.Join(stosDir, clusterDir), stosClusterFile)
 }
 
+// InstallPortalManager installs portal manager necessary components.
+func (in *Installer) InstallPortalManager() error {
+	if err := in.installPortalManagerClient(in.storageOSCluster.Namespace); err != nil {
+		return err
+	}
+	return in.installPortalManagerConfig(in.storageOSCluster.Namespace)
+}
+
+// UninstallPortalManager writes backup-filestem and uninstalls portal manager components.
+func (in *Installer) UninstallPortalManager() error {
+	if err := in.writeBackupFileSystem(); err != nil {
+		return err
+	}
+
+	stosClusterNamespace := in.storageOSCluster.Namespace
+	if stosClusterNamespace != "" {
+		stosClusterNamespace = in.stosConfig.Spec.GetOperatorNamespace()
+	}
+
+	if err := in.uninstallPortalManagerConfig(stosClusterNamespace); err != nil {
+		return err
+	}
+
+	return in.uninstallPortalManagerClient(stosClusterNamespace)
+}
+
 func (in *Installer) enablePortalManager(storageOSClusterName string, enable bool) error {
 	enablePortalManagerPatch := pluginutils.KustomizePatch{
 		Op:    "replace",
@@ -42,14 +104,6 @@ func (in *Installer) enablePortalManager(storageOSClusterName string, enable boo
 	}
 
 	return in.addPatchesToFSKustomize(filepath.Join(stosDir, clusterDir, kustomizationFile), stosClusterKind, storageOSClusterName, []pluginutils.KustomizePatch{enablePortalManagerPatch})
-}
-
-// InstallPortalManager installs portal manager necessary components.
-func (in *Installer) InstallPortalManager() error {
-	if err := in.installPortalManagerClient(in.storageOSCluster.Namespace); err != nil {
-		return err
-	}
-	return in.installPortalManagerConfig(in.storageOSCluster.Namespace)
 }
 
 func (in *Installer) installPortalManagerConfig(stosClusterNamespace string) error {
@@ -104,24 +158,6 @@ func buildStringForKustomize(clientID, password, portalURL, tenantID string) str
 		"URL", "=", portalURL, ",",
 		"TENANT_ID", "=", tenantID,
 		"]")
-}
-
-// UninstallPortalManager writes backup-filestem and uninstalls portal manager components.
-func (in *Installer) UninstallPortalManager() error {
-	if err := in.writeBackupFileSystem(in.storageOSCluster); err != nil {
-		return err
-	}
-
-	stosClusterNamespace := in.storageOSCluster.Namespace
-	if stosClusterNamespace != "" {
-		stosClusterNamespace = in.stosConfig.Spec.GetOperatorNamespace()
-	}
-
-	if err := in.uninstallPortalManagerConfig(stosClusterNamespace); err != nil {
-		return err
-	}
-
-	return in.uninstallPortalManagerClient(stosClusterNamespace)
 }
 
 func (in *Installer) uninstallPortalManagerClient(storageOSClusterNamespace string) error {
