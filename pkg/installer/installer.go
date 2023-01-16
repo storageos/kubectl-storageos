@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ondat/operator-toolkit/declarative/applier"
 	"github.com/ondat/operator-toolkit/declarative/deleter"
@@ -37,14 +36,6 @@ var (
 
 func init() {
 	serialInstall = SerialInstall != ""
-}
-
-type multipleErrors struct {
-	errors []string
-}
-
-func (me multipleErrors) Error() string {
-	return "Multiple errors: \n" + strings.Join(me.errors, "\n---\n")
 }
 
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process

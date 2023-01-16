@@ -280,6 +280,14 @@ func separateSecrets(secretList *corev1.SecretList) (*corev1.SecretList, *corev1
 	return stosSecretList, csiSecretList
 }
 
+type multipleErrors struct {
+	errors []string
+}
+
+func (me multipleErrors) Error() string {
+	return "Multiple errors: \n" + strings.Join(me.errors, "\n---\n")
+}
+
 // collectErrors collects all errors on the channel
 func collectErrors(errChan <-chan error) error {
 	mErr := multipleErrors{
