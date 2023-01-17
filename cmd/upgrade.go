@@ -333,6 +333,10 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 		if err != nil {
 			return err
 		}
+		config.Spec.AirGap, err = cmd.Flags().GetBool(installer.AirGapFlag)
+		if err != nil {
+			return err
+		}
 
 		config.Spec.IncludeEtcd = false
 		config.Spec.Uninstall.StorageOSVersion = cmd.Flags().Lookup(uninstallStosVersionFlag).Value.String()
@@ -352,6 +356,7 @@ func setUpgradeUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageO
 	config.Spec.IncludeEtcd = false
 	config.Spec.SkipStorageOSCluster = viper.GetBool(installer.SkipStosClusterConfig)
 	config.Spec.Serial = viper.GetBool(installer.SerialConfig)
+	config.Spec.AirGap = viper.GetBool(installer.AirGapConfig)
 	config.Spec.Uninstall.StorageOSVersion = viper.GetString(installer.UninstallStosVersionConfig)
 	config.Spec.Uninstall.PortalManagerVersion = viper.GetString(installer.UninstallPortalManagerVersionConfig)
 	config.Spec.Uninstall.StorageOSOperatorNamespace = viper.GetString(installer.UninstallStosOperatorNSConfig)
