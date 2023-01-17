@@ -111,7 +111,7 @@ func (in *Installer) Install(upgrade bool) error {
 			errChan <- in.installEtcd()
 		}()
 	} else if !upgrade {
-		if err := in.handleEndpointsInput(in.stosConfig.Spec); err != nil {
+		if err := in.handleEndpointsInput(); err != nil {
 			return err
 		}
 	}

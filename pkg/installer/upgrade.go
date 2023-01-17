@@ -71,7 +71,7 @@ func (u *Upgrader) Upgrade() error {
 		}
 	}
 
-	if err := u.installer.handleEndpointsInput(u.installer.stosConfig.Spec); err != nil {
+	if err := u.installer.handleEndpointsInput(); err != nil {
 		return err
 	}
 
