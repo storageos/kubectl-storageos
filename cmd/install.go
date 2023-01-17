@@ -111,6 +111,10 @@ func InstallCmd() *cobra.Command {
 func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error {
 	log.Verbose = config.Spec.Verbose
 
+	if config.Spec.AirGap {
+		log.Warn(airGapInstallWarning)
+	}
+
 	if err := installer.FlagsAreSet(installFlagsFilter(config)); err != nil {
 		return err
 	}

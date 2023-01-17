@@ -17,6 +17,16 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
+const airGapInstallWarning = `To install in an air-gap environment, there are some initial steps that are recomended.
+
+- Generate the necessary manifests using the --dry-run flag.
+- Update all of the container images to point to the air-gap registry - all of these images will need to be pulled,
+  tagged and pushed to the air-gap repository ahead of the actual install. 
+
+To find out more please see the documentation page https://docs.ondat.io/docs/install/airgap/
+
+`
+
 // etcdEndpointsPrompt uses promptui to prompt the user to enter etcd endpoints. The internal validate
 // func is run on each character as it is entered as per the regexp - it does not refer to actual
 // endpoint validation which is handled later.

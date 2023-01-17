@@ -133,6 +133,10 @@ func UpgradeCmd() *cobra.Command {
 func upgradeCmd(uninstallConfig *apiv1.KubectlStorageOSConfig, installConfig *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHasSet bool, log *logger.Logger) error {
 	log.Verbose = uninstallConfig.Spec.Verbose
 
+	if installConfig.Spec.AirGap {
+		log.Warn(airGapInstallWarning)
+	}
+
 	if err := installer.FlagsAreSet(upgradeFlagsFilter(uninstallConfig, installConfig)); err != nil {
 		return err
 	}
