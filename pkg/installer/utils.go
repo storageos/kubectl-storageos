@@ -20,7 +20,13 @@ import (
 	operatorapi "github.com/storageos/operator/api/v1"
 )
 
-const errFlagsNotSet = "The following flags have not been set and are required to perform this operation:"
+const (
+	errFlagsNotSet = "The following flags have not been set and are required to perform this operation:"
+
+	versionInstruction = `
+All versions should be of the format "v.x.y.z", where x, y and z are the semantic version numbers. For example "v2.10.0".
+`
+)
 
 // splitMultiDoc splits a single multidoc manifest into multiple manifests
 func splitMultiDoc(multidoc string) []string {
@@ -301,25 +307,34 @@ func collectErrors(errChan <-chan error) error {
 }
 
 // FlagsAreSet takes a map[string]string of flag-name:flag-value and returns an error listing
-// all flag-names in 'flags' map that have not been set.
+// all flag-names in 'flags' map that have not been set along with useful output on versions.
 func FlagsAreSet(flags map[string]string) error {
 	missingFlags := make([]string, 0)
+	displayVersionInstruction := false
 	for flagName, flagValue := range flags {
 		if flagValue == "" {
 			// if any version flags are missing, add a message to the output string pointing
 			// the user to the releases for the missing version flag.
 			if flagName == StosVersionFlag {
 				flagName += " (See " + pluginversion.OperatorReleasesURL() + " for StorageOS Versions)."
+				displayVersionInstruction = true
 			} else if flagName == EtcdOperatorVersionFlag {
 				flagName += " (See " + pluginversion.EtcdOperatorReleasesURL() + " for ETCD Operator Versions)."
+				displayVersionInstruction = true
 			} else if flagName == PortalManagerVersionFlag {
 				flagName += " (See " + pluginversion.PortalManagerReleasesURL() + " for Portal Manager Versions)."
+				displayVersionInstruction = true
 			}
 			missingFlags = append(missingFlags, flagName)
 		}
 	}
-	if len(missingFlags) != 0 {
-		return fmt.Errorf(errFlagsNotSet + "\n   --" + strings.Join(missingFlags, "\n   --"))
+	if len(missingFlags) == 0 {
+		return nil
 	}
-	return nil
+	errStr := errFlagsNotSet + "\n   --" + strings.Join(missingFlags, "\n   --")
+	if displayVersionInstruction {
+		errStr += "\n   " + versionInstruction
+	}
+
+	return fmt.Errorf(errStr)
 }
