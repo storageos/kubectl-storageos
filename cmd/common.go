@@ -17,7 +17,7 @@ import (
 	"github.com/storageos/kubectl-storageos/pkg/version"
 )
 
-const airGapInstallWarning = `To install in an air-gap environment, there are some initial steps that are recomended.
+const airGapInstallWarning = `To install in an air-gap environment, there are some initial steps that are recommended.
 
 - Generate the necessary manifests using the --dry-run flag.
 - Update all of the container images to point to the air-gap registry - all of these images will need to be pulled,
