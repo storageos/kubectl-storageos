@@ -64,7 +64,7 @@ func (u *Upgrader) Upgrade() error {
 		// First, check spec.namespace which defines the namespace for storageos installation by storageos/cluster-operator,
 		// (this field is deprecated in storageos/operator). Otherwise, use metadata.Namespace for storageos installation
 		// (default behaviour for storageos/operator).
-		if u.installer.storageOSCluster.Spec.Namespace != "" {
+		if u.uninstaller.storageOSCluster.Spec.Namespace != "" {
 			u.installer.stosConfig.Spec.Install.StorageOSClusterNamespace = u.uninstaller.storageOSCluster.Spec.Namespace
 		} else {
 			u.installer.stosConfig.Spec.Install.StorageOSClusterNamespace = u.uninstaller.storageOSCluster.Namespace
