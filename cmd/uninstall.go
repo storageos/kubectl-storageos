@@ -105,8 +105,9 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 		if err != nil {
 			// unable to get portal manager version. It may not exist, so just log a warning and continue.
 			log.Warnf("%s. Continuing uninstall.", err.Error())
+		} else {
+			log.Successf("Discovered Portal Manager version '%s'.", config.Spec.Uninstall.PortalManagerVersion)
 		}
-		log.Successf("Discovered Portal Manager version '%s'.", config.Spec.Uninstall.PortalManagerVersion)
 	}
 
 	if config.Spec.IncludeEtcd {
