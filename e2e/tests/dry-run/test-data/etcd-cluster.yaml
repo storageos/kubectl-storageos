@@ -60,4 +60,4 @@ spec:
     enabled: false
     storageOSClusterNamespace: storageos
     storageOSEtcdSecretName: storageos-etcd-secret
-  version: 3.5.4
+  version: 3.5.6
