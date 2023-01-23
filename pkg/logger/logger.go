@@ -41,6 +41,14 @@ func (l *Logger) Infof(message string, args ...interface{}) {
 	}
 }
 
+func (l *Logger) Print(message string) {
+	l.print(message)
+}
+
+func (l *Logger) Printf(message string, args ...interface{}) {
+	l.print(message, args...)
+}
+
 func (l *Logger) Warn(message string) {
 	l.println(l.formatWithIcon(promptui.IconWarn, message))
 }
@@ -63,6 +71,12 @@ func (l *Logger) Success(message string) {
 
 func (l *Logger) Successf(message string, args ...interface{}) {
 	l.println(l.formatWithIcon(promptui.IconGood, message), args...)
+}
+
+func (l *Logger) print(message string, args ...interface{}) {
+	l.writerMu.Lock()
+	defer l.writerMu.Unlock()
+	fmt.Fprint(l.Writer, fmt.Sprintf(message, args...))
 }
 
 func (l *Logger) println(message string, args ...interface{}) {

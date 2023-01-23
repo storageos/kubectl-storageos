@@ -21,7 +21,6 @@ func ForwardToCLIPod(log *logger.Logger, command []string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	log.Verbose = true
 
 	cliPodNamespace, err := getCLIPodNamespace(clientConfig)
 	if err != nil {
@@ -35,10 +34,10 @@ func ForwardToCLIPod(log *logger.Logger, command []string) error {
 
 	stdout, stderr, err := pluginutils.ExecToPod(clientConfig, command, "", cliPodName, cliPodNamespace, nil)
 	if stdout != "" {
-		log.Info(stdout)
+		log.Print(stdout)
 	}
 	if stderr != "" {
-		log.Info(stderr)
+		log.Print(stderr)
 	}
 
 	return err
