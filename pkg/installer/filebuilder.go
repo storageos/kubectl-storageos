@@ -368,7 +368,7 @@ func (fb *fileBuilder) readOrPullManifest(config *apiv1.KubectlStorageOSConfig) 
 		}
 	}
 
-	return "", errors.WithStack(fmt.Errorf("could not retrieve file %s from local path, remote url or docker repo", fb.fileName))
+	return "", errors.WithStack(fmt.Errorf("failed to retrieve file %s from %s - please ensure that this is a valid local path, remote url or docker image", fb.fileName, location))
 }
 
 func (fb *fileBuilder) getManifestFromPath(location string) (string, error) {
