@@ -112,7 +112,7 @@ func GetExistingOperatorVersion(namespace string) (string, error) {
 		stosDeployment, errNew = clientset.AppsV1().Deployments(newNS).Get(context.TODO(), consts.NewOperatorName, metav1.GetOptions{})
 		if errNew != nil {
 			errNew = errors.Wrap(errNew, errOld.Error())
-			return "", errors.Wrap(errNew, "unable to detect existing StorageOS version")
+			return "", errors.Wrap(errNew, "Unable to detect existing StorageOS version")
 		}
 	}
 	imageName := stosDeployment.Spec.Template.Spec.Containers[0].Image
@@ -146,7 +146,7 @@ func GetExistingPortalManagerVersion() (string, error) {
 	}
 	portalManagerDeployment, err := clientset.AppsV1().Deployments(stosCluster.Namespace).Get(context.TODO(), consts.PortalManagerName, metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "unable to detect existing Portal Manager version")
+		return "", errors.Wrap(err, "Unable to detect existing Portal Manager version")
 	}
 	imageName := portalManagerDeployment.Spec.Template.Spec.Containers[0].Image
 	splitImageName := strings.SplitAfter(imageName, ":")
@@ -170,7 +170,7 @@ func GetExistingEtcdOperatorVersion(namespace string) (string, error) {
 	}
 	etcdDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), consts.EtcdOperatorName, metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "unable to detect existing StorageOS ETCD Operator version")
+		return "", errors.Wrap(err, "Unable to detect existing StorageOS ETCD Operator version")
 	}
 	imageName := etcdDeployment.Spec.Template.Spec.Containers[0].Image
 	splitImageName := strings.SplitAfter(imageName, ":")
