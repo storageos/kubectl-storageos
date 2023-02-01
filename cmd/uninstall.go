@@ -271,22 +271,22 @@ func uninstallFlagsFilter(config *apiv1.KubectlStorageOSConfig) map[string]strin
 		return requiredFlags
 	}
 
-	if config.Spec.Install.StorageOSVersion == "" {
+	if config.Spec.Uninstall.StorageOSVersion == "" {
 		// no stos version was found in the cluster, so it becomes a requirement
 		// for an air-gap uninstall to avoid querying for the latest version.
-		requiredFlags[installer.StosVersionFlag] = config.Spec.Install.StorageOSVersion
+		requiredFlags[installer.StosVersionFlag] = config.Spec.Uninstall.StorageOSVersion
 	}
 
-	if config.Spec.IncludeEtcd && config.Spec.Install.EtcdOperatorVersion == "" {
+	if config.Spec.IncludeEtcd && config.Spec.Uninstall.EtcdOperatorVersion == "" {
 		// no etcd-operator version was found in the cluster, so it becomes a requirement
 		// for an air-gap uninstall to avoid querying for the latest version.
-		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Install.EtcdOperatorVersion
+		requiredFlags[installer.EtcdOperatorVersionFlag] = config.Spec.Uninstall.EtcdOperatorVersion
 	}
 
 	if config.Spec.IncludeLocalPathProvisioner {
 		// local path provisioner spec is pulled from a URL, so it becomes a requirement for
 		// an air-gap uninstall to avoid download attempt.
-		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Install.LocalPathProvisionerYaml
+		requiredFlags[installer.LocalPathProvisionerYamlFlag] = config.Spec.Uninstall.LocalPathProvisionerYaml
 	}
 
 	return requiredFlags
