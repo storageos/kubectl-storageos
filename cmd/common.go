@@ -20,8 +20,8 @@ import (
 const airGapInstallWarning = `To install in an air-gap environment, there are some initial steps that are recommended.
 
 - Generate the necessary manifests using the --dry-run flag.
-- Update all of the container images to point to the air-gap registry - all of these images will need to be pulled,
-  tagged and pushed to the air-gap repository ahead of the actual install. 
+- Update all of the container images to point to the air-gap registry. All of these images, along with a couple more
+  listed on our docs, will need to be pulled, tagged and pushed to the air-gap repository ahead of the actual install. 
 
 To find out more please see the documentation page https://docs.ondat.io/docs/install/airgap/
 
