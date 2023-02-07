@@ -235,18 +235,21 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 
 		// use dummy key/value pair 'foo'/'bar' to write to, read from & delete from etcd
 		// in order to validate each endpoint
+		//
+		// for these execs we hide the output since we only care about the returned code -
+		// operation being successfull - and don't any much value
 		key, value := "foo", "bar"
-		err := pluginutils.ExecToPod(in.clientConfig, etcdctlPutCmd(endpoint, key, value, tls), "", etcdShellPodName, etcdShellPodNS, nil)
+		err := pluginutils.ExecToPod(in.clientConfig, etcdctlPutCmd(endpoint, key, value, tls), "", etcdShellPodName, etcdShellPodNS, nil, false)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}
 
-		err = pluginutils.ExecToPod(in.clientConfig, etcdctlGetCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil)
+		err = pluginutils.ExecToPod(in.clientConfig, etcdctlGetCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil, false)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}
 
-		err = pluginutils.ExecToPod(in.clientConfig, etcdctlDelCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil)
+		err = pluginutils.ExecToPod(in.clientConfig, etcdctlDelCmd(endpoint, key, tls), "", etcdShellPodName, etcdShellPodNS, nil, false)
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintf("%s%v", errStr, err))
 		}

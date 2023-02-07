@@ -116,8 +116,9 @@ func GetKubernetesVersion(config *rest.Config) (*kversion.Info, error) {
 // ExecToPod execs into a pod and executes command from inside that pod.
 // containerName can be "" if the pod contains only a single container.
 //
-// Returnes both STDOUT and STDERR as strings.
-func ExecToPod(config *rest.Config, command []string, containerName, podName, namespace string, stdin io.Reader) error {
+// Allows for the output from the pod to be printed or hidden. When printed
+// it happens as soon as the buffers get any bytes back (real time).
+func ExecToPod(config *rest.Config, command []string, containerName, podName, namespace string, stdin io.Reader, showOutput bool) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
 		return err
@@ -147,7 +148,9 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	}
 
 	var stderr bytes.Buffer
-	l := &LogBuffer{}
+	l := &LogBuffer{
+		showOutput: showOutput,
+	}
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  stdin,
 		Stdout: l,
@@ -169,10 +172,14 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 // "real time" as possible.
 // Using this method we don't have to wai for CLI commands to finish before
 // being able to print the buffers (stdout/err).
-type LogBuffer struct{}
+type LogBuffer struct {
+	showOutput bool
+}
 
 func (l *LogBuffer) Write(p []byte) (int, error) {
-	fmt.Print(string(p))
+	if l.showOutput {
+		fmt.Print(string(p))
+	}
 	return len(p), nil
 }
 
