@@ -143,7 +143,7 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		return errors.WithStack(fmt.Errorf("error while creating Executor: %v", err))
+		return errors.WithStack(fmt.Errorf("error creating Executor: %v", err))
 	}
 
 	var stderr bytes.Buffer
@@ -164,10 +164,10 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 	return nil
 }
 
-// LogBuffer is a customer implementation of the io.Writer interface that logs
+// LogBuffer is a custom implementation of the io.Writer interface that logs
 // what's on the buffer on every Write thus printing its contents as close to
 // "real time" as possible.
-// Through this method we don't have to wai for CLI commands to finish before
+// Using this method we don't have to wai for CLI commands to finish before
 // being able to print the buffers (stdout/err).
 type LogBuffer struct{}
 
