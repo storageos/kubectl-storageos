@@ -117,10 +117,10 @@ func GetKubernetesVersion(config *rest.Config) (*kversion.Info, error) {
 // containerName can be "" if the pod contains only a single container.
 //
 // Returnes both STDOUT and STDERR as strings.
-func ExecToPod(config *rest.Config, command []string, containerName, podName, namespace string, stdin io.Reader) (string, string, error) {
+func ExecToPod(config *rest.Config, command []string, containerName, podName, namespace string, stdin io.Reader) error {
 	clientset, err := GetClientsetFromConfig(config)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
@@ -129,7 +129,7 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 		SubResource("exec")
 	scheme := runtime.NewScheme()
 	if err := corev1.AddToScheme(scheme); err != nil {
-		return "", "", errors.WithStack(fmt.Errorf("error adding to scheme: %v", err))
+		return errors.WithStack(fmt.Errorf("error adding to scheme: %v", err))
 	}
 
 	parameterCodec := runtime.NewParameterCodec(scheme)
@@ -139,25 +139,41 @@ func ExecToPod(config *rest.Config, command []string, containerName, podName, na
 		Stdin:     stdin != nil,
 		Stdout:    true,
 		Stderr:    true,
-		TTY:       false,
 	}, parameterCodec)
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
 	if err != nil {
-		return "", "", errors.WithStack(fmt.Errorf("error while creating Executor: %v", err))
+		return errors.WithStack(fmt.Errorf("error creating Executor: %v", err))
 	}
 
-	var stdout, stderr bytes.Buffer
-	if err = exec.Stream(remotecommand.StreamOptions{
+	var stderr bytes.Buffer
+	l := &LogBuffer{}
+	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  stdin,
-		Stdout: &stdout,
+		Stdout: l,
 		Stderr: &stderr,
-		Tty:    false,
-	}); err != nil {
-		return stdout.String(), stderr.String(), errors.WithStack(fmt.Errorf("error in Stream: %v", err))
+	})
+	if err != nil {
+		if stderr.String() != "" {
+			// cli returned an error
+			return fmt.Errorf(stderr.String())
+		}
+		// error from the exec cmd
+		return err
 	}
+	return nil
+}
 
-	return stdout.String(), stderr.String(), nil
+// LogBuffer is a custom implementation of the io.Writer interface that logs
+// what's on the buffer on every Write thus printing its contents as close to
+// "real time" as possible.
+// Using this method we don't have to wai for CLI commands to finish before
+// being able to print the buffers (stdout/err).
+type LogBuffer struct{}
+
+func (l *LogBuffer) Write(p []byte) (int, error) {
+	fmt.Print(string(p))
+	return len(p), nil
 }
 
 func FetchPodLogs(config *rest.Config, name, namespace string) (string, error) {
