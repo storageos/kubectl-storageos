@@ -237,7 +237,7 @@ func (in *Installer) etcdctlHealthCheck(etcdShellPodName, etcdShellPodNS string,
 		// in order to validate each endpoint
 		//
 		// for these execs we hide the output since we only care about the returned code -
-		// operation being successfull - and don't any much value
+		// operation being successful - and don't any much value
 		key, value := "foo", "bar"
 		err := pluginutils.ExecToPod(in.clientConfig, etcdctlPutCmd(endpoint, key, value, tls), "", etcdShellPodName, etcdShellPodNS, nil, false)
 		if err != nil {
