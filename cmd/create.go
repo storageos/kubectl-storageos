@@ -16,8 +16,12 @@ func CreateCmd() *cobra.Command {
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 		DisableFlagParsing: true,
 
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return forwarder.ForwardToCLIPod(logger.NewLogger(), storageosCommand(cmd, args))
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			err := forwarder.ForwardToCLIPod(logger, storageosCommand(cmd, args))
+			if err != nil {
+				logger.Error(err.Error())
+			}
 		},
 	}
 
