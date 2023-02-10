@@ -47,7 +47,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/ondat/operator-toolkit v0.0.0-20221205143413-92680f1a39a5
+	github.com/ondat/operator-toolkit v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.43.1
 	github.com/spf13/cobra v1.6.0
