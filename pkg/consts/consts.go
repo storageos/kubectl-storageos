@@ -23,4 +23,6 @@ const (
 
 	VersionRegex    = "v?([0-9]+.[0-9]+.[0-9]+)"
 	ShaVersionRegex = "^[a-fA-F0-9]+$"
+
+	DefaultStorageOSEndpoint = "http://localhost:5705"
 )
