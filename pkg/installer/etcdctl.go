@@ -104,7 +104,8 @@ func etcdctlGetCmd(endpoints, key string, tls bool) []string {
 // {`/bin/bash`, `-c`, `etcdctl --endpoints "http://<endpoints>" del foo`}
 func etcdctlDelCmd(endpoints, key string, tls bool) []string {
 	if tls {
-		return []string{"etcdctl",
+		return []string{
+			"etcdctl",
 			"--endpoints",
 			endpoints,
 			"--key",

@@ -306,7 +306,7 @@ func (in *Installer) uninstallEtcd() error {
 
 func (in *Installer) uninstallEtcdCluster() error {
 	// make changes etcd/cluster/kustomization.yaml based on flags (or cli config file) before
-	//kustomizeAndDelete call
+	// kustomizeAndDelete call
 	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, clusterDir, kustomizationFile), in.stosConfig.Spec.Uninstall.EtcdNamespace, "namespace", ""); err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ func (in *Installer) uninstallEtcdCluster() error {
 
 func (in *Installer) uninstallEtcdOperator() error {
 	// make changes etcd/operator/kustomization.yaml based on flags (or cli config file) before
-	//kustomizeAndDelete call
+	// kustomizeAndDelete call
 	if err := in.setFieldInFsManifest(filepath.Join(etcdDir, operatorDir, kustomizationFile), in.stosConfig.Spec.Uninstall.EtcdNamespace, "namespace", ""); err != nil {
 		return err
 	}

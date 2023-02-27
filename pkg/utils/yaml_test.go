@@ -875,7 +875,8 @@ spec:
 
 `,
 			kind: "Deployment",
-			expManifests: []string{`apiVersion: apps/v1
+			expManifests: []string{
+				`apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -915,7 +916,8 @@ spec:
       - name: test
         image: test
 
-`},
+`,
+			},
 			expError: false,
 		},
 	}

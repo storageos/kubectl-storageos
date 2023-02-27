@@ -41,7 +41,7 @@ func writeVersionFile(path string) error {
 	}
 
 	filename := filepath.Join(path, VersionFilename)
-	err = os.WriteFile(filename, b, 0644)
+	err = os.WriteFile(filename, b, 0o644)
 	if err != nil {
 		return err
 	}

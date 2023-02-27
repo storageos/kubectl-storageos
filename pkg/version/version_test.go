@@ -126,7 +126,6 @@ func TestIsSupported(t *testing.T) {
 			t.Parallel()
 
 			actual, err := IsSupported(tt.haveVersion, tt.wantVersion)
-
 			if err != nil {
 				t.Errorf("error not allowed: %s", err.Error())
 			}

@@ -39,12 +39,12 @@ func (w *dryRunWriter) writeDryRunManifests(filename string, fileData []byte) er
 			w.path = fmt.Sprintf("%s-%d", stosDryRunDir, time.Now().UnixNano())
 		}
 
-		if err = os.Mkdir(filepath.Join(cwd, w.path), 0770); err != nil {
+		if err = os.Mkdir(filepath.Join(cwd, w.path), 0o770); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
-	if err := os.WriteFile(filepath.Join(cwd, w.path, filename), fileData, 0640); err != nil {
+	if err := os.WriteFile(filepath.Join(cwd, w.path, filename), fileData, 0o640); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

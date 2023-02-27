@@ -38,7 +38,7 @@ func findFileName(basename, extension string) (string, error) {
 }
 
 func writeFile(filename string, contents []byte) error {
-	if err := os.WriteFile(filename, contents, 0644); err != nil {
+	if err := os.WriteFile(filename, contents, 0o644); err != nil {
 		return err
 	}
 
