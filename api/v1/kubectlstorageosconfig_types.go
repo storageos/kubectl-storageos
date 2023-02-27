@@ -61,8 +61,7 @@ func (spec *KubectlStorageOSConfigSpec) GetETCDValidationNamespace() (namespace 
 }
 
 // KubectlStorageOSConfigStatus defines the observed state of KubectlStorageOSConfig
-type KubectlStorageOSConfigStatus struct {
-}
+type KubectlStorageOSConfigStatus struct{}
 
 // Install defines options for cli install subcommand
 type Install struct {

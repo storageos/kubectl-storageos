@@ -57,9 +57,7 @@ resources:
 - bundle.yaml`
 )
 
-var (
-	httpClient *http.Client
-)
+var httpClient *http.Client
 
 type InMemory struct {
 	fileSys filesys.FileSystem
@@ -512,7 +510,7 @@ func saveCollectorOutput(output map[string][]byte, bundlePath string, c *collect
 		fileDir, fileName := filepath.Split(filename)
 		outPath := filepath.Join(bundlePath, fileDir)
 
-		if err := os.MkdirAll(outPath, 0777); err != nil {
+		if err := os.MkdirAll(outPath, 0o777); err != nil {
 			return errors.Wrap(err, "create output file")
 		}
 
@@ -530,7 +528,7 @@ func untarAndSave(tarFile []byte, bundlePath string) error {
 	files := make(map[string][]byte)
 	fileHeaders := make(map[string]*tar.Header)
 	tarReader := tar.NewReader(bytes.NewBuffer(tarFile))
-	//Extract and separate tar contents in file and folders, keeping header info from each one.
+	// Extract and separate tar contents in file and folders, keeping header info from each one.
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -554,22 +552,22 @@ func untarAndSave(tarFile []byte, bundlePath string) error {
 			return fmt.Errorf("Tar file entry %s contained unsupported file type %v", header.Name, header.FileInfo().Mode())
 		}
 	}
-	//Create directories from base path: <namespace>/<pod name>/containerPath
-	if err := os.MkdirAll(filepath.Join(bundlePath), 0777); err != nil {
+	// Create directories from base path: <namespace>/<pod name>/containerPath
+	if err := os.MkdirAll(filepath.Join(bundlePath), 0o777); err != nil {
 		return errors.Wrap(err, "create output file")
 	}
-	//Order folders stored in variable keys to start always by parent folder. That way folder info is preserved.
+	// Order folders stored in variable keys to start always by parent folder. That way folder info is preserved.
 	for k := range dirs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	//Orderly create folders.
+	// Orderly create folders.
 	for _, k := range keys {
 		if err := os.Mkdir(filepath.Join(bundlePath, k), dirs[k].FileInfo().Mode().Perm()); err != nil {
 			return errors.Wrap(err, "create output file")
 		}
 	}
-	//Populate folders with respective files and its permissions stored in the header.
+	// Populate folders with respective files and its permissions stored in the header.
 	for k, v := range files {
 		if err := os.WriteFile(filepath.Join(bundlePath, k), v, fileHeaders[k].FileInfo().Mode().Perm()); err != nil {
 			return err
@@ -577,6 +575,7 @@ func untarAndSave(tarFile []byte, bundlePath string) error {
 	}
 	return nil
 }
+
 func uploadSupportBundle(r *troubleshootv1beta2.ResultRequest, archivePath string) error {
 	contentType := getExpectedContentType(r.URI)
 	if contentType != "" && contentType != "application/tar+gzip" {
