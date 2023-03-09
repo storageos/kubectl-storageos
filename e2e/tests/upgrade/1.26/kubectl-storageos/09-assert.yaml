@@ -13,10 +13,6 @@ metadata:
   namespace: storageos 
 status:
   conditions:
-  - message: Scheduler Ready
-    reason: Ready
-    status: "True"
-    type: SchedulerReady
   - message: Node Ready
     reason: Ready
     status: "True"
