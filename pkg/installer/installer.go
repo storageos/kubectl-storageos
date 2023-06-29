@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ondat/operator-toolkit/declarative/applier"
 	"github.com/ondat/operator-toolkit/declarative/deleter"
@@ -12,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kstoragev1 "k8s.io/api/storage/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -27,190 +25,6 @@ import (
 	operatorapi "github.com/storageos/operator/api/v1"
 )
 
-const (
-	// CLI flags
-	StackTraceFlag                  = "stack-trace"
-	VerboseFlag                     = "verbose"
-	SkipNamespaceDeletionFlag       = "skip-namespace-deletion"
-	SkipExistingWorkloadCheckFlag   = "skip-existing-workload-check"
-	StosVersionFlag                 = "stos-version"
-	EtcdOperatorVersionFlag         = "etcd-operator-version"
-	K8sVersionFlag                  = "k8s-version"
-	WaitFlag                        = "wait"
-	DryRunFlag                      = "dry-run"
-	StosOperatorYamlFlag            = "stos-operator-yaml"
-	StosClusterYamlFlag             = "stos-cluster-yaml"
-	StosPortalConfigYamlFlag        = "stos-portal-config-yaml"
-	StosPortalClientSecretYamlFlag  = "stos-portal-client-secret-yaml"
-	EtcdOperatorYamlFlag            = "etcd-operator-yaml"
-	EtcdClusterYamlFlag             = "etcd-cluster-yaml"
-	EtcdDockerRepositoryFlag        = "etcd-docker-repository"
-	EtcdVersionTag                  = "etcd-version-tag"
-	ResourceQuotaYamlFlag           = "resource-quota-yaml"
-	IncludeEtcdFlag                 = "include-etcd"
-	EtcdEndpointsFlag               = "etcd-endpoints"
-	SkipEtcdEndpointsValFlag        = "skip-etcd-endpoints-validation"
-	SkipStosClusterFlag             = "skip-stos-cluster"
-	EtcdTLSEnabledFlag              = "etcd-tls-enabled"
-	EtcdSecretNameFlag              = "etcd-secret-name"
-	StosConfigPathFlag              = "stos-config-path"
-	EtcdNamespaceFlag               = "etcd-namespace"
-	StosOperatorNSFlag              = "stos-operator-namespace"
-	StosClusterNSFlag               = "stos-cluster-namespace"
-	EtcdStorageClassFlag            = "etcd-storage-class"
-	AdminUsernameFlag               = "admin-username"
-	AdminPasswordFlag               = "admin-password"
-	PortalClientIDFlag              = "portal-client-id"
-	PortalSecretFlag                = "portal-secret"
-	PortalTenantIDFlag              = "portal-tenant-id"
-	PortalAPIURLFlag                = "portal-api-url"
-	PortalManagerVersionFlag        = "portal-manager-version"
-	PortalHTTPSProxyFlag            = "portal-https-proxy"
-	EnablePortalManagerFlag         = "enable-portal-manager"
-	IncludeLocalPathProvisionerFlag = "include-local-path-storage-class"
-	LocalPathProvisionerYamlFlag    = "local-path-provisioner-yaml"
-	EtcdTopologyKeyFlag             = "etcd-topology-key"
-	EtcdCPULimitFlag                = "etcd-cpu-limit"
-	EtcdMemoryLimitFlag             = "etcd-memory-limit"
-	EtcdReplicasFlag                = "etcd-replicas"
-	EnableMetricsFlag               = "enable-metrics"
-	TestClusterFlag                 = "test-cluster"
-	SkipK8sVersionCheckFlag         = "skip-k8s-version-check"
-	SerialFlag                      = "serial"
-	AirGapFlag                      = "air-gap"
-	EnableNodeGuardFlag             = "enable-node-guard"
-	NodeGuardEnvFlag                = "node-guard-env"
-
-	// config file fields - contain path delimiters for plugin interpretation of config manifest
-	StackTraceConfig                          = "spec.stackTrace"
-	VerboseConfig                             = "spec.verbose"
-	SkipNamespaceDeletionConfig               = "spec.skipNamespaceDeletion"
-	SkipExistingWorkloadCheckConfig           = "spec.skipExistingWorkloadCheck"
-	SkipStosClusterConfig                     = "spec.skipStorageOSCluster"
-	IncludeEtcdConfig                         = "spec.includeEtcd"
-	SerialConfig                              = "spec.serial"
-	AirGapConfig                              = "spec.airGap"
-	WaitConfig                                = "spec.install.wait"
-	DryRunConfig                              = "spec.install.dryRun"
-	K8sVersionConfig                          = "spec.install.kubernetesVersion"
-	InstallStosVersionConfig                  = "spec.install.storageOSVersion"
-	InstallEtcdOperatorVersionConfig          = "spec.install.etcdOperatorVersion"
-	InstallEtcdNamespaceConfig                = "spec.install.etcdNamespace"
-	InstallStosOperatorNSConfig               = "spec.install.storageOSOperatorNamespace"
-	StosClusterNSConfig                       = "spec.install.storageOSClusterNamespace"
-	InstallStosOperatorYamlConfig             = "spec.install.storageOSOperatorYaml"
-	InstallStosClusterYamlConfig              = "spec.install.storageOSClusterYaml"
-	InstallStosPortalConfigYamlConfig         = "spec.install.storageOSPortalConfigYaml"
-	InstallStosPortalClientSecretYamlConfig   = "spec.install.storageOSPortalClientSecretYaml"
-	InstallEtcdOperatorYamlConfig             = "spec.install.etcdOperatorYaml"
-	InstallEtcdClusterYamlConfig              = "spec.install.etcdClusterYaml"
-	InstallResourceQuotaYamlConfig            = "spec.install.resourceQuotaYaml"
-	EtcdEndpointsConfig                       = "spec.install.etcdEndpoints"
-	SkipEtcdEndpointsValConfig                = "spec.install.skipEtcdEndpointsValidation"
-	EtcdTLSEnabledConfig                      = "spec.install.etcdTLSEnabled"
-	EtcdSecretNameConfig                      = "spec.install.etcdSecretName"
-	EtcdStorageClassConfig                    = "spec.install.etcdStorageClassName"
-	AdminUsernameConfig                       = "spec.install.adminUsername"
-	AdminPasswordConfig                       = "spec.install.adminPassword"
-	PortalClientIDConfig                      = "spec.install.portalClientID"
-	PortalSecretConfig                        = "spec.install.portalSecret"
-	PortalTenantIDConfig                      = "spec.install.portalTenantID"
-	PortalAPIURLConfig                        = "spec.install.portalAPIURL"
-	InstallPortalManagerVersionConfig         = "spec.install.portalManagerVersion"
-	UninstallPortalManagerVersionConfig       = "spec.uninstall.portalManagerVersion"
-	EnablePortalManagerConfig                 = "spec.install.enablePortalManager"
-	UninstallStosVersionConfig                = "spec.uninstall.storageOSVersion"
-	UninstallEtcdOperatorVersionConfig        = "spec.uninstall.etcdOperatorVersion"
-	UninstallEtcdNSConfig                     = "spec.uninstall.etcdNamespace"
-	UninstallStosOperatorNSConfig             = "spec.uninstall.storageOSOperatorNamespace"
-	UninstallStosOperatorYamlConfig           = "spec.uninstall.storageOSOperatorYaml"
-	UninstallStosClusterYamlConfig            = "spec.uninstall.storageOSClusterYaml"
-	UninstallStosPortalConfigYamlConfig       = "spec.uninstall.storageOSPortalConfigYaml"
-	UninstallStosPortalClientSecretYamlConfig = "spec.uninstall.storageOSPortalClientSecretYaml"
-	UninstallEtcdOperatorYamlConfig           = "spec.uninstall.etcdOperatorYaml"
-	UninstallEtcdClusterYamlConfig            = "spec.uninstall.etcdClusterYaml"
-	UninstallResourceQuotaYamlConfig          = "spec.uninstall.resourceQuotaYaml"
-	IncludeLocalPathProvisionerConfig         = "spec.includeLocalPathProvisioner"
-	InstallLocalPathProvisionerYamlConfig     = "spec.install.localPathProvisionerYamlConfig"
-	UninstallLocalPathProvisionerYamlConfig   = "spec.uninstall.localPathProvisionerYamlConfig"
-	EtcdVersionTagConfig                      = "spec.install.etcdVersionTag"
-	EtcdDockerRepositoryConfig                = "spec.install.etcdDockerRepository"
-	EtcdTopologyKeyConfig                     = "spec.install.etcdTopologyKey"
-	EtcdCPULimitConfig                        = "spec.install.etcdCPULimit"
-	EtcdMemoryLimitConfig                     = "spec.install.etcdMemoryLimit"
-	EtcdReplicasConfig                        = "spec.install.etcdReplicas"
-	EnableMetricsConfig                       = "spec.install.enableMetrics"
-	TestClusterConfig                         = "spec.install.enableTestClusterTaint"
-	SkipK8sVersionCheckConfig                 = "spec.install.skipK8sVerisonCheck"
-	EnableNodeGuardConfig                     = "spec.install.enableNodeGuard"
-	NodeGuardEnvConfig                        = "spec.install.nodeGuardEnv"
-
-	// dir and file names for in memory fs
-	etcdDir                  = "etcd"
-	stosDir                  = "storageos"
-	localPathProvisionerDir  = "local-path-provisioner"
-	operatorDir              = "operator"
-	clusterDir               = "cluster"
-	storageclassDir          = "storage-class"
-	resourceQuotaDir         = "resource-quota"
-	portalClientDir          = "portal-client"
-	portalConfigDir          = "portal-config"
-	stosOperatorFile         = "storageos-operator.yaml"
-	stosClusterFile          = "storageos-cluster.yaml"
-	resourceQuotaFile        = "resource-quota.yaml"
-	stosPortalClientFile     = "storageos-portal-client.yaml"
-	stosPortalConfigFile     = "storageos-portal-configmap.yaml"
-	stosSecretsFile          = "storageos-secrets.yaml"
-	csiSecretsFile           = "storageos-csi-secrets.yaml"
-	stosStorageClassFile     = "storageos-storageclass.yaml"
-	stosConfigMapsFile       = "storageos-configmaps.yaml"
-	etcdOperatorFile         = "etcd-operator.yaml"
-	etcdClusterFile          = "etcd-cluster.yaml"
-	kustomizationFile        = "kustomization.yaml"
-	localPathProvisionerFile = "local-path-provisioner-storage-class.yaml"
-	kubeDir                  = ".kube"
-	InstallPrefix            = "install-"
-	UninstallPrefix          = "uninstall-"
-
-	// kustomization template
-	kustTemp = `apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:`
-
-	// other defaults
-	stosClusterKind   = "StorageOSCluster"
-	resourceQuotaKind = "ResourceQuota"
-	etcdClusterKind   = "EtcdCluster"
-	stosFinalizer     = "storageos.com/finalizer"
-	stosSCProvisioner = "csi.storageos.com"
-	stosAppLabel      = "app=storageos"
-)
-
-var (
-	// SerialInstall allows the installer to install operators serially not parallel.
-	// This could be change with build flag:
-	// -X github.com/storageos/kubectl-storageos/pkg/installer.SerialInstall=ANY_VALUE
-	SerialInstall string
-	serialInstall bool
-)
-
-func init() {
-	serialInstall = SerialInstall != ""
-}
-
-type multipleErrors struct {
-	errors []string
-}
-
-func (me multipleErrors) Error() string {
-	return "Multiple errors: \n" + strings.Join(me.errors, "\n---\n")
-}
-
-// fsData represents dir name, subdir name, file name and file data.
-// It is used to create the Installer's in-memory file system.
-type fsData map[string]map[string]map[string][]byte
-
 // Installer holds the kubectl client and in-memory fs data used throughout the installation process
 type Installer struct {
 	distribution      pluginutils.Distribution
@@ -224,73 +38,6 @@ type Installer struct {
 	dryRunFileCounter int
 	storageOSCluster  *operatorapi.StorageOSCluster
 	log               *logger.Logger
-}
-
-// NewInstaller returns an Installer used for install command
-func NewInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	in, err := newCommonInstaller(config, log)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (in.distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-	in.installerOptions = installerOptions
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.fileSys = fileSys
-
-	return in, nil
-}
-
-// NewPortalManagerInstaller returns an Installer used for all portal manager commands
-func NewPortalManagerInstaller(config *apiv1.KubectlStorageOSConfig, manifestsRequired bool, log *logger.Logger) (*Installer, error) {
-	version.SetPortalManagerLatestSupportedVersion(getStringWithDefault(config.Spec.Install.PortalManagerVersion, config.Spec.Uninstall.PortalManagerVersion))
-
-	in, err := newCommonInstaller(config, log)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	installerOptions := &installerOptions{
-		storageosOperator:    false,
-		storageosCluster:     false,
-		portalClient:         manifestsRequired, // manifests are required for install-portal, and uninstall-portal
-		portalConfig:         manifestsRequired, // but not for enable-portal and disable-portal
-		resourceQuota:        false,
-		etcdOperator:         false,
-		etcdCluster:          false,
-		localPathProvisioner: false,
-	}
-	in.installerOptions = installerOptions
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.fileSys = fileSys
-
-	stosCluster, err := pluginutils.GetFirstStorageOSCluster(in.clientConfig)
-	if err != nil {
-		return in, errors.WithStack(err)
-	}
-
-	in.storageOSCluster = stosCluster
-
-	return in, nil
 }
 
 // newCommonInstaller contains logic that is common to NewInstaller and NewPortalManagerInstaller
@@ -356,117 +103,6 @@ func newCommonInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger
 	}
 
 	return installer, nil
-}
-
-// NewDryRunInstaller returns a lightweight Installer object for '--dry-run' enabled commands
-func NewDryRunInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	setVersionsForOperation(config)
-
-	installer := &Installer{}
-
-	clientConfig, err := pluginutils.NewClientConfig()
-	if err != nil {
-		return installer, errors.WithStack(err)
-	}
-
-	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
-
-	installerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         config.Spec.Install.EnablePortalManager,
-		portalConfig:         config.Spec.Install.EnablePortalManager,
-		resourceQuota:        (distribution == pluginutils.DistributionGKE),
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-
-	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
-	if err != nil {
-		return installer, errors.WithStack(err)
-	}
-
-	installer = &Installer{
-		distribution:      distribution,
-		clientConfig:      clientConfig,
-		stosConfig:        config,
-		fileSys:           fileSys,
-		onDiskFileSys:     filesys.MakeFsOnDisk(),
-		installerOptions:  installerOptions,
-		dryRunFileCounter: 0,
-		log:               log,
-	}
-
-	return installer, nil
-}
-
-// NewUninstaller returns an Installer used for uninstall command
-func NewUninstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
-	setVersionsForOperation(config)
-
-	uninstaller := &Installer{}
-
-	clientConfig, err := pluginutils.NewClientConfig()
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	currentVersion, err := pluginutils.GetKubernetesVersion(clientConfig)
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	distribution := pluginutils.DetermineDistribution(currentVersion.String())
-
-	kubesystemNS, err := pluginutils.GetNamespace(clientConfig, "kube-system")
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	stosCluster, err := pluginutils.GetFirstStorageOSCluster(clientConfig)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return uninstaller, errors.WithStack(err)
-		}
-	}
-
-	uninstallPortal := false
-	if stosCluster != nil {
-		uninstallPortal = stosCluster.Spec.EnablePortalManager
-	}
-
-	uninstallerOptions := &installerOptions{
-		storageosOperator:    true,
-		storageosCluster:     !config.Spec.SkipStorageOSCluster,
-		portalClient:         uninstallPortal,
-		portalConfig:         uninstallPortal,
-		resourceQuota:        distribution == pluginutils.DistributionGKE,
-		etcdOperator:         config.Spec.IncludeEtcd,
-		etcdCluster:          config.Spec.IncludeEtcd,
-		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
-	}
-	uninstaller.installerOptions = uninstallerOptions
-
-	fileSys, err := uninstallerOptions.buildInstallerFileSys(config, clientConfig)
-	if err != nil {
-		return uninstaller, errors.WithStack(err)
-	}
-
-	uninstaller = &Installer{
-		distribution:     distribution,
-		kubectlClient:    kubectlNew(log),
-		clientConfig:     clientConfig,
-		kubeClusterID:    kubesystemNS.GetUID(),
-		stosConfig:       config,
-		fileSys:          fileSys,
-		onDiskFileSys:    filesys.MakeFsOnDisk(),
-		installerOptions: uninstallerOptions,
-		storageOSCluster: stosCluster,
-		log:              log,
-	}
-
-	return uninstaller, nil
 }
 
 func setVersionsForOperation(config *apiv1.KubectlStorageOSConfig) {
@@ -612,7 +248,7 @@ func (in *Installer) omitAndReturnKindFromFSMultiDoc(path, kind string) ([]strin
 }
 
 // writeBackupFileSystem writes manifests of uninstalled secrets, configmaps, storageoscluster and storageclass to disk
-func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.StorageOSCluster) error {
+func (in *Installer) writeBackupFileSystem() error {
 	backupPath, err := in.getBackupPath()
 	if err != nil {
 		return err
@@ -621,7 +257,7 @@ func (in *Installer) writeBackupFileSystem(storageOSCluster *operatorapi.Storage
 		return errors.WithStack(err)
 	}
 
-	storageOSClusterManifest, err := storageOSClusterToManifest(storageOSCluster)
+	storageOSClusterManifest, err := storageOSClusterToManifest(in.storageOSCluster)
 	if err != nil {
 		return err
 	}

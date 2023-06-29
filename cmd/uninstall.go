@@ -128,13 +128,13 @@ func uninstallCmd(config *apiv1.KubectlStorageOSConfig, skipNamespaceDeletionHas
 		return err
 	}
 
-	cliInstaller, err := installer.NewUninstaller(config, log)
+	uninstaller, err := installer.NewUninstaller(config, log)
 	if err != nil {
 		return err
 	}
 
 	log.Commencing(uninstall)
-	return cliInstaller.Uninstall(false)
+	return uninstaller.Uninstall(false)
 }
 
 func setUninstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

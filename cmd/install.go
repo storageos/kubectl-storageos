@@ -196,21 +196,16 @@ func installCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) error 
 			}
 		}
 		config.Spec.Install.SkipEtcdEndpointsValidation = true
-		cliInstaller, err := installer.NewDryRunInstaller(config, log)
-		if err != nil {
-			return err
-		}
-		log.Commencing(install)
-		return cliInstaller.Install(false)
 	}
 
-	cliInstaller, err := installer.NewInstaller(config, log)
+	installer, err := installer.NewInstaller(config, log)
 	if err != nil {
 		return err
 	}
 
 	log.Commencing(install)
-	return cliInstaller.Install(false)
+
+	return installer.Install(false)
 }
 
 func setInstallValues(cmd *cobra.Command, config *apiv1.KubectlStorageOSConfig) error {

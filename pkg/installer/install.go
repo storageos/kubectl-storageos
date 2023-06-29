@@ -10,10 +10,88 @@ import (
 	"sync"
 
 	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 
+	"github.com/pkg/errors"
+	apiv1 "github.com/storageos/kubectl-storageos/api/v1"
 	"github.com/storageos/kubectl-storageos/pkg/consts"
+	"github.com/storageos/kubectl-storageos/pkg/logger"
 	pluginutils "github.com/storageos/kubectl-storageos/pkg/utils"
 )
+
+// NewInstaller returns an Installer used for install command
+func NewInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
+	if config.Spec.Install.DryRun {
+		return newDryRunInstaller(config, log)
+	}
+
+	in, err := newCommonInstaller(config, log)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	installerOptions := &installerOptions{
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         config.Spec.Install.EnablePortalManager,
+		portalConfig:         config.Spec.Install.EnablePortalManager,
+		resourceQuota:        (in.distribution == pluginutils.DistributionGKE),
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
+	}
+	in.installerOptions = installerOptions
+
+	fileSys, err := installerOptions.buildInstallerFileSys(config, in.clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	in.fileSys = fileSys
+
+	return in, nil
+}
+
+// NewDryRunInstallDriver returns a lightweight InstallDriver object for '--dry-run' enabled commands
+func newDryRunInstaller(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) (*Installer, error) {
+	setVersionsForOperation(config)
+
+	clientConfig, err := pluginutils.NewClientConfig()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	distribution := pluginutils.DetermineDistribution(config.Spec.Install.KubernetesVersion)
+
+	installerOptions := &installerOptions{
+		storageosOperator:    true,
+		storageosCluster:     !config.Spec.SkipStorageOSCluster,
+		portalClient:         config.Spec.Install.EnablePortalManager,
+		portalConfig:         config.Spec.Install.EnablePortalManager,
+		resourceQuota:        (distribution == pluginutils.DistributionGKE),
+		etcdOperator:         config.Spec.IncludeEtcd,
+		etcdCluster:          config.Spec.IncludeEtcd,
+		localPathProvisioner: config.Spec.IncludeLocalPathProvisioner,
+	}
+
+	fileSys, err := installerOptions.buildInstallerFileSys(config, clientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	installer := &Installer{
+		distribution:      distribution,
+		clientConfig:      clientConfig,
+		stosConfig:        config,
+		fileSys:           fileSys,
+		onDiskFileSys:     filesys.MakeFsOnDisk(),
+		installerOptions:  installerOptions,
+		dryRunFileCounter: 0,
+		log:               log,
+	}
+
+	return installer, nil
+}
 
 // Install performs storageos operator and etcd operator installation for kubectl-storageos
 func (in *Installer) Install(upgrade bool) error {
@@ -33,14 +111,12 @@ func (in *Installer) Install(upgrade bool) error {
 			errChan <- in.installEtcd()
 		}()
 	} else if !upgrade {
-		if err := in.handleEndpointsInput(in.stosConfig.Spec); err != nil {
+		if err := in.handleEndpointsInput(); err != nil {
 			return err
 		}
 	}
 
-	// serialInstall can be set via a build flag, whereas Serial is
-	// passed to the plugin via cli flag or config.
-	if serialInstall || in.stosConfig.Spec.Serial || in.stosConfig.Spec.Install.DryRun {
+	if in.stosConfig.Spec.Serial || in.stosConfig.Spec.Install.DryRun {
 		wg.Wait()
 	}
 
@@ -352,9 +428,7 @@ func (in *Installer) installStorageOSOperator() error {
 		}
 	}
 
-	// if serial install has been set either by build flag or by cli config,
-	// set the operator's execution strategy to serial also.
-	if in.stosConfig.Spec.Serial || serialInstall {
+	if in.stosConfig.Spec.Serial {
 		if err := in.setExecutionStrategyForOperatorConfigMap(); err != nil {
 			return err
 		}

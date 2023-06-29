@@ -73,13 +73,13 @@ func disablePortalCmd(config *apiv1.KubectlStorageOSConfig, log *logger.Logger) 
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cliInstaller, err := installer.NewPortalManagerInstaller(config, false, log)
+		portalManagerInstaller, err := installer.NewPortalManagerInstaller(config, false, log)
 		if err != nil {
 			return err
 		}
 
 		log.Commencing(disablePortal)
-		return cliInstaller.EnablePortalManager(false)
+		return portalManagerInstaller.EnablePortalManager(false)
 	})
 }
 
